@@ -186,16 +186,16 @@ const ZoneDetail = () => {
       if (device.hvac_action) {
         parts.push(device.hvac_action.toUpperCase())
       }
-      if (device.current_temperature !== undefined) {
-        parts.push(`${device.current_temperature}°C`)
+      if (device.current_temperature !== undefined && device.current_temperature !== null) {
+        parts.push(`${device.current_temperature.toFixed(1)}°C`)
       }
-      if (device.target_temperature !== undefined) {
-        parts.push(`→ ${device.target_temperature}°C`)
+      if (device.target_temperature !== undefined && device.target_temperature !== null) {
+        parts.push(`→ ${device.target_temperature.toFixed(1)}°C`)
       }
       return parts.length > 0 ? parts.join(' · ') : device.state || 'unknown'
     } else if (device.type === 'temperature_sensor') {
-      if (device.temperature !== undefined) {
-        return `${device.temperature}°C`
+      if (device.temperature !== undefined && device.temperature !== null) {
+        return `${device.temperature.toFixed(1)}°C`
       }
       return device.state || 'unknown'
     } else if (device.type === 'valve') {
@@ -346,7 +346,7 @@ const ZoneDetail = () => {
                       Current Temperature
                     </Typography>
                     <Typography variant="h5" color="text.primary">
-                      {area.current_temperature}°C
+                      {area.current_temperature?.toFixed(1)}°C
                     </Typography>
                   </Box>
                 </>

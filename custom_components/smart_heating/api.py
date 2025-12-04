@@ -161,6 +161,21 @@ class SmartHeatingAPIView(HomeAssistantView):
             if stored_area:
                 # Use stored data
                 devices_list = []
+                
+                # Get coordinator data for device states
+                # The coordinator is stored under the entry_id, find it
+                coordinator = None
+                for key, value in self.hass.data[DOMAIN].items():
+                    if hasattr(value, 'data') and hasattr(value, 'async_request_refresh'):
+                        coordinator = value
+                        break
+                
+                coordinator_devices = {}
+                if coordinator and coordinator.data and "areas" in coordinator.data:
+                    area_data = coordinator.data["areas"].get(area_id, {})
+                    for device in area_data.get("devices", []):
+                        coordinator_devices[device["id"]] = device
+                
                 for dev_id, dev_data in stored_area.devices.items():
                     device_info = {
                         "id": dev_id,
@@ -171,6 +186,17 @@ class SmartHeatingAPIView(HomeAssistantView):
                     state = self.hass.states.get(dev_id)
                     if state:
                         device_info["name"] = state.attributes.get("friendly_name", dev_id)
+                    
+                    # Add coordinator data if available
+                    if dev_id in coordinator_devices:
+                        coord_device = coordinator_devices[dev_id]
+                        device_info["state"] = coord_device.get("state")
+                        device_info["current_temperature"] = coord_device.get("current_temperature")
+                        device_info["target_temperature"] = coord_device.get("target_temperature")
+                        device_info["hvac_action"] = coord_device.get("hvac_action")
+                        device_info["temperature"] = coord_device.get("temperature")
+                        device_info["position"] = coord_device.get("position")
+                    
                     devices_list.append(device_info)
                 
                 areas_data.append({

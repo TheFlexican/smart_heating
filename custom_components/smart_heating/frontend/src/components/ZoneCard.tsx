@@ -144,15 +144,15 @@ const ZoneCard = ({ area, onUpdate }: ZoneCardProps) => {
       if (device.hvac_action) {
         parts.push(device.hvac_action)
       }
-      if (device.current_temperature !== undefined) {
-        parts.push(`${device.current_temperature}°C`)
+      if (device.current_temperature !== undefined && device.current_temperature !== null) {
+        parts.push(`${device.current_temperature.toFixed(1)}°C`)
       }
-      if (device.target_temperature !== undefined && device.target_temperature !== device.current_temperature) {
-        parts.push(`→ ${device.target_temperature}°C`)
+      if (device.target_temperature !== undefined && device.target_temperature !== null && device.target_temperature !== device.current_temperature) {
+        parts.push(`→ ${device.target_temperature.toFixed(1)}°C`)
       }
     } else if (device.type === 'temperature_sensor') {
-      if (device.temperature !== undefined) {
-        parts.push(`${device.temperature}°C`)
+      if (device.temperature !== undefined && device.temperature !== null) {
+        parts.push(`${device.temperature.toFixed(1)}°C`)
       }
     } else if (device.type === 'valve') {
       if (device.position !== undefined) {
@@ -246,13 +246,13 @@ const ZoneCard = ({ area, onUpdate }: ZoneCardProps) => {
           )}
         </Box>
 
-        {area.current_temperature !== undefined && (
+        {area.current_temperature !== undefined && area.current_temperature !== null && (
           <Box display="flex" justifyContent="space-between" mb={2}>
             <Typography variant="body2" color="text.secondary">
               Current Temperature
             </Typography>
             <Typography variant="body1">
-              {area.current_temperature}°C
+              {area.current_temperature.toFixed(1)}°C
             </Typography>
           </Box>
         )}

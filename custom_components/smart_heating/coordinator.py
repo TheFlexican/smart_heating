@@ -68,15 +68,35 @@ class SmartHeatingCoordinator(DataUpdateCoordinator):
                     }
                     
                     # Add device-specific attributes
-                    if state and state.attributes:
+                    if state:
                         if device_info["type"] == "thermostat":
                             device_data["current_temperature"] = state.attributes.get("current_temperature")
                             device_data["target_temperature"] = state.attributes.get("temperature")
                             device_data["hvac_action"] = state.attributes.get("hvac_action")
                         elif device_info["type"] == "temperature_sensor":
-                            device_data["temperature"] = state.attributes.get("temperature", state.state)
+                            # For temperature sensors, the state IS the temperature
+                            try:
+                                temp_value = float(state.state) if state.state not in ("unknown", "unavailable") else None
+                                if temp_value is not None:
+                                    # Check if temperature is in Fahrenheit and convert to Celsius
+                                    unit = state.attributes.get("unit_of_measurement", "°C")
+                                    if unit in ("°F", "F"):
+                                        temp_value = (temp_value - 32) * 5/9
+                                        _LOGGER.debug(
+                                            "Converted temperature sensor %s: %s°F -> %.1f°C",
+                                            device_id, state.state, temp_value
+                                        )
+                                    device_data["temperature"] = temp_value
+                                else:
+                                    device_data["temperature"] = None
+                            except (ValueError, TypeError):
+                                device_data["temperature"] = None
                         elif device_info["type"] == "valve":
-                            device_data["position"] = state.attributes.get("position")
+                            # For valves (number entities), the position is in the state
+                            try:
+                                device_data["position"] = float(state.state) if state.state not in ("unknown", "unavailable") else None
+                            except (ValueError, TypeError):
+                                device_data["position"] = None
                     
                     devices_data.append(device_data)
                 

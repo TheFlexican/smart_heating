@@ -48,8 +48,8 @@ const DeviceOverview = ({ areas }: DeviceOverviewProps) => {
       }
       return device.state || 'unknown'
     } else if (device.type === 'temperature_sensor') {
-      if (device.temperature !== undefined) {
-        return `${device.temperature}°C`
+      if (device.temperature !== undefined && device.temperature !== null) {
+        return `${device.temperature.toFixed(1)}°C`
       }
       return device.state || 'unknown'
     } else if (device.type === 'valve') {
@@ -66,11 +66,11 @@ const DeviceOverview = ({ areas }: DeviceOverviewProps) => {
     const parts = []
     
     if (device.type === 'thermostat') {
-      if (device.current_temperature !== undefined) {
-        parts.push(`Current: ${device.current_temperature}°C`)
+      if (device.current_temperature !== undefined && device.current_temperature !== null) {
+        parts.push(`Current: ${device.current_temperature.toFixed(1)}°C`)
       }
-      if (device.target_temperature !== undefined) {
-        parts.push(`Target: ${device.target_temperature}°C`)
+      if (device.target_temperature !== undefined && device.target_temperature !== null) {
+        parts.push(`Target: ${device.target_temperature.toFixed(1)}°C`)
       }
     }
     

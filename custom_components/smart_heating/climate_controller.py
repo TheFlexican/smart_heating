@@ -53,7 +53,18 @@ class ClimateController:
                 state = self.hass.states.get(sensor_id)
                 if state and state.state not in ("unknown", "unavailable"):
                     try:
-                        temps.append(float(state.state))
+                        temp_value = float(state.state)
+                        
+                        # Check if temperature is in Fahrenheit and convert to Celsius
+                        unit = state.attributes.get("unit_of_measurement", "°C")
+                        if unit in ("°F", "F"):
+                            temp_value = (temp_value - 32) * 5/9
+                            _LOGGER.debug(
+                                "Converted temperature from %s: %s°F -> %.1f°C",
+                                sensor_id, state.state, temp_value
+                            )
+                        
+                        temps.append(temp_value)
                     except (ValueError, TypeError):
                         _LOGGER.warning(
                             "Invalid temperature from %s: %s", 
