@@ -176,6 +176,11 @@ class Area:
         self.night_boost_offset: float = 0.5  # Add 0.5°C during night hours
         self.night_boost_start_time: str = DEFAULT_NIGHT_BOOST_START_TIME
         self.night_boost_end_time: str = DEFAULT_NIGHT_BOOST_END_TIME
+        
+        # Smart night boost settings
+        self.smart_night_boost_enabled: bool = False
+        self.smart_night_boost_target_time: str = "06:00"  # Time when room should be at target temp
+        self.weather_entity_id: str | None = None  # Outdoor temperature sensor
 
     def add_device(self, device_id: str, device_type: str, mqtt_topic: str | None = None) -> None:
         """Add a device to the area.
@@ -421,6 +426,9 @@ class Area:
             "night_boost_offset": self.night_boost_offset,
             "night_boost_start_time": self.night_boost_start_time,
             "night_boost_end_time": self.night_boost_end_time,
+            "smart_night_boost_enabled": self.smart_night_boost_enabled,
+            "smart_night_boost_target_time": self.smart_night_boost_target_time,
+            "weather_entity_id": self.weather_entity_id,
         }
 
     @classmethod
@@ -444,6 +452,9 @@ class Area:
         area.night_boost_offset = data.get("night_boost_offset", 0.5)
         area.night_boost_start_time = data.get("night_boost_start_time", DEFAULT_NIGHT_BOOST_START_TIME)
         area.night_boost_end_time = data.get("night_boost_end_time", DEFAULT_NIGHT_BOOST_END_TIME)
+        area.smart_night_boost_enabled = data.get("smart_night_boost_enabled", False)
+        area.smart_night_boost_target_time = data.get("smart_night_boost_target_time", "06:00")
+        area.weather_entity_id = data.get("weather_entity_id")
         
         # Load schedules
         for schedule_data in data.get("schedules", []):

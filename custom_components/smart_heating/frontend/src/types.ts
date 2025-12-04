@@ -35,10 +35,21 @@ export interface Zone {
   night_boost_offset?: number
   night_boost_start_time?: string
   night_boost_end_time?: string
+  smart_night_boost_enabled?: boolean
+  smart_night_boost_target_time?: string
+  weather_entity_id?: string
 }
 
 // Alias Area to Zone for compatibility
 export type Area = Zone
+
+export interface LearningStats {
+  total_events: number
+  avg_heating_rate: number
+  avg_outdoor_correlation: number
+  prediction_accuracy: number
+  last_updated?: string
+}
 
 export interface DeviceAdd {
   device_id: string

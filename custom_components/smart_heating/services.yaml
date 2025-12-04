@@ -221,7 +221,7 @@ disable_schedule:
 
 set_night_boost:
   name: Set Night Boost
-  description: Configure night boost for an area (gradually increase temperature during configurable night hours)
+  description: Configure night boost for an area (manual or adaptive learning mode)
   fields:
     area_id:
       name: Zone ID
@@ -232,7 +232,7 @@ set_night_boost:
         text:
     night_boost_enabled:
       name: Night Boost Enabled
-      description: Enable or disable night boost
+      description: Enable or disable manual night boost
       required: false
       example: true
       selector:
@@ -264,6 +264,30 @@ set_night_boost:
       example: "06:00"
       selector:
         time:
+    smart_night_boost_enabled:
+      name: Smart Night Boost Enabled
+      description: Enable adaptive learning to predict optimal heating start time
+      required: false
+      example: true
+      selector:
+        boolean:
+    smart_night_boost_target_time:
+      name: Smart Night Boost Target Time
+      description: Desired time to reach target temperature (e.g., wake-up time)
+      required: false
+      default: "06:00"
+      example: "06:00"
+      selector:
+        time:
+    weather_entity_id:
+      name: Weather Entity ID
+      description: Outdoor temperature sensor for weather correlation (optional but recommended)
+      required: false
+      example: "sensor.outdoor_temperature"
+      selector:
+        entity:
+          domain: sensor
+          device_class: temperature
 
 set_hysteresis:
   name: Set Hysteresis

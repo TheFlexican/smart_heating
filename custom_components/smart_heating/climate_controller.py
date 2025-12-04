@@ -28,18 +28,21 @@ _LOGGER = logging.getLogger(__name__)
 class ClimateController:
     """Control heating based on area settings and schedules."""
 
-    def __init__(self, hass: HomeAssistant, area_manager: AreaManager) -> None:
+    def __init__(self, hass: HomeAssistant, area_manager: AreaManager, learning_engine=None) -> None:
         """Initialize the climate controller.
         
         Args:
             hass: Home Assistant instance
             area_manager: Area manager instance
+            learning_engine: Optional learning engine for adaptive features
         """
         self.hass = hass
         self.area_manager = area_manager
+        self.learning_engine = learning_engine
         self._hysteresis = 0.5  # Temperature hysteresis in °C
         self._record_counter = 0  # Counter for history recording
         self._device_capabilities = {}  # Cache for device capabilities
+        self._area_heating_events = {}  # Track active heating events per area
 
     def _get_valve_capability(self, entity_id: str) -> dict[str, Any]:
         """Get valve control capabilities from HA entity.
@@ -203,6 +206,20 @@ class ClimateController:
             should_stop = current_temp >= target_temp
             
             if should_heat:
+                # Start heating event if not already active and learning engine available
+                if self.learning_engine and area_id not in self._area_heating_events:
+                    outdoor_temp = await self._async_get_outdoor_temperature(area)
+                    self._area_heating_events[area_id] = await self.learning_engine.async_start_heating_event(
+                        area_id=area_id,
+                        start_temp=current_temp,
+                        target_temp=target_temp,
+                        outdoor_temp=outdoor_temp
+                    )
+                    _LOGGER.debug(
+                        "Started learning event for area %s (outdoor: %s°C)",
+                        area_id, outdoor_temp if outdoor_temp else "N/A"
+                    )
+                
                 await self._async_set_area_heating(area, True, target_temp)
                 area.state = "heating"  # Update area state
                 heating_areas.append(area)
@@ -212,6 +229,19 @@ class ClimateController:
                     area_id, current_temp, target_temp
                 )
             elif should_stop:
+                # End heating event if active and learning engine available
+                if self.learning_engine and area_id in self._area_heating_events:
+                    event = self._area_heating_events.pop(area_id)
+                    await self.learning_engine.async_end_heating_event(
+                        event=event,
+                        end_temp=current_temp
+                    )
+                    _LOGGER.debug(
+                        "Completed learning event for area %s (%.1f°C -> %.1f°C in %d min)",
+                        area_id, event.start_temp, current_temp,
+                        int((event.end_time - event.start_time).total_seconds() / 60)
+                    )
+                
                 # Turn off heating but update target temperature to schedule value
                 await self._async_set_area_heating(area, False, target_temp)
                 area.state = "idle"  # Update area state
@@ -468,6 +498,32 @@ class ClimateController:
                     "Failed to control valve %s: %s",
                     valve_id, err
                 )
+
+    async def _async_get_outdoor_temperature(self, area: Area) -> float | None:
+        """Get outdoor temperature for learning.
+        
+        Args:
+            area: Area instance (checks weather_entity_id)
+            
+        Returns:
+            Outdoor temperature or None if not available
+        """
+        if not area.weather_entity_id:
+            return None
+        
+        state = self.hass.states.get(area.weather_entity_id)
+        if not state or state.state in ("unknown", "unavailable"):
+            return None
+        
+        try:
+            temp = float(state.state)
+            # Check for Fahrenheit and convert
+            unit = state.attributes.get("unit_of_measurement", "°C")
+            if unit in ("°F", "F"):
+                temp = (temp - 32) * 5/9
+            return temp
+        except (ValueError, TypeError):
+            return None
 
     async def _async_control_opentherm_gateway(
         self, any_heating: bool, max_target_temp: float

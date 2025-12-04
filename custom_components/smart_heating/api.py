@@ -60,6 +60,9 @@ class SmartHeatingAPIView(HomeAssistantView):
             elif endpoint.startswith("areas/") and "/history" in endpoint:
                 area_id = endpoint.split("/")[1]
                 return await self.get_history(request, area_id)
+            elif endpoint.startswith("areas/") and "/learning" in endpoint:
+                area_id = endpoint.split("/")[1]
+                return await self.get_learning_stats(request, area_id)
             else:
                 return web.json_response(
                     {"error": "Unknown endpoint"}, status=404
@@ -217,6 +220,9 @@ class SmartHeatingAPIView(HomeAssistantView):
                     "night_boost_offset": stored_area.night_boost_offset,
                     "night_boost_start_time": stored_area.night_boost_start_time,
                     "night_boost_end_time": stored_area.night_boost_end_time,
+                    "smart_night_boost_enabled": stored_area.smart_night_boost_enabled,
+                    "smart_night_boost_target_time": stored_area.smart_night_boost_target_time,
+                    "weather_entity_id": stored_area.weather_entity_id,
                 })
             else:
                 # Default data for HA area without stored settings
@@ -658,6 +664,31 @@ class SmartHeatingAPIView(HomeAssistantView):
             "area_id": area_id,
             "hours": hours,
             "entries": history
+        })
+
+    async def get_learning_stats(self, request: web.Request, area_id: str) -> web.Response:
+        """Get learning statistics for an area.
+        
+        Args:
+            request: Request object
+            area_id: Area identifier
+            
+        Returns:
+            JSON response with learning stats
+        """
+        from .const import DOMAIN
+        
+        learning_engine = self.hass.data.get(DOMAIN, {}).get("learning_engine")
+        if not learning_engine:
+            return web.json_response(
+                {"error": "Learning engine not available"}, status=503
+            )
+        
+        stats = await learning_engine.async_get_learning_stats(area_id)
+        
+        return web.json_response({
+            "area_id": area_id,
+            "stats": stats
         })
 
     async def add_schedule(

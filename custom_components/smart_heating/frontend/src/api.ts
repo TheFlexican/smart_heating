@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { Area, Device, DeviceAdd, ScheduleEntry } from './types'
+import { Area, Device, DeviceAdd, ScheduleEntry, LearningStats } from './types'
 
 const API_BASE = '/api/smart_heating'
 
@@ -74,4 +74,9 @@ export const removeScheduleFromZone = async (
   scheduleId: string
 ): Promise<void> => {
   await axios.delete(`${API_BASE}/areas/${areaId}/schedules/${scheduleId}`)
+}
+
+export const getLearningStats = async (areaId: string): Promise<LearningStats> => {
+  const response = await axios.get(`${API_BASE}/areas/${areaId}/learning`)
+  return response.data.stats
 }

@@ -59,6 +59,7 @@ from .websocket import setup_websocket
 from .climate_controller import ClimateController
 from .scheduler import ScheduleExecutor
 from .history import HistoryTracker
+from .learning_engine import LearningEngine
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -104,6 +105,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await history_tracker.async_load()
     hass.data[DOMAIN]["history"] = history_tracker
     
+    # Create learning engine
+    learning_engine = LearningEngine(hass)
+    hass.data[DOMAIN]["learning_engine"] = learning_engine
+    _LOGGER.info("Learning engine initialized")
+    
     # Create coordinator instance
     coordinator = SmartHeatingCoordinator(hass, area_manager)
     
@@ -114,7 +120,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _LOGGER.debug("Smart Heating coordinator stored in hass.data")
     
     # Create and start climate controller
-    climate_controller = ClimateController(hass, area_manager)
+    climate_controller = ClimateController(hass, area_manager, learning_engine)
     
     # Store climate controller
     hass.data[DOMAIN]["climate_controller"] = climate_controller
@@ -142,7 +148,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _LOGGER.info("Climate controller started with 30-second update interval")
     
     # Create and start schedule executor
-    schedule_executor = ScheduleExecutor(hass, area_manager)
+    schedule_executor = ScheduleExecutor(hass, area_manager, learning_engine)
     hass.data[DOMAIN]["schedule_executor"] = schedule_executor
     await schedule_executor.async_start()
     _LOGGER.info("Schedule executor started")
@@ -364,15 +370,19 @@ async def async_setup_services(hass: HomeAssistant, coordinator: SmartHeatingCoo
         offset = call.data.get(ATTR_NIGHT_BOOST_OFFSET)
         start_time = call.data.get(ATTR_NIGHT_BOOST_START_TIME)
         end_time = call.data.get(ATTR_NIGHT_BOOST_END_TIME)
+        smart_enabled = call.data.get("smart_night_boost_enabled")
+        smart_target_time = call.data.get("smart_night_boost_target_time")
+        weather_entity_id = call.data.get("weather_entity_id")
         
-        _LOGGER.debug("Setting night boost for area %s: enabled=%s, offset=%s, start=%s, end=%s", 
-                     area_id, enabled, offset, start_time, end_time)
+        _LOGGER.debug("Setting night boost for area %s: enabled=%s, offset=%s, start=%s, end=%s, smart=%s", 
+                     area_id, enabled, offset, start_time, end_time, smart_enabled)
         
         try:
             area = area_manager.get_area(area_id)
             if area is None:
                 raise ValueError(f"Area {area_id} does not exist")
             
+            # Manual night boost settings
             if enabled is not None:
                 area.night_boost_enabled = enabled
             if offset is not None:
@@ -381,6 +391,14 @@ async def async_setup_services(hass: HomeAssistant, coordinator: SmartHeatingCoo
                 area.night_boost_start_time = start_time
             if end_time is not None:
                 area.night_boost_end_time = end_time
+            
+            # Smart night boost settings
+            if smart_enabled is not None:
+                area.smart_night_boost_enabled = smart_enabled
+            if smart_target_time is not None:
+                area.smart_night_boost_target_time = smart_target_time
+            if weather_entity_id is not None:
+                area.weather_entity_id = weather_entity_id
             
             await area_manager.async_save()
             await coordinator.async_request_refresh()

@@ -9,6 +9,11 @@ A Home Assistant custom integration for managing multi-area heating systems with
 - 🎛️ **Web-based GUI** - Modern React interface with drag-and-drop device management
 - 📅 **Smart Scheduling** - Time-based temperature profiles with day-of-week selection
 - 🌙 **Night Boost** - Configurable temperature increase during night hours (customizable start/end times)
+- 🧠 **Adaptive Learning** - Machine learning system that learns heating patterns and weather correlation
+  - Automatically predicts heating time based on outdoor temperature
+  - Smart night boost: Starts heating at optimal time to reach target by wake-up
+  - Uses Home Assistant Statistics API for efficient database storage
+  - Tracks heating rates, cooldown rates, and outdoor temperature correlations
 - 📊 **Temperature History** - Track and visualize temperature trends with interactive charts
 - ⚙️ **Advanced Settings** - Hysteresis control, temperature limits, and fine-tuning
 - 🌐 **REST API** - Full API for programmatic control
@@ -94,6 +99,76 @@ Global Configuration:
 - **Smart TRV Fallback**: Works with TRVs that don't support direct position control
 - **External Sensors**: Accurate temperature measurement independent of TRV location
 - **Energy Efficient**: Boiler only runs when needed, optimal temperature setting
+
+## 🧠 Adaptive Learning System
+
+Smart Heating includes a machine learning engine that learns your home's heating characteristics and optimizes heating schedules automatically.
+
+### How It Works
+
+1. **Automatic Learning**: Every heating cycle is recorded with:
+   - Start and end temperatures
+   - Time taken to reach target
+   - Outdoor temperature (if weather sensor configured)
+   - Calculated heating rate (°C per minute)
+
+2. **Data Storage**: Uses Home Assistant's Statistics API
+   - Efficient database storage (SQLite or MariaDB)
+   - No file-based storage overhead
+   - Statistics tracked per area:
+     - `heating_rate`: How fast the area heats up
+     - `cooldown_rate`: How fast it cools down
+     - `outdoor_correlation`: Impact of outdoor temperature
+     - `prediction_accuracy`: How accurate predictions are
+
+3. **Predictive Scheduling**: Smart Night Boost feature
+   - Configure desired wake-up time (e.g., 06:00)
+   - System predicts heating time based on:
+     - Current temperature
+     - Target temperature
+     - Current outdoor temperature
+     - Historical learning data
+   - Automatically starts heating at optimal time
+   - Includes safety margin to ensure target is reached
+
+### Configuration
+
+**Per Area:**
+- `smart_night_boost_enabled`: Enable/disable adaptive learning for this area
+- `smart_night_boost_target_time`: Desired time to reach target temperature (e.g., "06:00")
+- `weather_entity_id`: Outdoor temperature sensor for weather correlation (optional)
+
+**Example:**
+```yaml
+# Via service call
+service: smart_heating.set_night_boost
+data:
+  area_id: living_room
+  smart_night_boost_enabled: true
+  smart_night_boost_target_time: "06:00"
+  weather_entity_id: sensor.outdoor_temperature
+```
+
+### Learning Statistics API
+
+Access learning data via REST API:
+```bash
+GET /api/smart_heating/areas/{area_id}/learning
+```
+
+Returns:
+```json
+{
+  "area_id": "living_room",
+  "stats": {
+    "total_events": 45,
+    "avg_heating_rate": 0.15,
+    "avg_outdoor_correlation": -0.65,
+    "prediction_accuracy": 0.92,
+    "last_updated": "2024-12-04T10:30:00"
+  }
+}
+```
 
 ## 🚀 Installation
 
@@ -409,12 +484,15 @@ Configure night boost for an area (gradually increase temperature during configu
 
 **Parameters:**
 - `area_id` (required): Area identifier
-- `night_boost_enabled` (optional): Enable/disable night boost
+- `night_boost_enabled` (optional): Enable/disable manual night boost
 - `night_boost_offset` (optional): Temperature offset in °C (0-3°C)
 - `night_boost_start_time` (optional): Start time in HH:MM format (default: 22:00)
 - `night_boost_end_time` (optional): End time in HH:MM format (default: 06:00)
+- `smart_night_boost_enabled` (optional): Enable/disable adaptive learning night boost
+- `smart_night_boost_target_time` (optional): Desired wake-up time in HH:MM format (e.g., "06:00")
+- `weather_entity_id` (optional): Outdoor temperature sensor entity for weather correlation
 
-**Example:**
+**Example (Manual Night Boost):**
 ```yaml
 service: smart_heating.set_night_boost
 data:
@@ -423,6 +501,16 @@ data:
   night_boost_offset: 0.5  # Add 0.5°C during night hours
   night_boost_start_time: "23:00"  # Start at 11 PM
   night_boost_end_time: "07:00"    # End at 7 AM
+```
+
+**Example (Smart Night Boost with Learning):**
+```yaml
+service: smart_heating.set_night_boost
+data:
+  area_id: "bedroom"
+  smart_night_boost_enabled: true
+  smart_night_boost_target_time: "06:00"  # Room ready by 6 AM
+  weather_entity_id: "sensor.outdoor_temperature"  # For weather correlation
 ```
 
 #### `smart_heating.set_hysteresis`
