@@ -39,6 +39,77 @@ class ClimateController:
         self.area_manager = area_manager
         self._hysteresis = 0.5  # Temperature hysteresis in °C
         self._record_counter = 0  # Counter for history recording
+        self._device_capabilities = {}  # Cache for device capabilities
+
+    def _get_valve_capability(self, entity_id: str) -> dict[str, Any]:
+        """Get valve control capabilities from HA entity.
+        
+        Queries the entity's attributes and supported features to determine:
+        - Whether it supports position control (via number.* or position attribute)
+        - Whether it only supports temperature control
+        - Min/max values for position control
+        
+        Args:
+            entity_id: Entity ID of the valve
+            
+        Returns:
+            Dict with capability information:
+            {
+                'supports_position': bool,
+                'supports_temperature': bool,
+                'position_min': float (if applicable),
+                'position_max': float (if applicable),
+                'entity_domain': str
+            }
+        """
+        # Check cache first
+        if entity_id in self._device_capabilities:
+            return self._device_capabilities[entity_id]
+        
+        capabilities = {
+            'supports_position': False,
+            'supports_temperature': False,
+            'position_min': 0,
+            'position_max': 100,
+            'entity_domain': entity_id.split('.')[0] if '.' in entity_id else 'unknown'
+        }
+        
+        state = self.hass.states.get(entity_id)
+        if not state:
+            _LOGGER.warning("Cannot determine capabilities for %s: entity not found", entity_id)
+            self._device_capabilities[entity_id] = capabilities
+            return capabilities
+        
+        # Check entity domain
+        domain = entity_id.split('.')[0] if '.' in entity_id else ''
+        capabilities['entity_domain'] = domain
+        
+        if domain == 'number':
+            # number.* entities support position control
+            capabilities['supports_position'] = True
+            capabilities['position_min'] = state.attributes.get('min', 0)
+            capabilities['position_max'] = state.attributes.get('max', 100)
+            _LOGGER.debug(
+                "Valve %s supports position control (range: %s-%s)",
+                entity_id,
+                capabilities['position_min'],
+                capabilities['position_max']
+            )
+        
+        elif domain == 'climate':
+            # climate.* entities - check if they have position attribute
+            if 'position' in state.attributes:
+                capabilities['supports_position'] = True
+                _LOGGER.debug("Valve %s (climate) supports position control via attribute", entity_id)
+            
+            # Check if it supports temperature (most climate entities do)
+            if 'temperature' in state.attributes or 'target_temp_low' in state.attributes:
+                capabilities['supports_temperature'] = True
+                _LOGGER.debug("Valve %s supports temperature control", entity_id)
+        
+        # Cache the result
+        self._device_capabilities[entity_id] = capabilities
+        return capabilities
 
     async def async_update_area_temperatures(self) -> None:
         """Update current temperatures for all areas from sensors."""
@@ -262,47 +333,94 @@ class ClimateController:
     ) -> None:
         """Control valves/TRVs in an area.
         
-        Attempts to control valve position directly if supported.
-        Falls back to temperature mode (set high when heating, low when idle).
+        Dynamically detects valve capabilities and uses appropriate control method:
+        - Position control: Direct 0-100% control via number.* entities or position attribute
+        - Temperature control: High/low temp method for TRVs without position control
+        
+        Args:
+            area: Area instance
+            heating: True if area needs heating
+            target_temp: Target temperature for the area
         """
         valves = area.get_valves()
         
         for valve_id in valves:
             try:
-                # Check if this is a number entity (valve position control)
-                if valve_id.startswith("number."):
-                    # Direct position control
-                    if heating:
-                        # Open valve (100%)
-                        await self.hass.services.async_call(
-                            "number",
-                            "set_value",
-                            {
-                                "entity_id": valve_id,
-                                "value": 100,
-                            },
-                            blocking=False,
-                        )
-                        _LOGGER.debug("Opened valve %s to 100%%", valve_id)
-                    else:
-                        # Close valve (0%)
-                        await self.hass.services.async_call(
-                            "number",
-                            "set_value",
-                            {
-                                "entity_id": valve_id,
-                                "value": 0,
-                            },
-                            blocking=False,
-                        )
-                        _LOGGER.debug("Closed valve %s to 0%%", valve_id)
+                # Query device capabilities dynamically
+                capabilities = self._get_valve_capability(valve_id)
                 
-                elif valve_id.startswith("climate."):
+                # Prefer position control if available
+                if capabilities['supports_position']:
+                    domain = capabilities['entity_domain']
+                    
+                    if domain == 'number':
+                        # Direct position control via number entity
+                        if heating:
+                            # Open valve to max
+                            await self.hass.services.async_call(
+                                "number",
+                                "set_value",
+                                {
+                                    "entity_id": valve_id,
+                                    "value": capabilities['position_max'],
+                                },
+                                blocking=False,
+                            )
+                            _LOGGER.debug(
+                                "Opened valve %s to %.0f%% (position control)",
+                                valve_id, capabilities['position_max']
+                            )
+                        else:
+                            # Close valve to min
+                            await self.hass.services.async_call(
+                                "number",
+                                "set_value",
+                                {
+                                    "entity_id": valve_id,
+                                    "value": capabilities['position_min'],
+                                },
+                                blocking=False,
+                            )
+                            _LOGGER.debug(
+                                "Closed valve %s to %.0f%% (position control)",
+                                valve_id, capabilities['position_min']
+                            )
+                    
+                    elif domain == 'climate' and 'position' in self.hass.states.get(valve_id).attributes:
+                        # Climate entity with position attribute
+                        # Try to set position via service
+                        position = capabilities['position_max'] if heating else capabilities['position_min']
+                        try:
+                            await self.hass.services.async_call(
+                                CLIMATE_DOMAIN,
+                                "set_position",
+                                {
+                                    "entity_id": valve_id,
+                                    "position": position,
+                                },
+                                blocking=False,
+                            )
+                            _LOGGER.debug(
+                                "Set valve %s position to %.0f%%",
+                                valve_id, position
+                            )
+                        except Exception:
+                            # Fall back to temperature control if position service doesn't exist
+                            _LOGGER.debug(
+                                "Valve %s doesn't support set_position service, using temperature control",
+                                valve_id
+                            )
+                            capabilities['supports_position'] = False
+                            capabilities['supports_temperature'] = True
+                
+                # Fall back to temperature control if position not supported
+                if not capabilities['supports_position'] and capabilities['supports_temperature']:
                     # TRV with temperature control only
                     # Use high/low temperature method
                     if heating and target_temp is not None:
                         # Set to heating temperature (default 25°C or configured)
-                        heating_temp = self.area_manager.trv_heating_temp
+                        # Use actual target + offset to ensure valve opens
+                        heating_temp = max(target_temp + 10, self.area_manager.trv_heating_temp)
                         await self.hass.services.async_call(
                             CLIMATE_DOMAIN,
                             SERVICE_SET_TEMPERATURE,
@@ -313,8 +431,8 @@ class ClimateController:
                             blocking=False,
                         )
                         _LOGGER.debug(
-                            "Set TRV %s to heating temp %.1f°C", 
-                            valve_id, heating_temp
+                            "Set TRV %s to heating temp %.1f°C (target %.1f°C + 10°C)", 
+                            valve_id, heating_temp, target_temp
                         )
                     else:
                         # Set to idle temperature (default 10°C or configured)
@@ -329,9 +447,16 @@ class ClimateController:
                             blocking=False,
                         )
                         _LOGGER.debug(
-                            "Set TRV %s to idle temp %.1f°C", 
+                            "Set TRV %s to idle temp %.1f°C (temperature control)", 
                             valve_id, idle_temp
                         )
+                
+                # If neither method is supported, log warning
+                if not capabilities['supports_position'] and not capabilities['supports_temperature']:
+                    _LOGGER.warning(
+                        "Valve %s doesn't support position or temperature control",
+                        valve_id
+                    )
                         
             except Exception as err:
                 _LOGGER.error(

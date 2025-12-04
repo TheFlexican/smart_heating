@@ -26,9 +26,14 @@ A Home Assistant custom integration for managing multi-area heating systems with
 ### Per-Area Devices
 - **Thermostat** - Room thermostats for direct temperature control
 - **Temperature Sensor** - External temperature measurement for area monitoring
-- **Valve/TRV** - Smart radiator valves with position or temperature control
-  - Direct position control (`number.*` entities): 0-100% valve opening
-  - Temperature mode (`climate.*` TRVs): Uses high/low temp method with external sensor
+- **Valve/TRV** - Smart radiator valves with **dynamic capability detection**
+  - System queries Home Assistant entity attributes to determine control mode:
+    - **Position control** (`number.*` or `climate.*` with `position` attribute): Direct 0-100% valve opening
+    - **Temperature control** (fallback for `climate.*` without position): Uses high/low temp method
+  - Examples:
+    - **TS0601 _TZE200_b6wax7g0** (temp-only): Sets to `target+10°C` when heating, `10°C` when idle
+    - **TS0601 with position support**: Opens to 100% when heating, 0% when idle
+  - Works with external sensors (e.g., **TS0201** temperature/humidity sensor)
 - **Switch** - Circulation pumps, relays, or zone valves
   - Automatically turns ON when area needs heating
   - Automatically turns OFF when area is idle
@@ -70,8 +75,10 @@ Global Configuration:
 3. **Per-Area Actions** (when heating needed):
    - **Thermostats**: Set to target temperature
    - **Switches**: Turn ON (pumps, relays)
-   - **Valves (position control)**: Open to 100%
-   - **Valves (temp mode)**: Set to heating temperature (default 25°C)
+   - **Valves**: Dynamic control based on capabilities
+     - **Position control** (if supported): Open to 100%
+     - **Temperature control** (fallback): Set to `target + 10°C` to ensure valve opens
+       - Example: For TS0601 TRV at 21°C target → Set TRV to 31°C (opens valve fully)
 4. **Global Boiler Control**:
    - If ANY area needs heating → Boiler ON
    - Set boiler to: `max(all_area_targets) + 20°C`

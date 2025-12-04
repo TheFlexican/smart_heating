@@ -150,14 +150,28 @@ Automated heating control engine with multi-device support.
    - Turns OFF when area is idle
    - Perfect for circulation pumps, zone valves, relays
 
-3. **_async_control_valves()** - Intelligent valve control
-   - **Position mode** (`number.*` entities): Direct 0-100% position control
-     - 100% open when heating
-     - 0% closed when idle
-   - **Temperature mode** (`climate.*` entities without thermostat type): High/low temp method
-     - Sets to `trv_heating_temp` (default 25°C) when heating
-     - Sets to `trv_idle_temp` (default 10°C) when idle
-     - Works with external temperature sensors
+3. **_async_control_valves()** - Intelligent valve control with dynamic capability detection
+   
+   **Capability Detection** (`_get_valve_capability()`):
+   - Queries entity attributes and domain to determine control mode
+   - Caches results to avoid repeated queries
+   - Returns:
+     - `supports_position`: Boolean for position control capability
+     - `supports_temperature`: Boolean for temperature control capability
+     - `position_min/max`: Min/max values for position entities
+     - `entity_domain`: Entity type (number, climate, etc.)
+   
+   **Control Modes**:
+   - **Position mode** (`number.*` entities or `climate.*` with position attribute):
+     - Queries `min`/`max` attributes from entity
+     - Sets to max when heating, min when idle
+     - Example: TS0601 with position support → 100% open / 0% closed
+   - **Temperature mode** (fallback for `climate.*` without position):
+     - For TRVs like **TS0601 _TZE200_b6wax7g0** that only support temperature
+     - Sets to `target_temp + 10°C` when heating (ensures valve opens)
+     - Sets to `trv_idle_temp` (default 10°C) when idle (closes valve)
+     - Example: Area target 21°C → TRV set to 31°C when heating, 10°C when idle
+   - Works with external temperature sensors (e.g., **TS0201 temperature/humidity sensor**)
 
 4. **_async_control_opentherm_gateway()** - Global boiler control
    - Aggregates heating demands across ALL areas
