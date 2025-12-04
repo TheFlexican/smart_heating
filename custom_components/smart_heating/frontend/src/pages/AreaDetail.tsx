@@ -319,6 +319,7 @@ const ZoneDetail = () => {
           <Tab label="Schedule" />
           <Tab label="History" />
           <Tab label="Settings" />
+          <Tab label="Learning" />
         </Tabs>
       </Paper>
 
@@ -713,6 +714,129 @@ const ZoneDetail = () => {
               </Box>
             </Paper>
 
+            {/* Smart Night Boost Settings */}
+            <Paper sx={{ p: 3, mb: 3 }}>
+              <Typography variant="h6" gutterBottom color="text.primary">
+                Smart Night Boost (Adaptive Learning)
+              </Typography>
+              <Typography variant="body2" color="text.secondary" paragraph>
+                Uses machine learning to predict optimal heating start time based on weather and historical data.
+                The system learns how long your room takes to heat up and automatically starts heating at the right time.
+              </Typography>
+              
+              <Box sx={{ mt: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Box>
+                    <Typography variant="body1" color="text.primary">
+                      Enable Smart Night Boost
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Automatically predict and optimize heating start time
+                    </Typography>
+                  </Box>
+                  <Switch
+                    checked={area.smart_night_boost_enabled ?? false}
+                    onChange={async (e) => {
+                      try {
+                        await fetch('/api/smart_heating/call_service', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            service: 'set_night_boost',
+                            area_id: area.id,
+                            smart_night_boost_enabled: e.target.checked
+                          })
+                        })
+                        loadData()
+                      } catch (error) {
+                        console.error('Failed to update smart night boost:', error)
+                      }
+                    }}
+                  />
+                </Box>
+
+                <Box sx={{ mt: 3 }}>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Target Wake-up Time
+                  </Typography>
+                  <TextField
+                    label="Desired Ready Time"
+                    type="time"
+                    value={area.smart_night_boost_target_time ?? '06:00'}
+                    onChange={async (e) => {
+                      try {
+                        await fetch('/api/smart_heating/call_service', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            service: 'set_night_boost',
+                            area_id: area.id,
+                            smart_night_boost_target_time: e.target.value
+                          })
+                        })
+                        loadData()
+                      } catch (error) {
+                        console.error('Failed to update target time:', error)
+                      }
+                    }}
+                    disabled={!area.smart_night_boost_enabled}
+                    fullWidth
+                    helperText="Time when the room should reach target temperature"
+                    InputLabelProps={{
+                      shrink: true,
+                    }}
+                    inputProps={{
+                      step: 300, // 5 min
+                    }}
+                    sx={{ mb: 3 }}
+                  />
+
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Weather Sensor (Optional but Recommended)
+                  </Typography>
+                  <TextField
+                    label="Outdoor Temperature Sensor"
+                    value={area.weather_entity_id ?? ''}
+                    onChange={async (e) => {
+                      try {
+                        await fetch('/api/smart_heating/call_service', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            service: 'set_night_boost',
+                            area_id: area.id,
+                            weather_entity_id: e.target.value
+                          })
+                        })
+                        loadData()
+                      } catch (error) {
+                        console.error('Failed to update weather entity:', error)
+                      }
+                    }}
+                    disabled={!area.smart_night_boost_enabled}
+                    fullWidth
+                    placeholder="sensor.outdoor_temperature"
+                    helperText="Entity ID of outdoor temperature sensor for weather correlation"
+                    sx={{ mb: 3 }}
+                  />
+
+                  {area.smart_night_boost_enabled && (
+                    <Box sx={{ mt: 3, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        <strong>How it works:</strong>
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" component="div">
+                        • System tracks every heating cycle automatically<br/>
+                        • Learns how weather affects heating time<br/>
+                        • Predicts when to start heating to reach target by wake-up time<br/>
+                        • Improves accuracy over time with more data
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              </Box>
+            </Paper>
+
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" gutterBottom color="text.primary">
                 Heating Control Settings
@@ -789,6 +913,95 @@ const ZoneDetail = () => {
                   </Box>
                 </Box>
               </Box>
+            </Paper>
+          </Box>
+        </TabPanel>
+
+        {/* Learning Tab */}
+        <TabPanel value={tabValue} index={5}>
+          <Box sx={{ maxWidth: 800, mx: 'auto' }}>
+            <Paper sx={{ p: 3, mb: 3 }}>
+              <Typography variant="h6" gutterBottom color="text.primary">
+                Adaptive Learning Statistics
+              </Typography>
+              <Typography variant="body2" color="text.secondary" paragraph>
+                Monitor the machine learning system's performance and predictions for this area.
+              </Typography>
+
+              {area.smart_night_boost_enabled ? (
+                <Box sx={{ mt: 3 }}>
+                  <Typography variant="body2" color="success.main" gutterBottom>
+                    ✓ Smart night boost is active
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 3 }}>
+                    The system is learning from each heating cycle and will improve predictions over time.
+                  </Typography>
+
+                  <Box sx={{ p: 2, bgcolor: 'info.light', borderRadius: 1, mb: 3 }}>
+                    <Typography variant="body2" color="info.dark">
+                      <strong>Note:</strong> Learning statistics will be available after the system has tracked several heating cycles.
+                      The more data collected, the more accurate predictions become.
+                    </Typography>
+                  </Box>
+
+                  <Typography variant="subtitle2" color="text.primary" gutterBottom sx={{ mt: 3 }}>
+                    Configuration
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 3 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <Typography variant="body2" color="text.secondary">Target Wake-up Time:</Typography>
+                      <Typography variant="body2" color="text.primary"><strong>{area.smart_night_boost_target_time ?? '06:00'}</strong></Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <Typography variant="body2" color="text.secondary">Weather Sensor:</Typography>
+                      <Typography variant="body2" color="text.primary">
+                        {area.weather_entity_id ? <strong>{area.weather_entity_id}</strong> : <em>Not configured</em>}
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  <Typography variant="subtitle2" color="text.primary" gutterBottom sx={{ mt: 3 }}>
+                    Learning Process
+                  </Typography>
+                  <Box component="ol" sx={{ pl: 2, mt: 1 }}>
+                    <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      System records each heating cycle (start/end time, temperatures)
+                    </Typography>
+                    <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      Calculates heating rate (°C per minute) and outdoor correlation
+                    </Typography>
+                    <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      Stores statistics in Home Assistant database
+                    </Typography>
+                    <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      Uses historical data to predict future heating times
+                    </Typography>
+                    <Typography component="li" variant="body2" color="text.secondary">
+                      Automatically starts heating to reach target by wake-up time
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ mt: 3, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      <strong>API Endpoint:</strong> /api/smart_heating/areas/{area.id}/learning
+                    </Typography>
+                  </Box>
+                </Box>
+              ) : (
+                <Box sx={{ mt: 3, textAlign: 'center', py: 4 }}>
+                  <Typography variant="body1" color="text.secondary" gutterBottom>
+                    Smart night boost is not enabled
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" paragraph>
+                    Enable smart night boost in the Settings tab to start collecting learning data.
+                  </Typography>
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      The adaptive learning system will automatically track heating cycles and improve predictions over time.
+                    </Typography>
+                  </Box>
+                </Box>
+              )}
             </Paper>
           </Box>
         </TabPanel>
