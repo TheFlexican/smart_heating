@@ -20,7 +20,7 @@ const theme = createTheme({
 })
 
 function App() {
-  const [zones, setZones] = useState<Zone[]>([])
+  const [zones, setZones] = useState<Area[]>([])
   const [devices, setDevices] = useState<Device[]>([])
   const [availableDevices, setAvailableDevices] = useState<Device[]>([])
   const [loading, setLoading] = useState(true)

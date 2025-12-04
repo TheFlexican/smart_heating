@@ -1,13 +1,13 @@
-"""Constants for the Zone Heater Manager integration."""
+"""Constants for the Smart Heating integration."""
 from datetime import timedelta
 from typing import Final
 
 # Integration domain
-DOMAIN: Final = "zone_heater_manager"
+DOMAIN: Final = "smart_heating"
 
 # Configuration and options
 CONF_UPDATE_INTERVAL: Final = "update_interval"
-CONF_ZONES: Final = "zones"
+CONF_AREAS: Final = "areas"
 CONF_MQTT_BASE_TOPIC: Final = "mqtt_base_topic"
 
 # Default values
@@ -19,13 +19,13 @@ UPDATE_INTERVAL: Final = timedelta(seconds=DEFAULT_UPDATE_INTERVAL)
 
 # Services
 SERVICE_REFRESH: Final = "refresh"
-SERVICE_CREATE_ZONE: Final = "create_zone"
-SERVICE_DELETE_ZONE: Final = "delete_zone"
-SERVICE_ADD_DEVICE_TO_ZONE: Final = "add_device_to_zone"
-SERVICE_REMOVE_DEVICE_FROM_ZONE: Final = "remove_device_from_zone"
-SERVICE_SET_ZONE_TEMPERATURE: Final = "set_zone_temperature"
-SERVICE_ENABLE_ZONE: Final = "enable_zone"
-SERVICE_DISABLE_ZONE: Final = "disable_zone"
+SERVICE_CREATE_AREA: Final = "create_area"
+SERVICE_DELETE_AREA: Final = "delete_area"
+SERVICE_ADD_DEVICE_TO_AREA: Final = "add_device_to_area"
+SERVICE_REMOVE_DEVICE_FROM_AREA: Final = "remove_device_from_area"
+SERVICE_SET_AREA_TEMPERATURE: Final = "set_area_temperature"
+SERVICE_ENABLE_AREA: Final = "enable_area"
+SERVICE_DISABLE_AREA: Final = "disable_area"
 
 # Sensor states
 STATE_INITIALIZED: Final = "initialized"
@@ -47,8 +47,8 @@ STORAGE_VERSION: Final = 1
 STORAGE_KEY: Final = f"{DOMAIN}_storage"
 
 # Attributes
-ATTR_ZONE_ID: Final = "zone_id"
-ATTR_ZONE_NAME: Final = "zone_name"
+ATTR_AREA_ID: Final = "area_id"
+ATTR_AREA_NAME: Final = "area_name"
 ATTR_DEVICE_ID: Final = "device_id"
 ATTR_DEVICE_TYPE: Final = "device_type"
 ATTR_TEMPERATURE: Final = "temperature"

@@ -19,8 +19,8 @@ interface CreateZoneDialogProps {
 }
 
 const CreateZoneDialog = ({ open, onClose, onSuccess }: CreateZoneDialogProps) => {
-  const [zoneName, setZoneName] = useState('')
-  const [zoneId, setZoneId] = useState('')
+  const [areaName, setZoneName] = useState('')
+  const [areaId, setZoneId] = useState('')
   const [temperature, setTemperature] = useState(20)
   const [loading, setLoading] = useState(false)
 
@@ -28,8 +28,8 @@ const CreateZoneDialog = ({ open, onClose, onSuccess }: CreateZoneDialogProps) =
     try {
       setLoading(true)
       await createZone({
-        zone_id: zoneId,
-        zone_name: zoneName,
+        zone_id: areaId,
+        zone_name: areaName,
         temperature
       })
       setZoneName('')
@@ -58,7 +58,7 @@ const CreateZoneDialog = ({ open, onClose, onSuccess }: CreateZoneDialogProps) =
         <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
           <TextField
             label="Zone Name"
-            value={zoneName}
+            value={areaName}
             onChange={(e) => handleNameChange(e.target.value)}
             fullWidth
             required
@@ -67,7 +67,7 @@ const CreateZoneDialog = ({ open, onClose, onSuccess }: CreateZoneDialogProps) =
           
           <TextField
             label="Zone ID"
-            value={zoneId}
+            value={areaId}
             onChange={(e) => setZoneId(e.target.value)}
             fullWidth
             required
@@ -100,7 +100,7 @@ const CreateZoneDialog = ({ open, onClose, onSuccess }: CreateZoneDialogProps) =
         <Button
           onClick={handleSubmit}
           variant="contained"
-          disabled={!zoneName || !zoneId || loading}
+          disabled={!areaName || !areaId || loading}
         >
           Create
         </Button>

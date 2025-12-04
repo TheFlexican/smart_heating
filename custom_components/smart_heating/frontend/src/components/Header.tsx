@@ -7,7 +7,7 @@ const Header = () => {
       <Toolbar>
         <ThermostatIcon sx={{ mr: 2 }} />
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          Zone Heater Manager
+          Smart Heating
         </Typography>
         <Chip 
           label="v0.1.0" 

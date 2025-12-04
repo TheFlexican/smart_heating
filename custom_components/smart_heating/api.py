@@ -1,4 +1,4 @@
-"""Flask API server for Zone Heater Manager."""
+"""Flask API server for Smart Heating."""
 import logging
 from typing import Any
 
@@ -9,27 +9,27 @@ from homeassistant.components.http import HomeAssistantView
 from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
-from .zone_manager import ZoneManager
+from .area_manager import AreaManager
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class ZoneHeaterAPIView(HomeAssistantView):
-    """API view for Zone Heater Manager."""
+    """API view for Smart Heating."""
 
-    url = "/api/zone_heater_manager/{endpoint:.*}"
-    name = "api:zone_heater_manager"
+    url = "/api/smart_heating/{endpoint:.*}"
+    name = "api:smart_heating"
     requires_auth = True
 
-    def __init__(self, hass: HomeAssistant, zone_manager: ZoneManager) -> None:
+    def __init__(self, hass: HomeAssistant, area_manager: AreaManager) -> None:
         """Initialize the API view.
         
         Args:
             hass: Home Assistant instance
-            zone_manager: Zone manager instance
+            area_manager: Zone manager instance
         """
         self.hass = hass
-        self.zone_manager = zone_manager
+        self.area_manager = area_manager
 
     async def get(self, request: web.Request, endpoint: str) -> web.Response:
         """Handle GET requests.
@@ -45,8 +45,8 @@ class ZoneHeaterAPIView(HomeAssistantView):
             if endpoint == "zones":
                 return await self.get_zones(request)
             elif endpoint.startswith("zones/"):
-                zone_id = endpoint.split("/")[1]
-                return await self.get_zone(request, zone_id)
+                area_id = endpoint.split("/")[1]
+                return await self.get_area(request, area_id)
             elif endpoint == "devices":
                 return await self.get_devices(request)
             elif endpoint == "status":
@@ -75,19 +75,19 @@ class ZoneHeaterAPIView(HomeAssistantView):
             data = await request.json()
             
             if endpoint == "zones":
-                return await self.create_zone(request, data)
+                return await self.create_area(request, data)
             elif endpoint.startswith("zones/") and endpoint.endswith("/devices"):
-                zone_id = endpoint.split("/")[1]
-                return await self.add_device(request, zone_id, data)
+                area_id = endpoint.split("/")[1]
+                return await self.add_device(request, area_id, data)
             elif endpoint.startswith("zones/") and endpoint.endswith("/temperature"):
-                zone_id = endpoint.split("/")[1]
-                return await self.set_temperature(request, zone_id, data)
+                area_id = endpoint.split("/")[1]
+                return await self.set_temperature(request, area_id, data)
             elif endpoint.startswith("zones/") and endpoint.endswith("/enable"):
-                zone_id = endpoint.split("/")[1]
-                return await self.enable_zone(request, zone_id)
+                area_id = endpoint.split("/")[1]
+                return await self.enable_area(request, area_id)
             elif endpoint.startswith("zones/") and endpoint.endswith("/disable"):
-                zone_id = endpoint.split("/")[1]
-                return await self.disable_zone(request, zone_id)
+                area_id = endpoint.split("/")[1]
+                return await self.disable_area(request, area_id)
             else:
                 return web.json_response(
                     {"error": "Unknown endpoint"}, status=404
@@ -111,12 +111,12 @@ class ZoneHeaterAPIView(HomeAssistantView):
         try:
             if endpoint.startswith("zones/") and "/devices/" in endpoint:
                 parts = endpoint.split("/")
-                zone_id = parts[1]
+                area_id = parts[1]
                 device_id = parts[3]
-                return await self.remove_device(request, zone_id, device_id)
+                return await self.remove_device(request, area_id, device_id)
             elif endpoint.startswith("zones/"):
-                zone_id = endpoint.split("/")[1]
-                return await self.delete_zone(request, zone_id)
+                area_id = endpoint.split("/")[1]
+                return await self.delete_area(request, area_id)
             else:
                 return web.json_response(
                     {"error": "Unknown endpoint"}, status=404
@@ -136,12 +136,12 @@ class ZoneHeaterAPIView(HomeAssistantView):
         Returns:
             JSON response with zones
         """
-        zones = self.zone_manager.get_all_zones()
+        zones = self.area_manager.get_all_areas()
         zones_data = []
         
-        for zone_id, zone in zones.items():
+        for area_id, area in zones.items():
             zones_data.append({
-                "id": zone.zone_id,
+                "id": zone.area_id,
                 "name": zone.name,
                 "enabled": zone.enabled,
                 "state": zone.state,
@@ -159,25 +159,25 @@ class ZoneHeaterAPIView(HomeAssistantView):
         
         return web.json_response({"zones": zones_data})
 
-    async def get_zone(self, request: web.Request, zone_id: str) -> web.Response:
+    async def get_zone(self, request: web.Request, area_id: str) -> web.Response:
         """Get a specific zone.
         
         Args:
             request: Request object
-            zone_id: Zone identifier
+            area_id: Zone identifier
             
         Returns:
             JSON response with zone data
         """
-        zone = self.zone_manager.get_zone(zone_id)
+        zone = self.area_manager.get_area(area_id)
         
         if zone is None:
             return web.json_response(
-                {"error": f"Zone {zone_id} not found"}, status=404
+                {"error": f"Zone {area_id} not found"}, status=404
             )
         
         zone_data = {
-            "id": zone.zone_id,
+            "id": zone.area_id,
             "name": zone.name,
             "enabled": zone.enabled,
             "state": zone.state,
@@ -193,7 +193,7 @@ class ZoneHeaterAPIView(HomeAssistantView):
             ],
         }
         
-        return web.json_response(zone_data)
+        return web.json_response(area_data)
 
     async def get_devices(self, request: web.Request) -> web.Response:
         """Get available Zigbee2MQTT devices.
@@ -244,9 +244,9 @@ class ZoneHeaterAPIView(HomeAssistantView):
                 
                 # Check if device is already assigned to a zone
                 assigned_zones = []
-                for zone_id, zone in self.zone_manager.get_all_zones().items():
+                for area_id, area in self.area_manager.get_all_areas().items():
                     if entity.entity_id in zone.devices:
-                        assigned_zones.append(zone_id)
+                        assigned_zones.append(area_id)
                 
                 devices.append({
                     "id": entity.entity_id,
@@ -274,10 +274,10 @@ class ZoneHeaterAPIView(HomeAssistantView):
         Returns:
             JSON response with status
         """
-        zones = self.zone_manager.get_all_zones()
+        zones = self.area_manager.get_all_areas()
         
         status = {
-            "zone_count": len(zones),
+            "zone_count": len(areas),
             "active_zones": sum(1 for z in zones.values() if z.enabled),
             "total_devices": sum(len(z.devices) for z in zones.values()),
         }
@@ -294,23 +294,23 @@ class ZoneHeaterAPIView(HomeAssistantView):
         Returns:
             JSON response
         """
-        zone_id = data.get("zone_id")
+        area_id = data.get("area_id")
         zone_name = data.get("zone_name")
         temperature = data.get("temperature", 20.0)
         
-        if not zone_id or not zone_name:
+        if not area_id or not zone_name:
             return web.json_response(
-                {"error": "zone_id and zone_name are required"}, status=400
+                {"error": "area_id and zone_name are required"}, status=400
             )
         
         try:
-            zone = self.zone_manager.create_zone(zone_id, zone_name, temperature)
-            await self.zone_manager.async_save()
+            zone = self.area_manager.create_area(area_id, area_name, temperature)
+            await self.area_manager.async_save()
             
             return web.json_response({
                 "success": True,
                 "zone": {
-                    "id": zone.zone_id,
+                    "id": zone.area_id,
                     "name": zone.name,
                     "target_temperature": zone.target_temperature,
                 }
@@ -320,19 +320,19 @@ class ZoneHeaterAPIView(HomeAssistantView):
                 {"error": str(err)}, status=400
             )
 
-    async def delete_zone(self, request: web.Request, zone_id: str) -> web.Response:
+    async def delete_zone(self, request: web.Request, area_id: str) -> web.Response:
         """Delete a zone.
         
         Args:
             request: Request object
-            zone_id: Zone identifier
+            area_id: Zone identifier
             
         Returns:
             JSON response
         """
         try:
-            self.zone_manager.delete_zone(zone_id)
-            await self.zone_manager.async_save()
+            self.area_manager.delete_area(area_id)
+            await self.area_manager.async_save()
             
             return web.json_response({"success": True})
         except ValueError as err:
@@ -341,13 +341,13 @@ class ZoneHeaterAPIView(HomeAssistantView):
             )
 
     async def add_device(
-        self, request: web.Request, zone_id: str, data: dict
+        self, request: web.Request, area_id: str, data: dict
     ) -> web.Response:
         """Add a device to a zone.
         
         Args:
             request: Request object
-            zone_id: Zone identifier
+            area_id: Zone identifier
             data: Device data
             
         Returns:
@@ -363,10 +363,10 @@ class ZoneHeaterAPIView(HomeAssistantView):
             )
         
         try:
-            self.zone_manager.add_device_to_zone(
-                zone_id, device_id, device_type, mqtt_topic
+            self.area_manager.add_device_to_area(
+                area_id, device_id, device_type, mqtt_topic
             )
-            await self.zone_manager.async_save()
+            await self.area_manager.async_save()
             
             return web.json_response({"success": True})
         except ValueError as err:
@@ -375,21 +375,21 @@ class ZoneHeaterAPIView(HomeAssistantView):
             )
 
     async def remove_device(
-        self, request: web.Request, zone_id: str, device_id: str
+        self, request: web.Request, area_id: str, device_id: str
     ) -> web.Response:
         """Remove a device from a zone.
         
         Args:
             request: Request object
-            zone_id: Zone identifier
+            area_id: Zone identifier
             device_id: Device identifier
             
         Returns:
             JSON response
         """
         try:
-            self.zone_manager.remove_device_from_zone(zone_id, device_id)
-            await self.zone_manager.async_save()
+            self.area_manager.remove_device_from_area(area_id, device_id)
+            await self.area_manager.async_save()
             
             return web.json_response({"success": True})
         except ValueError as err:
@@ -398,13 +398,13 @@ class ZoneHeaterAPIView(HomeAssistantView):
             )
 
     async def set_temperature(
-        self, request: web.Request, zone_id: str, data: dict
+        self, request: web.Request, area_id: str, data: dict
     ) -> web.Response:
         """Set zone temperature.
         
         Args:
             request: Request object
-            zone_id: Zone identifier
+            area_id: Zone identifier
             data: Temperature data
             
         Returns:
@@ -418,8 +418,8 @@ class ZoneHeaterAPIView(HomeAssistantView):
             )
         
         try:
-            self.zone_manager.set_zone_target_temperature(zone_id, temperature)
-            await self.zone_manager.async_save()
+            self.area_manager.set_area_target_temperature(area_id, temperature)
+            await self.area_manager.async_save()
             
             return web.json_response({"success": True})
         except ValueError as err:
@@ -427,19 +427,19 @@ class ZoneHeaterAPIView(HomeAssistantView):
                 {"error": str(err)}, status=404
             )
 
-    async def enable_zone(self, request: web.Request, zone_id: str) -> web.Response:
+    async def enable_zone(self, request: web.Request, area_id: str) -> web.Response:
         """Enable a zone.
         
         Args:
             request: Request object
-            zone_id: Zone identifier
+            area_id: Zone identifier
             
         Returns:
             JSON response
         """
         try:
-            self.zone_manager.enable_zone(zone_id)
-            await self.zone_manager.async_save()
+            self.area_manager.enable_area(area_id)
+            await self.area_manager.async_save()
             
             return web.json_response({"success": True})
         except ValueError as err:
@@ -447,19 +447,19 @@ class ZoneHeaterAPIView(HomeAssistantView):
                 {"error": str(err)}, status=404
             )
 
-    async def disable_zone(self, request: web.Request, zone_id: str) -> web.Response:
+    async def disable_zone(self, request: web.Request, area_id: str) -> web.Response:
         """Disable a zone.
         
         Args:
             request: Request object
-            zone_id: Zone identifier
+            area_id: Zone identifier
             
         Returns:
             JSON response
         """
         try:
-            self.zone_manager.disable_zone(zone_id)
-            await self.zone_manager.async_save()
+            self.area_manager.disable_area(area_id)
+            await self.area_manager.async_save()
             
             return web.json_response({"success": True})
         except ValueError as err:
@@ -468,14 +468,14 @@ class ZoneHeaterAPIView(HomeAssistantView):
             )
 
 
-async def setup_api(hass: HomeAssistant, zone_manager: ZoneManager) -> None:
+async def setup_api(hass: HomeAssistant, area_manager: AreaManager) -> None:
     """Set up the API.
     
     Args:
         hass: Home Assistant instance
-        zone_manager: Zone manager instance
+        area_manager: Zone manager instance
     """
-    view = ZoneHeaterAPIView(hass, zone_manager)
+    view = ZoneHeaterAPIView(hass, area_manager)
     hass.http.register_view(view)
     
-    _LOGGER.info("Zone Heater Manager API registered")
+    _LOGGER.info("Smart Heating API registered")

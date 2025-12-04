@@ -1,4 +1,4 @@
-"""Config flow for Zone Heater Manager integration."""
+"""Config flow for Smart Heating integration."""
 import logging
 from typing import Any
 
@@ -14,7 +14,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class ZoneHeaterManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for Zone Heater Manager."""
+    """Handle a config flow for Smart Heating."""
 
     VERSION = 1
 
@@ -35,14 +35,14 @@ class ZoneHeaterManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         
         # Check if already configured
         if self._async_current_entries():
-            _LOGGER.debug("Zone Heater Manager already configured")
+            _LOGGER.debug("Smart Heating already configured")
             return self.async_abort(reason="already_configured")
         
         if user_input is not None:
             _LOGGER.debug("Creating config entry")
             # Create the config entry
             return self.async_create_entry(
-                title="Zone Heater Manager",
+                title="Smart Heating",
                 data={},
             )
         
@@ -70,7 +70,7 @@ class ZoneHeaterManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class ZoneHeaterManagerOptionsFlowHandler(config_entries.OptionsFlow):
-    """Handle options flow for Zone Heater Manager."""
+    """Handle options flow for Smart Heating."""
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow.

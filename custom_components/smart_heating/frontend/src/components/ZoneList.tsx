@@ -12,13 +12,13 @@ import ZoneCard from './ZoneCard'
 import CreateZoneDialog from './CreateZoneDialog'
 import { Zone } from '../types'
 
-interface ZoneListProps {
-  zones: Zone[]
+interface AreaListProps {
+  zones: Area[]
   loading: boolean
   onUpdate: () => void
 }
 
-const ZoneList = ({ zones, loading, onUpdate }: ZoneListProps) => {
+const ZoneList = ({ zones, loading, onUpdate }: AreaListProps) => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
 
   if (loading) {

@@ -1,4 +1,4 @@
-"""WebSocket handler for Zone Heater Manager."""
+"""WebSocket handler for Smart Heating."""
 import asyncio
 import logging
 from typing import Any
@@ -15,13 +15,13 @@ from homeassistant.components.websocket_api import (
 )
 
 from .const import DOMAIN
-from .coordinator import ZoneHeaterManagerCoordinator
+from .coordinator import SmartHeatingCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
 
 @websocket_command({
-    "type": "zone_heater_manager/subscribe",
+    "type": "smart_heating/subscribe",
 })
 @callback
 def websocket_subscribe_updates(
@@ -46,7 +46,7 @@ def websocket_subscribe_updates(
 
     # Get the coordinator
     entry_id = list(hass.data[DOMAIN].keys())[0]
-    coordinator: ZoneHeaterManagerCoordinator = hass.data[DOMAIN][entry_id]
+    coordinator: SmartHeatingCoordinator = hass.data[DOMAIN][entry_id]
     
     # Subscribe to coordinator updates
     unsub = coordinator.async_add_listener(forward_messages)
@@ -61,7 +61,7 @@ def websocket_subscribe_updates(
 
 
 @websocket_command({
-    "type": "zone_heater_manager/get_zones",
+    "type": "smart_heating/get_zones",
 })
 @callback
 def websocket_get_zones(
@@ -77,15 +77,15 @@ def websocket_get_zones(
         msg: Message data
     """
     entry_id = list(hass.data[DOMAIN].keys())[0]
-    coordinator: ZoneHeaterManagerCoordinator = hass.data[DOMAIN][entry_id]
-    zone_manager = coordinator.zone_manager
+    coordinator: SmartHeatingCoordinator = hass.data[DOMAIN][entry_id]
+    area_manager = coordinator.area_manager
     
-    zones = zone_manager.get_all_zones()
+    zones = area_manager.get_all_areas()
     zones_data = []
     
-    for zone_id, zone in zones.items():
+    for area_id, area in zones.items():
         zones_data.append({
-            "id": zone.zone_id,
+            "id": zone.area_id,
             "name": zone.name,
             "enabled": zone.enabled,
             "state": zone.state,
@@ -105,8 +105,8 @@ def websocket_get_zones(
 
 
 @websocket_command({
-    "type": "zone_heater_manager/create_zone",
-    "zone_id": str,
+    "type": "smart_heating/create_zone",
+    "area_id": str,
     "zone_name": str,
     "temperature": float,
 })
@@ -124,23 +124,23 @@ def websocket_create_zone(
         msg: Message data
     """
     entry_id = list(hass.data[DOMAIN].keys())[0]
-    coordinator: ZoneHeaterManagerCoordinator = hass.data[DOMAIN][entry_id]
-    zone_manager = coordinator.zone_manager
+    coordinator: SmartHeatingCoordinator = hass.data[DOMAIN][entry_id]
+    area_manager = coordinator.area_manager
     
     try:
-        zone = zone_manager.create_zone(
-            msg["zone_id"],
+        zone = area_manager.create_area(
+            msg["area_id"],
             msg["zone_name"],
             msg.get("temperature", 20.0)
         )
         
-        hass.async_create_task(zone_manager.async_save())
+        hass.async_create_task(area_manager.async_save())
         hass.async_create_task(coordinator.async_request_refresh())
         
         connection.send_result(msg["id"], {
             "success": True,
             "zone": {
-                "id": zone.zone_id,
+                "id": zone.area_id,
                 "name": zone.name,
                 "target_temperature": zone.target_temperature,
             }
@@ -159,4 +159,4 @@ async def setup_websocket(hass: HomeAssistant) -> None:
     async_register_command(hass, websocket_get_zones)
     async_register_command(hass, websocket_create_zone)
     
-    _LOGGER.info("Zone Heater Manager WebSocket API registered")
+    _LOGGER.info("Smart Heating WebSocket API registered")

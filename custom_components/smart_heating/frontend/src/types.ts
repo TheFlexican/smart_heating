@@ -5,7 +5,7 @@ export interface Device {
   name?: string
 }
 
-export interface Zone {
+export interface Area {
   id: string
   name: string
   enabled: boolean
@@ -15,7 +15,7 @@ export interface Zone {
   devices: Device[]
 }
 
-export interface ZoneCreate {
+export interface AreaCreate {
   zone_id: string
   zone_name: string
   temperature?: number

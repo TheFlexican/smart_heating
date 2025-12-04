@@ -24,12 +24,12 @@ import AcUnitIcon from '@mui/icons-material/AcUnit'
 import { Zone } from '../types'
 import { setZoneTemperature, enableZone, disableZone, deleteZone } from '../api'
 
-interface ZoneCardProps {
-  zone: Zone
+interface AreaCardProps {
+  zone: Area
   onUpdate: () => void
 }
 
-const ZoneCard = ({ zone, onUpdate }: ZoneCardProps) => {
+const ZoneCard = ({ zone, onUpdate }: AreaCardProps) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const [temperature, setTemperature] = useState(zone.target_temperature)
 

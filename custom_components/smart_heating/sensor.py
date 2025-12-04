@@ -1,4 +1,4 @@
-"""Sensor platform for Zone Heater Manager integration."""
+"""Sensor platform for Smart Heating integration."""
 import logging
 
 from homeassistant.components.sensor import SensorEntity
@@ -8,7 +8,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN, STATE_INITIALIZED
-from .coordinator import ZoneHeaterManagerCoordinator
+from .coordinator import SmartHeatingCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -18,17 +18,17 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up Zone Heater Manager sensor platform.
+    """Set up Smart Heating sensor platform.
     
     Args:
         hass: Home Assistant instance
         entry: Config entry
         async_add_entities: Callback to add entities
     """
-    _LOGGER.debug("Setting up Zone Heater Manager sensor platform")
+    _LOGGER.debug("Setting up Smart Heating sensor platform")
     
     # Get the coordinator from hass.data
-    coordinator: ZoneHeaterManagerCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator: SmartHeatingCoordinator = hass.data[DOMAIN][entry.entry_id]
     
     # Create sensor entities
     entities = [
@@ -37,15 +37,15 @@ async def async_setup_entry(
     
     # Add entities
     async_add_entities(entities)
-    _LOGGER.info("Zone Heater Manager sensor platform setup complete")
+    _LOGGER.info("Smart Heating sensor platform setup complete")
 
 
 class ZoneHeaterManagerStatusSensor(CoordinatorEntity, SensorEntity):
-    """Representation of a Zone Heater Manager Status Sensor."""
+    """Representation of a Smart Heating Status Sensor."""
 
     def __init__(
         self,
-        coordinator: ZoneHeaterManagerCoordinator,
+        coordinator: SmartHeatingCoordinator,
         entry: ConfigEntry,
     ) -> None:
         """Initialize the sensor.
@@ -57,7 +57,7 @@ class ZoneHeaterManagerStatusSensor(CoordinatorEntity, SensorEntity):
         super().__init__(coordinator)
         
         # Entity attributes
-        self._attr_name = "Zone Heater Manager Status"
+        self._attr_name = "Smart Heating Status"
         self._attr_unique_id = f"{entry.entry_id}_status"
         self._attr_icon = "mdi:radiator"
         
@@ -87,7 +87,7 @@ class ZoneHeaterManagerStatusSensor(CoordinatorEntity, SensorEntity):
             dict: Additional attributes
         """
         attributes = {
-            "integration": "zone_heater_manager",
+            "integration": "smart_heating",
             "version": "0.0.1",
         }
         
