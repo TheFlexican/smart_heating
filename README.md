@@ -147,37 +147,7 @@ After installation, the following entities will be created:
 
 ### Area Management
 
-#### `smart_heating.create_zone`
-Create a new heating area.
-
-**Parameters:**
-- `area_id` (required): Unique identifier (e.g. "living_room")
-- `area_name` (required): Display name (e.g. "Living Room")
-- `temperature` (optional): Initial target temperature in °C (default: 20.0)
-
-**Example:**
-```yaml
-service: smart_heating.create_zone
-data:
-  area_id: "living_room"
-  area_name: "Living Room"
-  temperature: 21.5
-```
-
-#### `smart_heating.delete_zone`
-Delete an existing area.
-
-**Parameters:**
-- `area_id` (required): Area identifier
-
-**Example:**
-```yaml
-service: smart_heating.delete_zone
-data:
-  area_id: "living_room"
-```
-
-#### `smart_heating.enable_zone`
+#### `smart_heating.enable_area`
 Enable heating for a area.
 
 **Parameters:**
@@ -185,12 +155,12 @@ Enable heating for a area.
 
 **Example:**
 ```yaml
-service: smart_heating.enable_zone
+service: smart_heating.enable_area
 data:
   area_id: "living_room"
 ```
 
-#### `smart_heating.disable_zone`
+#### `smart_heating.disable_area`
 Disable heating for a area.
 
 **Parameters:**
@@ -198,14 +168,14 @@ Disable heating for a area.
 
 **Example:**
 ```yaml
-service: smart_heating.disable_zone
+service: smart_heating.disable_area
 data:
   area_id: "living_room"
 ```
 
 ### Device Management
 
-#### `smart_heating.add_device_to_zone`
+#### `smart_heating.add_device_to_area`
 Add a Zigbee2MQTT device to a area.
 
 **Parameters:**
@@ -215,14 +185,14 @@ Add a Zigbee2MQTT device to a area.
 
 **Example:**
 ```yaml
-service: smart_heating.add_device_to_zone
+service: smart_heating.add_device_to_area
 data:
   area_id: "living_room"
   device_id: "0x00158d0001a2b3c4"
   device_type: "thermostat"
 ```
 
-#### `smart_heating.remove_device_from_zone`
+#### `smart_heating.remove_device_from_area`
 Remove a device from a area.
 
 **Parameters:**
@@ -231,7 +201,7 @@ Remove a device from a area.
 
 **Example:**
 ```yaml
-service: smart_heating.remove_device_from_zone
+service: smart_heating.remove_device_from_area
 data:
   area_id: "living_room"
   device_id: "0x00158d0001a2b3c4"
@@ -344,37 +314,30 @@ data:
 ### Basic Setup Workflow
 
 1. **Install the integration** via the Home Assistant UI
-2. **Create areas** using the `create_zone` service
-3. **Add devices** using the `add_device_to_zone` service
+2. **Add areas** in Home Assistant (Settings → Areas & Zones)
+3. **Add devices** to areas using the web interface or service calls
 4. **Configure temperatures** via climate entities or service calls
 5. **Manage areas** via switches or service calls
 
 ### Example Configuration
 
 ```yaml
-# Automation to create areas at startup
+# Automation to add devices to area
 automation:
-  - alias: "Setup Heating Zones"
+  - alias: "Setup Living Room Devices"
     trigger:
       - platform: homeassistant
         event: start
     action:
-      # Create living room area
-      - service: smart_heating.create_zone
-        data:
-          area_id: "living_room"
-          area_name: "Living Room"
-          temperature: 21.0
-      
       # Add thermostat
-      - service: smart_heating.add_device_to_zone
+      - service: smart_heating.add_device_to_area
         data:
           area_id: "living_room"
           device_id: "0x00158d0001a2b3c4"
           device_type: "thermostat"
       
       # Add temperature sensor
-      - service: smart_heating.add_device_to_zone
+      - service: smart_heating.add_device_to_area
         data:
           area_id: "living_room"
           device_id: "0x00158d0001a2b3c5"

@@ -91,7 +91,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Enhanced service descriptions in `services.yaml`
 
 ### 🐛 Fixed
-- Scheduler variable naming (zone → area consistency)
+- Scheduler variable naming (area → area consistency)
 - Area entity ID generation in scheduler
 - Method calls in ScheduleExecutor
 
@@ -121,16 +121,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### 🔄 BREAKING CHANGES
 - **Complete Rename**: Integration renamed from "Area Heater Manager" to "Smart Heating"
-  - Domain changed from `zone_heater_manager` to `smart_heating`
-  - All entities now use `smart_heating` prefix instead of `zone_heater`
-  - Panel URL changed from `/zone_heater_manager/` to `/smart_heating/`
-  - All service names changed from `zone_heater_manager.*` to `smart_heating.*`
+  - Domain changed from `area_heater_manager` to `smart_heating`
+  - All entities now use `smart_heating` prefix instead of `area_heater`
+  - Panel URL changed from `/area_heater_manager/` to `/smart_heating/`
+  - All service names changed from `area_heater_manager.*` to `smart_heating.*`
   
 - **Terminology Update**: Aligned with Home Assistant conventions
   - "Zones" renamed to "Areas" throughout the codebase
-  - All service calls now use "area" instead of "area" (e.g., `create_area`, `delete_area`)
-  - Entity IDs changed from `climate.zone_*` to `climate.smart_heating_*`
-  - API endpoints changed from `/areas` to `/areas`
+  - All service calls now use "area" instead of "zone" terminology
+  - Entity IDs changed from `climate.area_*` to `climate.smart_heating_*`
+  - API endpoints updated to use "areas" terminology
+  - Areas are now based on Home Assistant areas (created in Settings → Areas & Zones)
+  - Removed manual area creation/deletion - areas sync with HA's area registry
 
 ### ✨ Added
 - **Schedule Executor**
@@ -148,11 +150,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### 📝 Migration Guide
 If upgrading from v0.1.0 or earlier:
 1. Remove the old "Area Heater Manager" integration
-2. Delete `.storage/zone_heater_manager` file
+2. Delete `.storage/area_heater_manager` file
 3. Install "Smart Heating" v2.0.0
 4. Reconfigure all areas
-5. Update automations to use new service names (`smart_heating.*` instead of `zone_heater_manager.*`)
-6. Update entity references in dashboards (e.g., `climate.zone_living_room` → `climate.smart_heating_living_room`)
+5. Update automations to use new service names (`smart_heating.*` instead of `area_heater_manager.*`)
+6. Update entity references in dashboards (e.g., `climate.area_living_room` → `climate.smart_heating_living_room`)
 
 ## [0.1.0] - 2025-12-04
 
@@ -174,13 +176,11 @@ If upgrading from v0.1.0 or earlier:
   - Support for smart radiator valves
   
 - **Extensive Service Calls**
-  - `create_zone` - Create new area
-  - `delete_zone` - Delete area
-  - `add_device_to_zone` - Add device to area
-  - `remove_device_from_zone` - Remove device from area
+  - `add_device_to_area` - Add device to area
+  - `remove_device_from_area` - Remove device from area
   - `set_area_temperature` - Set target temperature
-  - `enable_zone` - Enable area
-  - `disable_zone` - Disable area
+  - `enable_area` - Enable area
+  - `disable_area` - Disable area
   - `refresh` - Manually refresh data
   
 - **Documentation**

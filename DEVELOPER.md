@@ -154,7 +154,7 @@ smart_heating/
    ```python
    async def async_my_method(self, area_id: str, param: str) -> bool:
        """My method description."""
-       area = self.get_zone(area_id)
+       area = self.get_area(area_id)
        if not area:
            return False
        
@@ -195,16 +195,14 @@ class ZoneManager:
     async def async_load() -> None
     async def async_save() -> None
     
-    def get_zone(area_id: str) -> Optional[Area]
-    def get_all_zones() -> List[Area]
+    def get_area(area_id: str) -> Optional[Area]
+    def get_all_areas() -> List[Area]
     
-    async def async_create_zone(...) -> Area
-    async def async_delete_zone(area_id: str) -> bool
-    async def async_add_device_to_zone(...) -> bool
-    async def async_remove_device_from_zone(...) -> bool
+    async def async_add_device_to_area(...) -> bool
+    async def async_remove_device_from_area(...) -> bool
     async def async_set_area_temperature(...) -> bool
-    async def async_enable_zone(area_id: str) -> bool
-    async def async_disable_zone(area_id: str) -> bool
+    async def async_enable_area(area_id: str) -> bool
+    async def async_disable_area(area_id: str) -> bool
 ```
 
 ### Coordinator (`coordinator.py`)

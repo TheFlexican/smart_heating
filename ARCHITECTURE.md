@@ -232,32 +232,29 @@ Real-time communication using HA WebSocket API.
 
 **Commands:**
 - `smart_heating/subscribe_updates` - Subscribe to area updates
-- `smart_heating/get_zones` - Get areas via WebSocket
-- `smart_heating/create_zone` - Create area via WebSocket
+- `smart_heating/get_areas` - Get areas via WebSocket
 
 ### 9. Service Calls
 
 Comprehensive service API for automation/script integration:
 
 **Area Management:**
-1. `smart_heating.create_area` - Create new area
-2. `smart_heating.delete_area` - Delete area
-3. `smart_heating.enable_area` - Enable area
-4. `smart_heating.disable_area` - Disable area
-5. `smart_heating.set_area_temperature` - Set target temperature
+1. `smart_heating.enable_area` - Enable area
+2. `smart_heating.disable_area` - Disable area
+3. `smart_heating.set_area_temperature` - Set target temperature
 
 **Device Management:**
-6. `smart_heating.add_device_to_area` - Add device to area
-7. `smart_heating.remove_device_from_area` - Remove device
+4. `smart_heating.add_device_to_area` - Add device to area
+5. `smart_heating.remove_device_from_area` - Remove device
 
 **Schedule Management:**
-8. `smart_heating.add_schedule` - Add time-based schedule
-9. `smart_heating.remove_schedule` - Remove schedule
-10. `smart_heating.enable_schedule` - Enable schedule
-11. `smart_heating.disable_schedule` - Disable schedule
+6. `smart_heating.add_schedule` - Add time-based schedule
+7. `smart_heating.remove_schedule` - Remove schedule
+8. `smart_heating.enable_schedule` - Enable schedule
+9. `smart_heating.disable_schedule` - Disable schedule
 
 **Advanced Settings:**
-12. `smart_heating.set_night_boost` - Configure night boost
+10. `smart_heating.set_night_boost` - Configure night boost
 13. `smart_heating.set_hysteresis` - Set global hysteresis
 
 **System:**
@@ -385,22 +382,6 @@ WebSocket connection for live updates:
 User clicks "Create Area"
     ↓
 CreateZoneDialog collects input
-    ↓
-api.createZone() calls POST /api/smart_heating/areas
-    ↓
-ZoneHeaterAPIView.post() in api.py
-    ↓
-area_manager.async_create_zone()
-    ↓
-Area saved to storage
-    ↓
-Coordinator refresh triggered
-    ↓
-Climate/Switch entities created
-    ↓
-Frontend refreshes area list
-```
-
 ### Temperature Control Flow
 
 ```
@@ -427,7 +408,7 @@ Physical devices adjust
 
 Zones and configuration are stored using Home Assistant's storage API:
 
-**File:** `.storage/smart_heating_zones`
+**File:** `.storage/smart_heating_areas`
 
 **Format:**
 ```json

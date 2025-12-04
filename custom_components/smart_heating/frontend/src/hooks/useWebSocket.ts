@@ -7,7 +7,7 @@ interface WebSocketMessage {
   data?: {
     areas?: Zone[]
     area?: Zone
-    zone_id?: string
+    area_id?: string
   }
   error?: {
     code: string
@@ -21,7 +21,7 @@ interface WebSocketMessage {
 interface UseWebSocketOptions {
   onZonesUpdate?: (areas: Zone[]) => void
   onZoneUpdate?: (area: Zone) => void
-  onZoneDelete?: (zoneId: string) => void
+  onZoneDelete?: (areaId: string) => void
   onConnect?: () => void
   onDisconnect?: () => void
   onError?: (error: string) => void
@@ -128,29 +128,29 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
               options.onZonesUpdate?.(event.data.areas)
             } else if (event.data?.area) {
               options.onZoneUpdate?.(event.data.area)
-            } else if (event.data?.zone_id) {
-              options.onZoneDelete?.(event.data.zone_id)
+            } else if (event.data?.area_id) {
+              options.onZoneDelete?.(event.data.area_id)
             }
             return
           }
           
           // Legacy message handling (for backward compatibility)
           switch (message.type) {
-            case 'zones_updated':
+            case 'areas_updated':
               if (message.data?.areas) {
                 options.onZonesUpdate?.(message.data.areas)
               }
               break
             
-            case 'zone_updated':
+            case 'area_updated':
               if (message.data?.area) {
                 options.onZoneUpdate?.(message.data.area)
               }
               break
             
-            case 'zone_deleted':
-              if (message.data?.zone_id) {
-                options.onZoneDelete?.(message.data.zone_id)
+            case 'area_deleted':
+              if (message.data?.area_id) {
+                options.onZoneDelete?.(message.data.area_id)
               }
               break
           }

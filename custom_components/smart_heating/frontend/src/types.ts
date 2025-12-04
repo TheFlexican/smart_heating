@@ -28,13 +28,6 @@ export interface Zone {
 
 // Alias Area to Zone for compatibility
 export type Area = Zone
-export type AreaCreate = ZoneCreate
-
-export interface ZoneCreate {
-  zone_id: string
-  zone_name: string
-  temperature?: number
-}
 
 export interface DeviceAdd {
   device_id: string

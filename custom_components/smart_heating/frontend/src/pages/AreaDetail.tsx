@@ -53,7 +53,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const ZoneDetail = () => {
-  const { zoneId } = useParams<{ zoneId: string }>()
+  const { areaId } = useParams<{ areaId: string }>()
   const navigate = useNavigate()
   const [area, setZone] = useState<Zone | null>(null)
   const [availableDevices, setAvailableDevices] = useState<Device[]>([])
@@ -63,19 +63,19 @@ const ZoneDetail = () => {
 
   useEffect(() => {
     loadData()
-  }, [zoneId])
+  }, [areaId])
 
   const loadData = async () => {
-    if (!zoneId) return
+    if (!areaId) return
     
     try {
       setLoading(true)
-      const [zonesData, devicesData] = await Promise.all([
+      const [areasData, devicesData] = await Promise.all([
         getZones(),
         getDevices()
       ])
       
-      const currentZone = zonesData.find(z => z.id === zoneId)
+      const currentZone = areasData.find(z => z.id === areaId)
       if (!currentZone) {
         navigate('/')
         return
@@ -86,7 +86,7 @@ const ZoneDetail = () => {
       
       // Filter available devices (not assigned to any area)
       const assignedDeviceIds = new Set(
-        zonesData.flatMap(z => z.devices.map(d => d.id))
+        areasData.flatMap(z => z.devices.map(d => d.id))
       )
       setAvailableDevices(
         devicesData.filter(device => !assignedDeviceIds.has(device.id))
@@ -481,7 +481,7 @@ const ZoneDetail = () => {
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                     <Slider
                       value={area.night_boost_offset ?? 0.5}
-                      onChange={async (e, value) => {
+                      onChange={async (_e, value) => {
                         try {
                           await fetch('/api/smart_heating/call_service', {
                             method: 'POST',
@@ -539,7 +539,7 @@ const ZoneDetail = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <Slider
                     defaultValue={0.5}
-                    onChange={async (e, value) => {
+                    onChange={async (_e, value) => {
                       try {
                         await fetch('/api/smart_heating/call_service', {
                           method: 'POST',

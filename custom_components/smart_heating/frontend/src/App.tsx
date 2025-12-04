@@ -78,15 +78,15 @@ function App() {
   const loadData = useCallback(async () => {
     try {
       setLoading(true)
-      const [zonesData, devicesData] = await Promise.all([
+      const [areasData, devicesData] = await Promise.all([
         getZones(),
         getDevices()
       ])
-      setZones(zonesData)
+      setZones(areasData)
       
       // Filter out devices already assigned to areas
       const assignedDeviceIds = new Set(
-        zonesData.flatMap(area => area.devices.map(d => d.id))
+        areasData.flatMap(area => area.devices.map(d => d.id))
       )
       setAvailableDevices(
         devicesData.filter(device => !assignedDeviceIds.has(device.id))
@@ -129,9 +129,9 @@ function App() {
         prevZones.map(z => z.id === updatedZone.id ? updatedZone : z)
       )
     },
-    onZoneDelete: (zoneId) => {
-      console.log('Received area delete:', zoneId)
-      setZones(prevZones => prevZones.filter(z => z.id !== zoneId))
+    onZoneDelete: (areaId) => {
+      console.log('Received area delete:', areaId)
+      setZones(prevZones => prevZones.filter(z => z.id !== areaId))
       // Reload data to update available devices
       loadData()
     },
@@ -162,7 +162,7 @@ function App() {
     }
 
     // Extract area ID from droppable ID (format: "area-{id}")
-    const zoneId = destination.droppableId.replace('area-', '')
+    const areaId = destination.droppableId.replace('area-', '')
     
     // Extract device ID from draggable ID (format: "device-{id}")
     const deviceId = result.draggableId.replace('device-', '')
@@ -172,7 +172,7 @@ function App() {
     if (!device) return
     
     try {
-      await addDeviceToZone(zoneId, {
+      await addDeviceToZone(areaId, {
         device_id: deviceId,
         device_type: device.type,
         mqtt_topic: device.mqtt_topic
@@ -215,7 +215,7 @@ function App() {
       <Router basename="/smart_heating_ui">
         <Routes>
           <Route path="/" element={<ZonesOverview />} />
-          <Route path="/area/:zoneId" element={<ZoneDetail />} />
+          <Route path="/area/:areaId" element={<ZoneDetail />} />
         </Routes>
       </Router>
       

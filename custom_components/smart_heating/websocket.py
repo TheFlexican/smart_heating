@@ -44,8 +44,16 @@ def websocket_subscribe_updates(
             "data": coordinator.data
         }))
 
-    # Get the coordinator
-    entry_id = list(hass.data[DOMAIN].keys())[0]
+    # Get the coordinator - filter out non-entry keys
+    entry_ids = [
+        key for key in hass.data[DOMAIN].keys()
+        if key not in ["history", "climate_controller", "schedule_executor"]
+    ]
+    if not entry_ids:
+        connection.send_error(msg["id"], "not_loaded", "Smart Heating not loaded")
+        return
+    
+    entry_id = entry_ids[0]
     coordinator: SmartHeatingCoordinator = hass.data[DOMAIN][entry_id]
     
     # Subscribe to coordinator updates
@@ -61,10 +69,10 @@ def websocket_subscribe_updates(
 
 
 @websocket_command({
-    "type": "smart_heating/get_zones",
+    "type": "smart_heating/get_areas",
 })
 @callback
-def websocket_get_zones(
+def websocket_get_areas(
     hass: HomeAssistant,
     connection: ActiveConnection,
     msg: dict[str, Any],
@@ -76,15 +84,24 @@ def websocket_get_zones(
         connection: WebSocket connection
         msg: Message data
     """
-    entry_id = list(hass.data[DOMAIN].keys())[0]
+    # Get the coordinator - filter out non-entry keys
+    entry_ids = [
+        key for key in hass.data[DOMAIN].keys()
+        if key not in ["history", "climate_controller", "schedule_executor"]
+    ]
+    if not entry_ids:
+        connection.send_error(msg["id"], "not_loaded", "Smart Heating not loaded")
+        return
+    
+    entry_id = entry_ids[0]
     coordinator: SmartHeatingCoordinator = hass.data[DOMAIN][entry_id]
     area_manager = coordinator.area_manager
     
     areas = area_manager.get_all_areas()
-    zones_data = []
+    areas_data = []
     
     for area_id, area in areas.items():
-        zones_data.append({
+        areas_data.append({
             "id": area.area_id,
             "name": area.name,
             "enabled": area.enabled,
@@ -101,52 +118,7 @@ def websocket_get_zones(
             ],
         })
     
-    connection.send_result(msg["id"], {"areas": zones_data})
-
-
-@websocket_command({
-    "type": "smart_heating/create_zone",
-    "area_id": str,
-    "zone_name": str,
-    "temperature": float,
-})
-@callback
-def websocket_create_zone(
-    hass: HomeAssistant,
-    connection: ActiveConnection,
-    msg: dict[str, Any],
-) -> None:
-    """Create a area via websocket.
-    
-    Args:
-        hass: Home Assistant instance
-        connection: WebSocket connection
-        msg: Message data
-    """
-    entry_id = list(hass.data[DOMAIN].keys())[0]
-    coordinator: SmartHeatingCoordinator = hass.data[DOMAIN][entry_id]
-    area_manager = coordinator.area_manager
-    
-    try:
-        area = area_manager.create_area(
-            msg["area_id"],
-            msg["zone_name"],
-            msg.get("temperature", 20.0)
-        )
-        
-        hass.async_create_task(area_manager.async_save())
-        hass.async_create_task(coordinator.async_request_refresh())
-        
-        connection.send_result(msg["id"], {
-            "success": True,
-            "area": {
-                "id": area.area_id,
-                "name": area.name,
-                "target_temperature": area.target_temperature,
-            }
-        })
-    except ValueError as err:
-        connection.send_error(msg["id"], "creation_failed", str(err))
+    connection.send_result(msg["id"], {"areas": areas_data})
 
 
 async def setup_websocket(hass: HomeAssistant) -> None:
@@ -156,7 +128,6 @@ async def setup_websocket(hass: HomeAssistant) -> None:
         hass: Home Assistant instance
     """
     async_register_command(hass, websocket_subscribe_updates)
-    async_register_command(hass, websocket_get_zones)
-    async_register_command(hass, websocket_create_zone)
+    async_register_command(hass, websocket_get_areas)
     
     _LOGGER.info("Smart Heating WebSocket API registered")

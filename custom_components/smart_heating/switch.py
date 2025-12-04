@@ -123,8 +123,8 @@ class AreaSwitch(CoordinatorEntity, SwitchEntity):
         """
         return {
             "area_id": self._area.area_id,
-            "zone_name": self._area.name,
-            "zone_state": self._area.state,
+            "area_name": self._area.name,
+            "area_state": self._area.state,
             "target_temperature": self._area.target_temperature,
             "current_temperature": self._area.current_temperature,
             "device_count": len(self._area.devices),

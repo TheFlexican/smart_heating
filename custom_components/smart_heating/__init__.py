@@ -30,8 +30,6 @@ from .const import (
     DOMAIN,
     PLATFORMS,
     SERVICE_ADD_DEVICE_TO_AREA,
-    SERVICE_CREATE_AREA,
-    SERVICE_DELETE_AREA,
     SERVICE_DISABLE_AREA,
     SERVICE_ENABLE_AREA,
     SERVICE_REFRESH,
@@ -70,6 +68,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """
     _LOGGER.debug("Setting up Smart Heating integration")
     
+    # Initialize hass.data for this domain
+    hass.data.setdefault(DOMAIN, {})
+    
     # Create area manager
     area_manager = AreaManager(hass)
     await area_manager.async_load()
@@ -84,9 +85,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     
     # Fetch initial data
     await coordinator.async_config_entry_first_refresh()
-    
-    # Store coordinator in hass.data
-    hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = coordinator
     
     _LOGGER.debug("Smart Heating coordinator stored in hass.data")
@@ -181,38 +179,8 @@ async def async_setup_services(hass: HomeAssistant, coordinator: SmartHeatingCoo
         await coordinator.async_request_refresh()
         _LOGGER.info("Smart Heating data refreshed")
     
-    async def async_handle_create_zone(call: ServiceCall) -> None:
-        """Handle the create_zone service call."""
-        area_id = call.data[ATTR_AREA_ID]
-        zone_name = call.data[ATTR_AREA_NAME]
-        temperature = call.data.get(ATTR_TEMPERATURE, 20.0)
-        
-        _LOGGER.debug("Creating area %s (%s) with temperature %.1f°C", area_id, area_name, temperature)
-        
-        try:
-            area_manager.create_area(area_id, area_name, temperature)
-            await area_manager.async_save()
-            await coordinator.async_request_refresh()
-            _LOGGER.info("Created area %s", area_id)
-        except ValueError as err:
-            _LOGGER.error("Failed to create area: %s", err)
-    
-    async def async_handle_delete_zone(call: ServiceCall) -> None:
-        """Handle the delete_zone service call."""
-        area_id = call.data[ATTR_AREA_ID]
-        
-        _LOGGER.debug("Deleting area %s", area_id)
-        
-        try:
-            area_manager.delete_area(area_id)
-            await area_manager.async_save()
-            await coordinator.async_request_refresh()
-            _LOGGER.info("Deleted area %s", area_id)
-        except ValueError as err:
-            _LOGGER.error("Failed to delete area: %s", err)
-    
     async def async_handle_add_device(call: ServiceCall) -> None:
-        """Handle the add_device_to_zone service call."""
+        """Handle the add_device_to_area service call."""
         area_id = call.data[ATTR_AREA_ID]
         device_id = call.data[ATTR_DEVICE_ID]
         device_type = call.data[ATTR_DEVICE_TYPE]
@@ -228,7 +196,7 @@ async def async_setup_services(hass: HomeAssistant, coordinator: SmartHeatingCoo
             _LOGGER.error("Failed to add device: %s", err)
     
     async def async_handle_remove_device(call: ServiceCall) -> None:
-        """Handle the remove_device_from_zone service call."""
+        """Handle the remove_device_from_area service call."""
         area_id = call.data[ATTR_AREA_ID]
         device_id = call.data[ATTR_DEVICE_ID]
         
@@ -243,7 +211,7 @@ async def async_setup_services(hass: HomeAssistant, coordinator: SmartHeatingCoo
             _LOGGER.error("Failed to remove device: %s", err)
     
     async def async_handle_set_temperature(call: ServiceCall) -> None:
-        """Handle the set_zone_temperature service call."""
+        """Handle the set_area_temperature service call."""
         area_id = call.data[ATTR_AREA_ID]
         temperature = call.data[ATTR_TEMPERATURE]
         
@@ -257,8 +225,8 @@ async def async_setup_services(hass: HomeAssistant, coordinator: SmartHeatingCoo
         except ValueError as err:
             _LOGGER.error("Failed to set temperature: %s", err)
     
-    async def async_handle_enable_zone(call: ServiceCall) -> None:
-        """Handle the enable_zone service call."""
+    async def async_handle_enable_area(call: ServiceCall) -> None:
+        """Handle the enable_area service call."""
         area_id = call.data[ATTR_AREA_ID]
         
         _LOGGER.debug("Enabling area %s", area_id)
@@ -271,8 +239,8 @@ async def async_setup_services(hass: HomeAssistant, coordinator: SmartHeatingCoo
         except ValueError as err:
             _LOGGER.error("Failed to enable area: %s", err)
     
-    async def async_handle_disable_zone(call: ServiceCall) -> None:
-        """Handle the disable_zone service call."""
+    async def async_handle_disable_area(call: ServiceCall) -> None:
+        """Handle the disable_area service call."""
         area_id = call.data[ATTR_AREA_ID]
         
         _LOGGER.debug("Disabling area %s", area_id)
@@ -399,16 +367,6 @@ async def async_setup_services(hass: HomeAssistant, coordinator: SmartHeatingCoo
             _LOGGER.error("Failed to set hysteresis: %s", err)
     
     # Service schemas
-    CREATE_ZONE_SCHEMA = vol.Schema({
-        vol.Required(ATTR_AREA_ID): cv.string,
-        vol.Required(ATTR_AREA_NAME): cv.string,
-        vol.Optional(ATTR_TEMPERATURE, default=20.0): vol.Coerce(float),
-    })
-    
-    DELETE_ZONE_SCHEMA = vol.Schema({
-        vol.Required(ATTR_AREA_ID): cv.string,
-    })
-    
     ADD_DEVICE_SCHEMA = vol.Schema({
         vol.Required(ATTR_AREA_ID): cv.string,
         vol.Required(ATTR_DEVICE_ID): cv.string,
@@ -464,13 +422,11 @@ async def async_setup_services(hass: HomeAssistant, coordinator: SmartHeatingCoo
     
     # Register all services
     hass.services.async_register(DOMAIN, SERVICE_REFRESH, async_handle_refresh)
-    hass.services.async_register(DOMAIN, SERVICE_CREATE_AREA, async_handle_create_zone, schema=CREATE_ZONE_SCHEMA)
-    hass.services.async_register(DOMAIN, SERVICE_DELETE_AREA, async_handle_delete_zone, schema=DELETE_ZONE_SCHEMA)
     hass.services.async_register(DOMAIN, SERVICE_ADD_DEVICE_TO_AREA, async_handle_add_device, schema=ADD_DEVICE_SCHEMA)
     hass.services.async_register(DOMAIN, SERVICE_REMOVE_DEVICE_FROM_AREA, async_handle_remove_device, schema=REMOVE_DEVICE_SCHEMA)
     hass.services.async_register(DOMAIN, SERVICE_SET_AREA_TEMPERATURE, async_handle_set_temperature, schema=SET_TEMPERATURE_SCHEMA)
-    hass.services.async_register(DOMAIN, SERVICE_ENABLE_AREA, async_handle_enable_zone, schema=ZONE_ID_SCHEMA)
-    hass.services.async_register(DOMAIN, SERVICE_DISABLE_AREA, async_handle_disable_zone, schema=ZONE_ID_SCHEMA)
+    hass.services.async_register(DOMAIN, SERVICE_ENABLE_AREA, async_handle_enable_area, schema=ZONE_ID_SCHEMA)
+    hass.services.async_register(DOMAIN, SERVICE_DISABLE_AREA, async_handle_disable_area, schema=ZONE_ID_SCHEMA)
     hass.services.async_register(DOMAIN, SERVICE_ADD_SCHEDULE, async_handle_add_schedule, schema=ADD_SCHEDULE_SCHEMA)
     hass.services.async_register(DOMAIN, SERVICE_REMOVE_SCHEDULE, async_handle_remove_schedule, schema=REMOVE_SCHEDULE_SCHEMA)
     hass.services.async_register(DOMAIN, SERVICE_ENABLE_SCHEDULE, async_handle_enable_schedule, schema=SCHEDULE_CONTROL_SCHEMA)
@@ -521,8 +477,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         # Remove services if no more instances
         if not hass.data[DOMAIN]:
             hass.services.async_remove(DOMAIN, SERVICE_REFRESH)
-            hass.services.async_remove(DOMAIN, SERVICE_CREATE_AREA)
-            hass.services.async_remove(DOMAIN, SERVICE_DELETE_AREA)
             hass.services.async_remove(DOMAIN, SERVICE_ADD_DEVICE_TO_AREA)
             hass.services.async_remove(DOMAIN, SERVICE_REMOVE_DEVICE_FROM_AREA)
             hass.services.async_remove(DOMAIN, SERVICE_SET_AREA_TEMPERATURE)

@@ -93,7 +93,7 @@ class SmartHeatingStatusSensor(CoordinatorEntity, SensorEntity):
         
         # Add coordinator data to attributes if available
         if self.coordinator.data:
-            attributes["zone_count"] = self.coordinator.data.get("zone_count", 0)
+            attributes["area_count"] = self.coordinator.data.get("area_count", 0)
         
         return attributes
 

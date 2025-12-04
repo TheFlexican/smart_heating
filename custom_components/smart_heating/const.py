@@ -19,8 +19,6 @@ UPDATE_INTERVAL: Final = timedelta(seconds=DEFAULT_UPDATE_INTERVAL)
 
 # Services
 SERVICE_REFRESH: Final = "refresh"
-SERVICE_CREATE_AREA: Final = "create_area"
-SERVICE_DELETE_AREA: Final = "delete_area"
 SERVICE_ADD_DEVICE_TO_AREA: Final = "add_device_to_area"
 SERVICE_REMOVE_DEVICE_FROM_AREA: Final = "remove_device_from_area"
 SERVICE_SET_AREA_TEMPERATURE: Final = "set_area_temperature"

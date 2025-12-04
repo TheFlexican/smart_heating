@@ -169,8 +169,8 @@ class AreaClimate(CoordinatorEntity, ClimateEntity):
         """
         attributes = {
             "area_id": self._area.area_id,
-            "zone_name": self._area.name,
-            "zone_state": self._area.state,
+            "area_name": self._area.name,
+            "area_state": self._area.state,
             "device_count": len(self._area.devices),
             "devices": list(self._area.devices.keys()),
         }

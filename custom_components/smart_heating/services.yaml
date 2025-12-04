@@ -5,54 +5,11 @@ refresh:
   description: Manually refresh the Zone Heater Manager data
   fields: {}
 
-create_zone:
-  name: Create Zone
-  description: Create a new heating area
-  fields:
-    zone_id:
-      name: Zone ID
-      description: Unique identifier for the area
-      required: true
-      example: "living_room"
-      selector:
-        text:
-    zone_name:
-      name: Zone Name
-      description: Display name for the area
-      required: true
-      example: "Living Room"
-      selector:
-        text:
-    temperature:
-      name: Target Temperature
-      description: Initial target temperature for the area (°C)
-      required: false
-      default: 20.0
-      example: 21.5
-      selector:
-        number:
-          min: 5
-          max: 30
-          step: 0.5
-          unit_of_measurement: "°C"
-
-delete_zone:
-  name: Delete Zone
-  description: Delete an existing heating area
-  fields:
-    zone_id:
-      name: Zone ID
-      description: Identifier of the area to delete
-      required: true
-      example: "living_room"
-      selector:
-        text:
-
-add_device_to_zone:
+add_device_to_area:
   name: Add Device to Zone
   description: Add a Zigbee2MQTT device to a area
   fields:
-    zone_id:
+    area_id:
       name: Zone ID
       description: Identifier of the area
       required: true
@@ -79,11 +36,11 @@ add_device_to_zone:
             - "opentherm_gateway"
             - "valve"
 
-remove_device_from_zone:
+remove_device_from_area:
   name: Remove Device from Zone
   description: Remove a device from a area
   fields:
-    zone_id:
+    area_id:
       name: Zone ID
       description: Identifier of the area
       required: true
@@ -98,11 +55,11 @@ remove_device_from_zone:
       selector:
         text:
 
-set_zone_temperature:
+set_area_temperature:
   name: Set Zone Temperature
   description: Set the target temperature for a area
   fields:
-    zone_id:
+    area_id:
       name: Zone ID
       description: Identifier of the area
       required: true
@@ -121,11 +78,11 @@ set_zone_temperature:
           step: 0.5
           unit_of_measurement: "°C"
 
-enable_zone:
+enable_area:
   name: Enable Zone
   description: Enable heating for a area
   fields:
-    zone_id:
+    area_id:
       name: Zone ID
       description: Identifier of the area to enable
       required: true
@@ -133,11 +90,11 @@ enable_zone:
       selector:
         text:
 
-disable_zone:
+disable_area:
   name: Disable Zone
   description: Disable heating for a area
   fields:
-    zone_id:
+    area_id:
       name: Zone ID
       description: Identifier of the area to disable
       required: true
@@ -149,7 +106,7 @@ add_schedule:
   name: Add Schedule
   description: Add a temperature schedule to an area
   fields:
-    zone_id:
+    area_id:
       name: Zone ID
       description: Identifier of the area
       required: true
@@ -209,7 +166,7 @@ remove_schedule:
   name: Remove Schedule
   description: Remove a schedule from an area
   fields:
-    zone_id:
+    area_id:
       name: Zone ID
       description: Identifier of the area
       required: true
@@ -228,7 +185,7 @@ enable_schedule:
   name: Enable Schedule
   description: Enable a schedule for an area
   fields:
-    zone_id:
+    area_id:
       name: Zone ID
       description: Identifier of the area
       required: true
@@ -247,7 +204,7 @@ disable_schedule:
   name: Disable Schedule
   description: Disable a schedule for an area
   fields:
-    zone_id:
+    area_id:
       name: Zone ID
       description: Identifier of the area
       required: true
@@ -266,7 +223,7 @@ set_night_boost:
   name: Set Night Boost
   description: Configure night boost for an area (gradually increase temperature during night hours 22:00-06:00)
   fields:
-    zone_id:
+    area_id:
       name: Zone ID
       description: Identifier of the area
       required: true

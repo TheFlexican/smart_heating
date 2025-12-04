@@ -82,27 +82,21 @@ Alternatively, navigate directly to: `http://your-ha-instance:8123/smart_heating
 Via the Web Interface:
 1. Open the Smart Heating panel
 2. Click **+ Create Area**
-3. Enter area name (e.g., "Living Room")
-4. Set initial temperature
-5. Click **Create**
+### Create Areas
 
-Via Service Call:
-```yaml
-service: smart_heating.create_zone
-data:
-  area_id: "living_room"
-  area_name: "Living Room"
-  temperature: 21.0
-```
+1. Go to Home Assistant Settings → Areas & Zones
+2. Click **Create Area**
+3. Enter area name (e.g., "Living Room")
+4. Click **Create**
 
 ### Add Devices to Zones
 
 1. Make sure Zigbee2MQTT is running and devices are paired
-2. In the web interface, drag devices from the right panel to area cards
+2. In the Smart Heating web interface, drag devices from the right panel to area cards
 3. Or use service calls:
 
 ```yaml
-service: smart_heating.add_device_to_zone
+service: smart_heating.add_device_to_area
 data:
   area_id: "living_room"
   device_id: "zigbee2mqtt/0x00158d0001a2b3c4"

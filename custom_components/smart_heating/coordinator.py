@@ -51,7 +51,7 @@ class SmartHeatingCoordinator(DataUpdateCoordinator):
             # Build data structure
             data = {
                 "status": STATE_INITIALIZED,
-                "zone_count": len(areas),
+                "area_count": len(areas),
                 "areas": {},
             }
             

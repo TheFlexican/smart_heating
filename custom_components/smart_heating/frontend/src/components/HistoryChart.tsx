@@ -93,13 +93,18 @@ const HistoryChart = ({ areaId }: HistoryChartProps) => {
     heating: entry.state === 'heating' ? entry.current_temperature : null
   }))
 
+  // Calculate average target temperature for reference line
+  const avgTarget = data.length > 0
+    ? data.reduce((sum, entry) => sum + entry.target_temperature, 0) / data.length
+    : null
+
   return (
     <Box>
       <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
         <ToggleButtonGroup
           value={timeRange}
           exclusive
-          onChange={(e, value) => value && setTimeRange(value)}
+          onChange={(_e, value) => value && setTimeRange(value)}
           size="small"
         >
           <ToggleButton value={6}>6h</ToggleButton>
@@ -135,6 +140,20 @@ const HistoryChart = ({ areaId }: HistoryChartProps) => {
           <Legend 
             wrapperStyle={{ color: '#e1e1e1' }}
           />
+          {avgTarget && (
+            <ReferenceLine
+              y={avgTarget}
+              stroke="#4caf50"
+              strokeDasharray="3 3"
+              strokeWidth={1}
+              label={{
+                value: `Avg: ${avgTarget.toFixed(1)}°C`,
+                position: 'right',
+                fill: '#4caf50',
+                fontSize: 12
+              }}
+            />
+          )}
           <Line
             type="monotone"
             dataKey="current"
@@ -171,6 +190,7 @@ const HistoryChart = ({ areaId }: HistoryChartProps) => {
             <li><strong style={{ color: '#03a9f4' }}>Blue line:</strong> Current temperature</li>
             <li><strong style={{ color: '#ffc107' }}>Yellow dashed:</strong> Target temperature</li>
             <li><strong style={{ color: '#f44336' }}>Red dots:</strong> Heating active periods</li>
+            <li><strong style={{ color: '#4caf50' }}>Green dashed:</strong> Average target temperature</li>
           </ul>
         </Alert>
       </Box>

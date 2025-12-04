@@ -378,43 +378,6 @@ class AreaManager:
         await self._store.async_save(data)
         _LOGGER.info("Saved %d areas to storage", len(self.areas))
 
-    def create_area(self, area_id: str, name: str, target_temperature: float = 20.0) -> Area:
-        """Create a new area.
-        
-        Args:
-            area_id: Unique identifier for the area
-            name: Display name of the area
-            target_temperature: Target temperature for the area
-            
-        Returns:
-            Created area
-            
-        Raises:
-            ValueError: If area already exists
-        """
-        if area_id in self.areas:
-            raise ValueError(f"Area {area_id} already exists")
-        
-        area = Area(area_id, name, target_temperature)
-        self.areas[area_id] = area
-        _LOGGER.info("Created area %s (%s)", area_id, name)
-        return area
-
-    def delete_area(self, area_id: str) -> None:
-        """Delete a area.
-        
-        Args:
-            area_id: Zone identifier
-            
-        Raises:
-            ValueError: If area does not exist
-        """
-        if area_id not in self.areas:
-            raise ValueError(f"Zone {area_id} does not exist")
-        
-        del self.areas[area_id]
-        _LOGGER.info("Deleted area %s", area_id)
-
     def get_area(self, area_id: str) -> Area | None:
         """Get a area by ID.
         
