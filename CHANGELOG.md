@@ -19,6 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### ✨ Added
+- **Real-time Device State Updates**: Area overview now shows immediate feedback when temperature changes
+  - Device states (heating/idle/off) update instantly when temperature is adjusted
+  - Thermostat HVAC action (heating/idle) reflected in real-time
+  - Valve positions and switch states update immediately
+  - WebSocket pushes device state changes to frontend within 1-2 seconds
+  - Coordinator includes full device state information with type-specific attributes
+  - Temperature changes trigger immediate climate control execution
+
 ### 🐛 Fixed
 - **Device Display Names**: Area cards now show human-readable device names (e.g., "Living Room Thermostat") instead of entity IDs (e.g., "climate.living_room")
   - API endpoints `/api/smart_heating/areas` and `/api/smart_heating/areas/{id}` now include `name` field in device objects
