@@ -20,6 +20,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### ✨ Added
+- **Device Status Display in Area Cards**: Area overview now shows real-time device information
+  - **Thermostats**: Display HVAC action (heating/idle), current temperature, and target temperature
+    - Red flame icon when actively heating
+    - Blue thermostat icon when idle
+    - Status text shows "heating · 19.5°C → 21°C"
+  - **Temperature Sensors**: Show current temperature reading with green sensor icon
+  - **Valves**: Display position percentage and open/closed state
+    - Orange icon when valve is open (position > 0)
+    - Status text shows "75% · open"
+  - **Switches**: Show on/off state with color-coded power icons
+  - Color-coded icons provide instant visual feedback of device states
+  - All device states update automatically every 30 seconds via coordinator
+
 - **Real-time Device State Updates**: Area overview now shows immediate feedback when temperature changes
   - Device states (heating/idle/off) update instantly when temperature is adjusted
   - Thermostat HVAC action (heating/idle) reflected in real-time
