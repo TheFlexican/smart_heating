@@ -298,7 +298,133 @@ mqtt_pub "homeassistant/number/bedroom_valve/config" '{
 }'
 mqtt_pub "bedroom/valve/position" "30"
 
-echo -e "${GREEN}✓${NC} Created 9 MQTT devices (3 per area)"
+# OpenTherm Gateway (global boiler control)
+echo "  → OpenTherm Gateway..."
+mqtt_pub "homeassistant/climate/opentherm_gateway/config" '{
+  "name": "OpenTherm Gateway",
+  "unique_id": "opentherm_gateway",
+  "temperature_command_topic": "opentherm/gateway/target_temp",
+  "temperature_state_topic": "opentherm/gateway/target_temp",
+  "current_temperature_topic": "opentherm/gateway/current_temp",
+  "mode_command_topic": "opentherm/gateway/mode",
+  "mode_state_topic": "opentherm/gateway/mode",
+  "modes": ["off", "heat"],
+  "temp_step": 1,
+  "min_temp": 20,
+  "max_temp": 80,
+  "device": {
+    "identifiers": ["opentherm_gw_001"],
+    "name": "OpenTherm Gateway",
+    "model": "Zigbee OpenTherm Gateway",
+    "manufacturer": "Generic"
+  }
+}'
+mqtt_pub "opentherm/gateway/target_temp" "50.0"
+mqtt_pub "opentherm/gateway/current_temp" "45.0"
+mqtt_pub "opentherm/gateway/mode" "heat"
+
+# TS0201 Temperature/Humidity Sensor (_TZ3000_f2bw0b6k)
+echo "  → TS0201 Temperature/Humidity Sensor..."
+mqtt_pub "homeassistant/sensor/ts0201_temperature/config" '{
+  "name": "TS0201 Temperature",
+  "unique_id": "ts0201_temperature",
+  "state_topic": "zigbee2mqtt/ts0201/temperature",
+  "unit_of_measurement": "°C",
+  "device_class": "temperature",
+  "device": {
+    "identifiers": ["ts0201_sensor_001"],
+    "name": "TS0201 Temperature Sensor",
+    "model": "TS0201 (_TZ3000_f2bw0b6k)",
+    "manufacturer": "TuYa"
+  }
+}'
+mqtt_pub "zigbee2mqtt/ts0201/temperature" "21.5"
+
+mqtt_pub "homeassistant/sensor/ts0201_humidity/config" '{
+  "name": "TS0201 Humidity",
+  "unique_id": "ts0201_humidity",
+  "state_topic": "zigbee2mqtt/ts0201/humidity",
+  "unit_of_measurement": "%",
+  "device_class": "humidity",
+  "device": {
+    "identifiers": ["ts0201_sensor_001"],
+    "name": "TS0201 Temperature Sensor",
+    "model": "TS0201 (_TZ3000_f2bw0b6k)",
+    "manufacturer": "TuYa"
+  }
+}'
+mqtt_pub "zigbee2mqtt/ts0201/humidity" "55"
+
+# TS0601 TRV (_TZE200_b6wax7g0) - Temperature control only (no position)
+echo "  → TS0601 TRV (temp control only)..."
+mqtt_pub "homeassistant/climate/ts0601_trv/config" '{
+  "name": "TS0601 TRV",
+  "unique_id": "ts0601_trv",
+  "temperature_command_topic": "zigbee2mqtt/ts0601/set/current_heating_setpoint",
+  "temperature_state_topic": "zigbee2mqtt/ts0601/current_heating_setpoint",
+  "current_temperature_topic": "zigbee2mqtt/ts0601/local_temperature",
+  "mode_command_topic": "zigbee2mqtt/ts0601/set/system_mode",
+  "mode_state_topic": "zigbee2mqtt/ts0601/system_mode",
+  "modes": ["off", "heat"],
+  "temp_step": 0.5,
+  "min_temp": 5,
+  "max_temp": 35,
+  "device": {
+    "identifiers": ["ts0601_trv_001"],
+    "name": "TS0601 Thermostatic Radiator Valve",
+    "model": "TS0601 (_TZE200_b6wax7g0)",
+    "manufacturer": "TuYa"
+  }
+}'
+mqtt_pub "zigbee2mqtt/ts0601/current_heating_setpoint" "20.0"
+mqtt_pub "zigbee2mqtt/ts0601/local_temperature" "19.5"
+mqtt_pub "zigbee2mqtt/ts0601/system_mode" "heat"
+
+# Additional TS0601 state attributes (realistic TRV data)
+mqtt_pub "zigbee2mqtt/ts0601/state" '{
+  "battery": 85,
+  "current_heating_setpoint": 20.0,
+  "local_temperature": 19.5,
+  "system_mode": "heat",
+  "valve_state": "open",
+  "window_detection": "OFF"
+}'
+
+# Circulation pump switches (for testing switch device type)
+echo "  → Circulation pump switches..."
+mqtt_pub "homeassistant/switch/living_room_pump/config" '{
+  "name": "Living Room Pump",
+  "unique_id": "living_room_pump",
+  "command_topic": "switches/living_room_pump/set",
+  "state_topic": "switches/living_room_pump/state",
+  "payload_on": "ON",
+  "payload_off": "OFF",
+  "device": {
+    "identifiers": ["pump_living_room"],
+    "name": "Living Room Circulation Pump",
+    "model": "Smart Switch",
+    "manufacturer": "Generic"
+  }
+}'
+mqtt_pub "switches/living_room_pump/state" "OFF"
+
+mqtt_pub "homeassistant/switch/bedroom_pump/config" '{
+  "name": "Bedroom Pump",
+  "unique_id": "bedroom_pump",
+  "command_topic": "switches/bedroom_pump/set",
+  "state_topic": "switches/bedroom_pump/state",
+  "payload_on": "ON",
+  "payload_off": "OFF",
+  "device": {
+    "identifiers": ["pump_bedroom"],
+    "name": "Bedroom Circulation Pump",
+    "model": "Smart Switch",
+    "manufacturer": "Generic"
+  }
+}'
+mqtt_pub "switches/bedroom_pump/state" "OFF"
+
+echo -e "${GREEN}✓${NC} Created 17 MQTT devices (including OpenTherm, TS0201, TS0601, pumps)"
 echo ""
 
 # Step 10: Restart Home Assistant to discover devices
@@ -320,13 +446,22 @@ echo -e "${GREEN}║${NC} Created devices:                                      
 echo -e "${GREEN}║${NC}   Living Room: Thermostat, Temp Sensor, Valve                 ${GREEN}║${NC}"
 echo -e "${GREEN}║${NC}   Kitchen: Thermostat, Temp Sensor                             ${GREEN}║${NC}"
 echo -e "${GREEN}║${NC}   Bedroom: Thermostat, Temp Sensor, Valve                     ${GREEN}║${NC}"
+echo -e "${GREEN}║${NC}   OpenTherm: Gateway for boiler control                        ${GREEN}║${NC}"
+echo -e "${GREEN}║${NC}   TS0201: Temperature/Humidity sensor (TuYa)                   ${GREEN}║${NC}"
+echo -e "${GREEN}║${NC}   TS0601: TRV with temp control (TuYa)                         ${GREEN}║${NC}"
+echo -e "${GREEN}║${NC}   Switches: 2x circulation pumps                               ${GREEN}║${NC}"
 echo -e "${GREEN}║${NC}                                                                ${GREEN}║${NC}"
 echo -e "${GREEN}║${NC} Next Steps:                                                    ${GREEN}║${NC}"
-echo -e "${GREEN}║${NC}   1. Open Smart Heating panel in sidebar                      ${GREEN}║${NC}"
-echo -e "${GREEN}║${NC}   2. Click on an area (Living Room/Kitchen/Bedroom)           ${GREEN}║${NC}"
-echo -e "${GREEN}║${NC}   3. Drag devices from right panel to assign them             ${GREEN}║${NC}"
-echo -e "${GREEN}║${NC}   4. Add schedules in the Schedule tab                        ${GREEN}║${NC}"
-echo -e "${GREEN}║${NC}   5. Watch automatic heating control (30s intervals)          ${GREEN}║${NC}"
+echo -e "${GREEN}║${NC}   1. Configure OpenTherm gateway globally:                     ${GREEN}║${NC}"
+echo -e "${GREEN}║${NC}      service: smart_heating.set_opentherm_gateway              ${GREEN}║${NC}"
+echo -e "${GREEN}║${NC}      data: {gateway_id: climate.opentherm_gateway}             ${GREEN}║${NC}"
+echo -e "${GREEN}║${NC}   2. Open Smart Heating panel in sidebar                       ${GREEN}║${NC}"
+echo -e "${GREEN}║${NC}   3. Create area and assign devices:                           ${GREEN}║${NC}"
+echo -e "${GREEN}║${NC}      - sensor.ts0201_temperature (temp sensor)                 ${GREEN}║${NC}"
+echo -e "${GREEN}║${NC}      - climate.ts0601_trv (valve)                              ${GREEN}║${NC}"
+echo -e "${GREEN}║${NC}      - switch.living_room_pump (pump)                          ${GREEN}║${NC}"
+echo -e "${GREEN}║${NC}   4. System will auto-detect TRV capabilities                  ${GREEN}║${NC}"
+echo -e "${GREEN}║${NC}   5. Watch heating control (30s intervals)                     ${GREEN}║${NC}"
 echo -e "${GREEN}║${NC}                                                                ${GREEN}║${NC}"
 echo -e "${GREEN}║${NC} Night boost: Adds 0.5°C between 22:00-06:00                   ${GREEN}║${NC}"
 echo -e "${GREEN}╚════════════════════════════════════════════════════════════════╝${NC}"
