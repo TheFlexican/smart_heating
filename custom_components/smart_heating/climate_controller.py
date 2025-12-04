@@ -129,7 +129,8 @@ class ClimateController:
                     area_id, current_temp, target_temp
                 )
             elif should_stop:
-                await self._async_set_area_heating(area, False)
+                # Turn off heating but update target temperature to schedule value
+                await self._async_set_area_heating(area, False, target_temp)
                 area.state = "idle"  # Update area state
                 _LOGGER.debug(
                     "Area %s: Heating OFF (current: %.1f°C, target: %.1f°C)",
@@ -168,8 +169,22 @@ class ClimateController:
                     _LOGGER.debug(
                         "Set %s to %.1f°C", thermostat_id, target_temp
                     )
+                elif target_temp is not None:
+                    # Update target temperature even when not heating (for schedules)
+                    await self.hass.services.async_call(
+                        CLIMATE_DOMAIN,
+                        SERVICE_SET_TEMPERATURE,
+                        {
+                            "entity_id": thermostat_id,
+                            ATTR_TEMPERATURE: target_temp,
+                        },
+                        blocking=False,
+                    )
+                    _LOGGER.debug(
+                        "Updated %s target to %.1f°C (idle)", thermostat_id, target_temp
+                    )
                 else:
-                    # Turn off heating
+                    # Turn off heating completely (no target specified)
                     await self.hass.services.async_call(
                         CLIMATE_DOMAIN,
                         SERVICE_TURN_OFF,

@@ -141,33 +141,36 @@ const ZoneCard = ({ area, onUpdate }: ZoneCardProps) => {
     const parts = []
     
     if (device.type === 'thermostat') {
-      if (device.hvac_action) {
-        parts.push(device.hvac_action)
-      }
       if (device.current_temperature !== undefined && device.current_temperature !== null) {
         parts.push(`${device.current_temperature.toFixed(1)}°C`)
       }
-      if (device.target_temperature !== undefined && device.target_temperature !== null && device.target_temperature !== device.current_temperature) {
+      if (device.target_temperature !== undefined && device.target_temperature !== null && 
+          device.current_temperature !== undefined && device.current_temperature !== null &&
+          device.target_temperature > device.current_temperature) {
         parts.push(`→ ${device.target_temperature.toFixed(1)}°C`)
+      }
+      if (parts.length === 0 && device.state) {
+        parts.push(device.state)
       }
     } else if (device.type === 'temperature_sensor') {
       if (device.temperature !== undefined && device.temperature !== null) {
         parts.push(`${device.temperature.toFixed(1)}°C`)
+      } else if (device.state && device.state !== 'unavailable' && device.state !== 'unknown') {
+        parts.push(`${device.state}°C`)
       }
     } else if (device.type === 'valve') {
-      if (device.position !== undefined) {
+      if (device.position !== undefined && device.position !== null) {
         parts.push(`${device.position}%`)
-      }
-      if (device.state) {
-        parts.push(device.state)
+      } else if (device.state && device.state !== 'unavailable' && device.state !== 'unknown') {
+        parts.push(`${device.state}%`)
       }
     } else {
-      if (device.state) {
+      if (device.state && device.state !== 'unavailable' && device.state !== 'unknown') {
         parts.push(device.state)
       }
     }
     
-    return parts.length > 0 ? parts.join(' · ') : device.type.replace(/_/g, ' ')
+    return parts.length > 0 ? parts.join(' · ') : 'unavailable'
   }
 
   return (

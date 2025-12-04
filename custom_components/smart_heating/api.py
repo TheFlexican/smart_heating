@@ -618,7 +618,7 @@ class SmartHeatingAPIView(HomeAssistantView):
         Args:
             request: Request object
             area_id: Area identifier
-            data: Schedule data (time, temperature, days)
+            data: Schedule data (day, start_time, end_time, temperature)
             
         Returns:
             JSON response
@@ -626,13 +626,11 @@ class SmartHeatingAPIView(HomeAssistantView):
         import uuid
         
         schedule_id = data.get("id") or str(uuid.uuid4())
-        time = data.get("time")
         temperature = data.get("temperature")
-        days = data.get("days")
         
-        if not time or temperature is None:
+        if temperature is None:
             return web.json_response(
-                {"error": "time and temperature are required"}, status=400
+                {"error": "temperature is required"}, status=400
             )
         
         try:
@@ -650,9 +648,21 @@ class SmartHeatingAPIView(HomeAssistantView):
                         {"error": f"Area {area_id} not found"}, status=404
                     )
             
-            schedule = self.area_manager.add_schedule_to_area(
-                area_id, schedule_id, time, temperature, days
+            # Create schedule from frontend data
+            from .area_manager import Schedule
+            schedule = Schedule(
+                schedule_id=schedule_id,
+                time=data.get("time"),
+                temperature=temperature,
+                days=data.get("days"),
+                enabled=data.get("enabled", True),
+                day=data.get("day"),
+                start_time=data.get("start_time"),
+                end_time=data.get("end_time"),
             )
+            
+            area = self.area_manager.get_area(area_id)
+            area.add_schedule(schedule)
             await self.area_manager.async_save()
             
             return web.json_response({

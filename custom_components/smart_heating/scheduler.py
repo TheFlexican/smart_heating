@@ -98,7 +98,7 @@ class ScheduleExecutor:
             )
             
             if active_schedule:
-                schedule_key = f"{area_id}_{active_schedule['id']}"
+                schedule_key = f"{area_id}_{active_schedule.schedule_id}"
                 
                 # Only apply if this schedule hasn't been applied yet
                 # (to avoid setting temperature every minute)
@@ -133,13 +133,13 @@ class ScheduleExecutor:
         Returns:
             Active schedule entry or None
         """
-        for schedule in schedules:
-            if schedule["day"] != current_day:
+        for schedule in schedules.values():
+            if schedule.day != current_day:
                 continue
                 
             # Parse schedule times
-            start_time = time.fromisoformat(schedule["start_time"])
-            end_time = time.fromisoformat(schedule["end_time"])
+            start_time = time.fromisoformat(schedule.start_time)
+            end_time = time.fromisoformat(schedule.end_time)
             
             # Check if current time is within schedule window
             # Handle schedules that cross midnight
@@ -154,20 +154,20 @@ class ScheduleExecutor:
                     
         return None
 
-    async def _apply_schedule(self, area, schedule: dict) -> None:
+    async def _apply_schedule(self, area, schedule) -> None:
         """Apply a schedule's temperature to a area.
         
         Args:
             area: Zone object
-            schedule: Schedule entry dict
+            schedule: Schedule object
         """
-        target_temp = schedule["temperature"]
+        target_temp = schedule.temperature
         
         _LOGGER.info(
             "Applying schedule to area %s: %s-%s @ %s°C",
             area.name,
-            schedule["start_time"],
-            schedule["end_time"],
+            schedule.start_time,
+            schedule.end_time,
             target_temp,
         )
         

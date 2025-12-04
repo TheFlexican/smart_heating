@@ -239,20 +239,21 @@ Add a temperature schedule to an area.
 
 **Parameters:**
 - `area_id` (required): Area identifier
-- `schedule_id` (required): Unique schedule identifier
-- `time` (required): Time in HH:MM format
+- `schedule_id` (optional): Unique schedule identifier (auto-generated if not provided)
+- `day` (required): Day name (Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday)
+- `start_time` (required): Start time in HH:MM format (24-hour)
+- `end_time` (required): End time in HH:MM format (24-hour)
 - `temperature` (required): Target temperature in °C
-- `days` (optional): Days of week (mon, tue, wed, thu, fri, sat, sun)
 
 **Example:**
 ```yaml
 service: smart_heating.add_schedule
 data:
   area_id: "living_room"
-  schedule_id: "morning_warmup"
-  time: "07:00"
+  day: "Monday"
+  start_time: "07:00"
+  end_time: "22:00"
   temperature: 21.5
-  days: ["mon", "tue", "wed", "thu", "fri"]
 ```
 
 #### `smart_heating.remove_schedule`
@@ -363,7 +364,36 @@ entities:
     type: custom:simple-thermostat
 ```
 
-## 🔧 Development
+## 🏗️ Architecture
+
+### Backend Components
+
+- **Area Manager** - Manages heating areas, devices, and schedules
+- **Climate Controller** - Controls thermostats based on temperature and schedules (updates every 30 seconds)
+- **Schedule Executor** - Applies time-based temperature schedules (checks every minute)
+- **Coordinator** - Fetches device states from Home Assistant (30-second interval)
+- **History Tracker** - Records temperature data for visualization (5-minute intervals)
+- **REST API** - HTTP endpoints for frontend and external integrations
+- **WebSocket** - Real-time updates for frontend
+
+### Frontend (React + TypeScript + MUI)
+
+- **ZoneCard** - Area overview with device status and temperature control
+- **AreaDetail** - Detailed area view with tabs for overview, schedules, and history
+- **ScheduleManager** - Create and manage time-based temperature profiles
+- **TemperatureChart** - Interactive temperature history visualization
+- **DeviceList** - Drag-and-drop device assignment
+
+### Device Control Flow
+
+1. **Temperature Monitoring**: Coordinator fetches sensor data → Climate Controller calculates average per area
+2. **Heating Decision**: Climate Controller compares current vs target (with hysteresis) → Sends commands to thermostats
+3. **Schedule Application**: Schedule Executor checks active schedules → Updates area target temperature
+4. **Thermostat Control**: Climate Controller sends `climate.set_temperature` to TRVs
+5. **TRV Response**: Physical TRV adjusts valve position → Reports back via MQTT
+6. **Display Update**: Coordinator fetches updated states → WebSocket pushes to frontend
+
+**Note**: With mock devices, the valve position doesn't respond to commands since there's no physical hardware. Real TRVs would automatically adjust valve position based on temperature commands.
 
 ### Debug Logging
 
@@ -411,13 +441,24 @@ Current version: **0.1.0**
 ### Changelog
 
 #### v0.1.0 (2025-12-04)
-- ✨ Area management system
-- ✨ Climate entities per area
-- ✨ Switch entities for area control
-- ✨ Extensive service calls
-- ✨ Zigbee2MQTT device support
-- ✨ Persistent storage of configuration
+- ✨ Area management system with Home Assistant areas integration
+- ✨ Climate entities per area with full thermostat control
+- ✨ Switch entities for area enable/disable
+- ✨ Modern React-based web interface with drag-and-drop
+- ✨ Schedule management (time-based temperature profiles)
+- ✨ Temperature history tracking with interactive charts
+- ✨ Real-time device status display in area cards
+- ✨ Fahrenheit to Celsius temperature conversion
+- ✨ Climate controller with hysteresis control
+- ✨ Schedule executor for automatic temperature changes
+- ✨ WebSocket support for real-time updates
+- ✨ REST API for full programmatic control
+- ✨ Zigbee2MQTT device support (thermostats, sensors, valves)
+- 💾 Persistent storage of configuration and history
 - 🔧 MQTT dependency added
+- 🐛 Fixed schedule format compatibility between frontend and backend
+- 🐛 Fixed device status display (shows actual temperatures instead of type names)
+- 🐛 Fixed thermostat target sync when area is idle
 
 #### v0.0.1 (Initial)
 - 🎉 Basic integration setup

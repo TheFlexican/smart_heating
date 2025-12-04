@@ -37,20 +37,47 @@ class Schedule:
         temperature: float,
         days: list[str] | None = None,
         enabled: bool = True,
+        day: str | None = None,
+        start_time: str | None = None,
+        end_time: str | None = None,
     ) -> None:
         """Initialize a schedule.
         
         Args:
             schedule_id: Unique identifier
-            time: Time in HH:MM format
+            time: Time in HH:MM format (legacy)
             temperature: Target temperature
-            days: Days of week (mon, tue, etc.) or None for all days
+            days: Days of week (mon, tue, etc.) or None for all days (legacy)
             enabled: Whether schedule is active
+            day: Day name (Monday, Tuesday, etc.) - new format
+            start_time: Start time in HH:MM format - new format
+            end_time: End time in HH:MM format - new format
         """
         self.schedule_id = schedule_id
-        self.time = time
+        # Support both old and new formats
+        self.time = start_time or time
+        self.start_time = start_time or time
+        self.end_time = end_time or "23:59"  # Default end time
         self.temperature = temperature
-        self.days = days or ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+        
+        # Convert between day formats
+        day_map = {
+            "Monday": "mon", "Tuesday": "tue", "Wednesday": "wed",
+            "Thursday": "thu", "Friday": "fri", "Saturday": "sat", "Sunday": "sun"
+        }
+        reverse_day_map = {v: k for k, v in day_map.items()}
+        
+        if day:
+            self.day = day
+            self.days = [day_map.get(day, "mon")]
+        elif days:
+            self.days = days
+            # Use first day for display
+            self.day = reverse_day_map.get(days[0], "Monday") if days else "Monday"
+        else:
+            self.days = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+            self.day = "Monday"
+        
         self.enabled = enabled
 
     def is_active(self, current_time: datetime) -> bool:
@@ -82,9 +109,10 @@ class Schedule:
         """Convert to dictionary."""
         return {
             "id": self.schedule_id,
-            "time": self.time,
+            "day": self.day,
+            "start_time": self.start_time,
+            "end_time": self.end_time,
             "temperature": self.temperature,
-            "days": self.days,
             "enabled": self.enabled,
         }
     
@@ -93,10 +121,13 @@ class Schedule:
         """Create from dictionary."""
         return cls(
             schedule_id=data["id"],
-            time=data["time"],
+            time=data.get("time"),
             temperature=data["temperature"],
             days=data.get("days"),
             enabled=data.get("enabled", True),
+            day=data.get("day"),
+            start_time=data.get("start_time"),
+            end_time=data.get("end_time"),
         )
 
 
