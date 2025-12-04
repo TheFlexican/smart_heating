@@ -23,10 +23,67 @@ A Home Assistant custom integration for managing multi-area heating systems with
 
 ## 📋 Supported Device Types
 
-- **Thermostat** - Zigbee thermostats for temperature control
-- **Temperature Sensor** - Temperature sensors for area monitoring
-- **OpenTherm Gateway** - Zigbee-to-OpenTherm gateways for boiler control
-- **Valve** - Smart radiator valves/thermostatic radiator valves (TRVs)
+### Per-Area Devices
+- **Thermostat** - Room thermostats for direct temperature control
+- **Temperature Sensor** - External temperature measurement for area monitoring
+- **Valve/TRV** - Smart radiator valves with position or temperature control
+  - Direct position control (`number.*` entities): 0-100% valve opening
+  - Temperature mode (`climate.*` TRVs): Uses high/low temp method with external sensor
+- **Switch** - Circulation pumps, relays, or zone valves
+  - Automatically turns ON when area needs heating
+  - Automatically turns OFF when area is idle
+
+### Global Devices
+- **OpenTherm Gateway** - Single gateway for boiler control (shared across all areas)
+  - Aggregates heating demands from all areas
+  - Controls boiler on/off based on any area needing heat
+  - Sets optimal boiler temperature (highest requested + 20°C overhead)
+
+## 🏗️ Heating Architecture
+
+Smart Heating uses an intelligent multi-device control strategy:
+
+### Device Assignment by Area
+Each area can contain multiple device types that work together:
+
+```
+Living Room Area:
+├── climate.living_room_thermostat (optional - direct control)
+├── sensor.living_room_temperature (required - for monitoring)
+├── climate.living_room_trv_1 (valve with temp control)
+├── climate.living_room_trv_2 (valve with temp control)
+└── switch.living_room_pump (floor heating pump)
+
+Bedroom Area:
+├── sensor.bedroom_temperature (required)
+├── number.bedroom_valve (valve with position control)
+└── switch.bedroom_pump
+
+Global Configuration:
+└── climate.opentherm_gateway (boiler control - shared)
+```
+
+### Heating Control Flow
+
+1. **Temperature Monitoring**: External sensors measure area temperature
+2. **Heating Decision**: Compare current vs target (with hysteresis)
+3. **Per-Area Actions** (when heating needed):
+   - **Thermostats**: Set to target temperature
+   - **Switches**: Turn ON (pumps, relays)
+   - **Valves (position control)**: Open to 100%
+   - **Valves (temp mode)**: Set to heating temperature (default 25°C)
+4. **Global Boiler Control**:
+   - If ANY area needs heating → Boiler ON
+   - Set boiler to: `max(all_area_targets) + 20°C`
+   - If NO areas need heating → Boiler OFF
+
+### Why This Design?
+
+- **Shared Boiler**: One OpenTherm gateway serves all areas efficiently
+- **Independent Zones**: Each area controls its own circulation and valves
+- **Smart TRV Fallback**: Works with TRVs that don't support direct position control
+- **External Sensors**: Accurate temperature measurement independent of TRV location
+- **Energy Efficient**: Boiler only runs when needed, optimal temperature setting
 
 ## 🚀 Installation
 
@@ -310,6 +367,38 @@ data:
   hysteresis: 0.5  # Heating turns on at target-0.5°C
 ```
 
+#### `smart_heating.set_opentherm_gateway`
+Configure the global OpenTherm gateway for boiler control.
+
+**Parameters:**
+- `gateway_id` (optional): Entity ID of the OpenTherm gateway climate entity
+- `enabled` (optional): Enable/disable OpenTherm control (default: true)
+
+**Example:**
+```yaml
+service: smart_heating.set_opentherm_gateway
+data:
+  gateway_id: "climate.opentherm_gateway"
+  enabled: true
+```
+
+#### `smart_heating.set_trv_temperatures`
+Configure global temperature limits for TRVs without position control.
+
+**Parameters:**
+- `heating_temp` (optional): Temperature to set when heating (default: 25.0°C)
+- `idle_temp` (optional): Temperature to set when idle (default: 10.0°C)
+
+**Example:**
+```yaml
+service: smart_heating.set_trv_temperatures
+data:
+  heating_temp: 25.0  # Set TRV high when area needs heat
+  idle_temp: 10.0     # Set TRV low when area is idle
+```
+
+**Note**: This is for TRVs that only support temperature control (climate.* entities) and require an external temperature sensor. TRVs with direct position control (number.* entities) don't need this configuration.
+
 ## 📖 Usage
 
 ### Basic Setup Workflow
@@ -323,26 +412,56 @@ data:
 ### Example Configuration
 
 ```yaml
-# Automation to add devices to area
+# Complete setup example for floor heating with boiler
 automation:
-  - alias: "Setup Living Room Devices"
+  - alias: "Configure Smart Heating System"
     trigger:
       - platform: homeassistant
         event: start
     action:
-      # Add thermostat
-      - service: smart_heating.add_device_to_area
+      # Configure global OpenTherm gateway
+      - service: smart_heating.set_opentherm_gateway
         data:
-          area_id: "living_room"
-          device_id: "0x00158d0001a2b3c4"
-          device_type: "thermostat"
+          gateway_id: "climate.opentherm_gateway"
+          enabled: true
       
-      # Add temperature sensor
+      # Configure TRV temperature limits (for TRVs without position control)
+      - service: smart_heating.set_trv_temperatures
+        data:
+          heating_temp: 25.0
+          idle_temp: 10.0
+      
+      # Setup Living Room area
       - service: smart_heating.add_device_to_area
         data:
           area_id: "living_room"
-          device_id: "0x00158d0001a2b3c5"
+          device_id: "sensor.living_room_temperature"
           device_type: "temperature_sensor"
+      
+      - service: smart_heating.add_device_to_area
+        data:
+          area_id: "living_room"
+          device_id: "switch.living_room_pump"
+          device_type: "switch"
+      
+      - service: smart_heating.add_device_to_area
+        data:
+          area_id: "living_room"
+          device_id: "climate.living_room_trv_1"
+          device_type: "valve"
+      
+      # Setup Bedroom area
+      - service: smart_heating.add_device_to_area
+        data:
+          area_id: "bedroom"
+          device_id: "sensor.bedroom_temperature"
+          device_type: "temperature_sensor"
+      
+      - service: smart_heating.add_device_to_area
+        data:
+          area_id: "bedroom"
+          device_id: "number.bedroom_valve_position"
+          device_type: "valve"
 ```
 
 ### Dashboard Integration
