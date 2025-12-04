@@ -55,3 +55,11 @@ custom_components/zone_heater_manager/frontend/node_modules/
 custom_components/zone_heater_manager/frontend/dist/
 custom_components/zone_heater_manager/frontend/.vite/
 custom_components/zone_heater_manager/frontend/*.local
+
+# DevContainer
+.devcontainer/.storage/
+.devcontainer/home-assistant_v2.db*
+.devcontainer/.cloud/
+.devcontainer/.google.token
+.devcontainer/deps/
+.devcontainer
