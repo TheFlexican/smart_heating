@@ -33,6 +33,8 @@ export interface Zone {
   schedules?: ScheduleEntry[]
   night_boost_enabled?: boolean
   night_boost_offset?: number
+  night_boost_start_time?: string
+  night_boost_end_time?: string
 }
 
 // Alias Area to Zone for compatibility

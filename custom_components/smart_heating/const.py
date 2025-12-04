@@ -80,4 +80,10 @@ ATTR_TIME: Final = "time"
 ATTR_DAYS: Final = "days"
 ATTR_NIGHT_BOOST_ENABLED: Final = "night_boost_enabled"
 ATTR_NIGHT_BOOST_OFFSET: Final = "night_boost_offset"
+ATTR_NIGHT_BOOST_START_TIME: Final = "night_boost_start_time"
+ATTR_NIGHT_BOOST_END_TIME: Final = "night_boost_end_time"
 ATTR_HYSTERESIS: Final = "hysteresis"
+
+# Default night boost times
+DEFAULT_NIGHT_BOOST_START_TIME: Final = "22:00"
+DEFAULT_NIGHT_BOOST_END_TIME: Final = "06:00"

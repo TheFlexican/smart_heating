@@ -18,6 +18,7 @@ import {
   Switch,
   Divider,
   Alert,
+  TextField,
 } from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import ThermostatIcon from '@mui/icons-material/Thermostat'
@@ -568,7 +569,7 @@ const ZoneDetail = () => {
                 Night Boost Settings
               </Typography>
               <Typography variant="body2" color="text.secondary" paragraph>
-                Night boost gradually increases temperature during night hours (22:00-06:00) to ensure comfort in the morning.
+                Night boost gradually increases temperature during configured night hours to ensure comfort in the morning.
               </Typography>
               
               <Box sx={{ mt: 3 }}>
@@ -600,6 +601,72 @@ const ZoneDetail = () => {
                       }
                     }}
                   />
+                </Box>
+
+                <Box sx={{ mt: 3 }}>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Night Boost Period
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+                    <TextField
+                      label="Start Time"
+                      type="time"
+                      value={area.night_boost_start_time ?? '22:00'}
+                      onChange={async (e) => {
+                        try {
+                          await fetch('/api/smart_heating/call_service', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              service: 'set_night_boost',
+                              area_id: area.id,
+                              night_boost_start_time: e.target.value
+                            })
+                          })
+                          loadData()
+                        } catch (error) {
+                          console.error('Failed to update night boost start time:', error)
+                        }
+                      }}
+                      disabled={!area.night_boost_enabled}
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
+                      inputProps={{
+                        step: 300, // 5 min
+                      }}
+                      sx={{ flex: 1 }}
+                    />
+                    <TextField
+                      label="End Time"
+                      type="time"
+                      value={area.night_boost_end_time ?? '06:00'}
+                      onChange={async (e) => {
+                        try {
+                          await fetch('/api/smart_heating/call_service', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              service: 'set_night_boost',
+                              area_id: area.id,
+                              night_boost_end_time: e.target.value
+                            })
+                          })
+                          loadData()
+                        } catch (error) {
+                          console.error('Failed to update night boost end time:', error)
+                        }
+                      }}
+                      disabled={!area.night_boost_enabled}
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
+                      inputProps={{
+                        step: 300, // 5 min
+                      }}
+                      sx={{ flex: 1 }}
+                    />
+                  </Box>
                 </Box>
 
                 <Box sx={{ mt: 3 }}>

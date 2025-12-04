@@ -215,6 +215,8 @@ class SmartHeatingAPIView(HomeAssistantView):
                     "schedules": [s.to_dict() for s in stored_area.schedules.values()],
                     "night_boost_enabled": stored_area.night_boost_enabled,
                     "night_boost_offset": stored_area.night_boost_offset,
+                    "night_boost_start_time": stored_area.night_boost_start_time,
+                    "night_boost_end_time": stored_area.night_boost_end_time,
                 })
             else:
                 # Default data for HA area without stored settings

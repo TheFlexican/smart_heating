@@ -22,6 +22,8 @@ from .const import (
     ATTR_DAYS,
     ATTR_NIGHT_BOOST_ENABLED,
     ATTR_NIGHT_BOOST_OFFSET,
+    ATTR_NIGHT_BOOST_START_TIME,
+    ATTR_NIGHT_BOOST_END_TIME,
     ATTR_HYSTERESIS,
     ATTR_OPENTHERM_GATEWAY,
     ATTR_OPENTHERM_ENABLED,
@@ -360,9 +362,11 @@ async def async_setup_services(hass: HomeAssistant, coordinator: SmartHeatingCoo
         area_id = call.data[ATTR_AREA_ID]
         enabled = call.data.get(ATTR_NIGHT_BOOST_ENABLED)
         offset = call.data.get(ATTR_NIGHT_BOOST_OFFSET)
+        start_time = call.data.get(ATTR_NIGHT_BOOST_START_TIME)
+        end_time = call.data.get(ATTR_NIGHT_BOOST_END_TIME)
         
-        _LOGGER.debug("Setting night boost for area %s: enabled=%s, offset=%s", 
-                     area_id, enabled, offset)
+        _LOGGER.debug("Setting night boost for area %s: enabled=%s, offset=%s, start=%s, end=%s", 
+                     area_id, enabled, offset, start_time, end_time)
         
         try:
             area = area_manager.get_area(area_id)
@@ -373,6 +377,10 @@ async def async_setup_services(hass: HomeAssistant, coordinator: SmartHeatingCoo
                 area.night_boost_enabled = enabled
             if offset is not None:
                 area.night_boost_offset = offset
+            if start_time is not None:
+                area.night_boost_start_time = start_time
+            if end_time is not None:
+                area.night_boost_end_time = end_time
             
             await area_manager.async_save()
             await coordinator.async_request_refresh()

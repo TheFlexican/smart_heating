@@ -21,6 +21,10 @@ from .const import (
     ATTR_HYSTERESIS,
     ATTR_NIGHT_BOOST_ENABLED,
     ATTR_NIGHT_BOOST_OFFSET,
+    ATTR_NIGHT_BOOST_START_TIME,
+    ATTR_NIGHT_BOOST_END_TIME,
+    DEFAULT_NIGHT_BOOST_START_TIME,
+    DEFAULT_NIGHT_BOOST_END_TIME,
     DEVICE_TYPE_OPENTHERM_GATEWAY,
     DEVICE_TYPE_TEMPERATURE_SENSOR,
     DEVICE_TYPE_THERMOSTAT,
@@ -170,6 +174,8 @@ class Area:
         self._current_temperature: float | None = None
         self.night_boost_enabled: bool = True
         self.night_boost_offset: float = 0.5  # Add 0.5°C during night hours
+        self.night_boost_start_time: str = DEFAULT_NIGHT_BOOST_START_TIME
+        self.night_boost_end_time: str = DEFAULT_NIGHT_BOOST_END_TIME
 
     def add_device(self, device_id: str, device_type: str, mqtt_topic: str | None = None) -> None:
         """Add a device to the area.
@@ -317,15 +323,34 @@ class Area:
         if target is None:
             target = self.target_temperature
         
-        # Apply night boost if enabled (22:00 - 06:00)
+        # Apply night boost if enabled
         if self.night_boost_enabled:
+            # Parse start and end times
+            start_hour, start_min = map(int, self.night_boost_start_time.split(':'))
+            end_hour, end_min = map(int, self.night_boost_end_time.split(':'))
             current_hour = current_time.hour
-            if current_hour >= 22 or current_hour < 6:
+            current_min = current_time.minute
+            
+            # Check if current time is within night boost period
+            # Handle period that crosses midnight
+            start_minutes = start_hour * 60 + start_min
+            end_minutes = end_hour * 60 + end_min
+            current_minutes = current_hour * 60 + current_min
+            
+            is_active = False
+            if start_minutes <= end_minutes:
+                # Normal period (e.g., 08:00-18:00)
+                is_active = start_minutes <= current_minutes < end_minutes
+            else:
+                # Period crosses midnight (e.g., 22:00-06:00)
+                is_active = current_minutes >= start_minutes or current_minutes < end_minutes
+            
+            if is_active:
                 target += self.night_boost_offset
                 _LOGGER.debug(
-                    "Night boost active for area %s: %.1f°C + %.1f°C = %.1f°C",
-                    self.area_id, target - self.night_boost_offset, 
-                    self.night_boost_offset, target
+                    "Night boost active for area %s (%s-%s): %.1f°C + %.1f°C = %.1f°C",
+                    self.area_id, self.night_boost_start_time, self.night_boost_end_time,
+                    target - self.night_boost_offset, self.night_boost_offset, target
                 )
         
         return target
@@ -394,6 +419,8 @@ class Area:
             "schedules": [s.to_dict() for s in self.schedules.values()],
             "night_boost_enabled": self.night_boost_enabled,
             "night_boost_offset": self.night_boost_offset,
+            "night_boost_start_time": self.night_boost_start_time,
+            "night_boost_end_time": self.night_boost_end_time,
         }
 
     @classmethod
@@ -415,6 +442,8 @@ class Area:
         area.devices = data.get(ATTR_DEVICES, {})
         area.night_boost_enabled = data.get("night_boost_enabled", True)
         area.night_boost_offset = data.get("night_boost_offset", 0.5)
+        area.night_boost_start_time = data.get("night_boost_start_time", DEFAULT_NIGHT_BOOST_START_TIME)
+        area.night_boost_end_time = data.get("night_boost_end_time", DEFAULT_NIGHT_BOOST_END_TIME)
         
         # Load schedules
         for schedule_data in data.get("schedules", []):
