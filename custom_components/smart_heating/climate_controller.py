@@ -209,11 +209,9 @@ class ClimateController:
                 # Start heating event if not already active and learning engine available
                 if self.learning_engine and area_id not in self._area_heating_events:
                     outdoor_temp = await self._async_get_outdoor_temperature(area)
-                    self._area_heating_events[area_id] = await self.learning_engine.async_start_heating_event(
+                    await self.learning_engine.async_start_heating_event(
                         area_id=area_id,
                         current_temp=current_temp,
-                        target_temp=target_temp,
-                        outdoor_temp=outdoor_temp
                     )
                     _LOGGER.debug(
                         "Started learning event for area %s (outdoor: %s°C)",
@@ -231,15 +229,15 @@ class ClimateController:
             elif should_stop:
                 # End heating event if active and learning engine available
                 if self.learning_engine and area_id in self._area_heating_events:
-                    event = self._area_heating_events.pop(area_id)
+                    del self._area_heating_events[area_id]
                     await self.learning_engine.async_end_heating_event(
-                        event=event,
-                        end_temp=current_temp
+                        area_id=area_id,
+                        current_temp=current_temp,
+                        target_reached=True
                     )
                     _LOGGER.debug(
-                        "Completed learning event for area %s (%.1f°C -> %.1f°C in %d min)",
-                        area_id, event.start_temp, current_temp,
-                        int((event.end_time - event.start_time).total_seconds() / 60)
+                        "Completed learning event for area %s (reached %.1f°C)",
+                        area_id, current_temp
                     )
                 
                 # Turn off heating but update target temperature to schedule value

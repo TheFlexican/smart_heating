@@ -47,7 +47,7 @@ def websocket_subscribe_updates(
     # Get the coordinator - filter out non-entry keys
     entry_ids = [
         key for key in hass.data[DOMAIN].keys()
-        if key not in ["history", "climate_controller", "schedule_executor"]
+        if key not in ["history", "climate_controller", "schedule_executor", "learning_engine"]
     ]
     if not entry_ids:
         connection.send_error(msg["id"], "not_loaded", "Smart Heating not loaded")
@@ -87,7 +87,7 @@ def websocket_get_areas(
     # Get the coordinator - filter out non-entry keys
     entry_ids = [
         key for key in hass.data[DOMAIN].keys()
-        if key not in ["history", "climate_controller", "schedule_executor"]
+        if key not in ["history", "climate_controller", "schedule_executor", "learning_engine"]
     ]
     if not entry_ids:
         connection.send_error(msg["id"], "not_loaded", "Smart Heating not loaded")
