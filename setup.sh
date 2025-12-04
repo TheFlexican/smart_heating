@@ -43,6 +43,11 @@ if [ -d "$HA_CONFIG_DIR" ]; then
     echo -e "  ${GREEN}✓${NC} Removed $HA_CONFIG_DIR"
 fi
 
+# Also clean up any Docker volumes that might persist
+echo "  Removing Docker volumes..."
+docker volume ls -q | grep -E "(homeassistant|smart_heating)" | xargs -r docker volume rm > /dev/null 2>&1 || true
+echo -e "  ${GREEN}✓${NC} Cleaned Docker volumes"
+
 echo "  Pulling latest Docker images..."
 docker pull eclipse-mosquitto:latest > /dev/null 2>&1
 echo -e "  ${GREEN}✓${NC} Pulled mosquitto:latest"
@@ -429,6 +434,12 @@ echo ""
 
 # Step 10: Restart Home Assistant to discover devices
 echo -e "${YELLOW}[9/9]${NC} Restarting Home Assistant to discover devices..."
+
+# Clean up any existing Smart Heating config entries to allow fresh setup
+echo "  Removing old Smart Heating config entries..."
+docker exec "$HA_CONTAINER" rm -f /config/.storage/core.config_entries 2>/dev/null || true
+docker exec "$HA_CONTAINER" rm -f /config/.storage/smart_heating_* 2>/dev/null || true
+
 docker restart "$HA_CONTAINER" > /dev/null
 echo "  Waiting for restart (20 seconds)..."
 sleep 20
