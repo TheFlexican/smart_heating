@@ -8,28 +8,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Planned
-- 🎨 Web GUI for drag & drop zone management
+- 🎨 Web GUI for drag & drop area management
 - 🤖 Smart heating with AI optimization
 - 📊 Energy monitoring and statistics
 - 🔗 MQTT auto-discovery for Zigbee2MQTT devices
-- ⏱️ Time schedules per zone
 - 👥 Presence-based heating
-- 🌡️ Multi-sensor averaging per zone
+- 🌡️ Multi-sensor averaging per area
 - 🔥 Direct OpenTherm boiler control
 - 📱 Mobile app notifications
 - 🌍 Weather-based temperature optimization
+
+## [2.0.0] - 2025-12-04
+
+### 🔄 BREAKING CHANGES
+- **Complete Rename**: Integration renamed from "Zone Heater Manager" to "Smart Heating"
+  - Domain changed from `zone_heater_manager` to `smart_heating`
+  - All entities now use `smart_heating` prefix instead of `zone_heater`
+  - Panel URL changed from `/zone_heater_manager/` to `/smart_heating/`
+  - All service names changed from `zone_heater_manager.*` to `smart_heating.*`
+  
+- **Terminology Update**: Aligned with Home Assistant conventions
+  - "Zones" renamed to "Areas" throughout the codebase
+  - All service calls now use "area" instead of "zone" (e.g., `create_area`, `delete_area`)
+  - Entity IDs changed from `climate.zone_*` to `climate.smart_heating_*`
+  - API endpoints changed from `/zones` to `/areas`
+
+### ✨ Added
+- **Schedule Executor**
+  - Automatic temperature control based on time schedules
+  - Checks schedules every minute
+  - Supports day-of-week and time-based rules
+  - Handles midnight-crossing schedules correctly
+
+### 🔧 Changed
+- Updated all documentation to reflect new naming
+- Frontend dependencies updated to latest versions (React 18.3, MUI v6, Vite 6)
+- Improved coordinator lifecycle management
+- Better separation of concerns (scheduler as separate component)
+
+### 📝 Migration Guide
+If upgrading from v0.1.0 or earlier:
+1. Remove the old "Zone Heater Manager" integration
+2. Delete `.storage/zone_heater_manager` file
+3. Install "Smart Heating" v2.0.0
+4. Reconfigure all areas
+5. Update automations to use new service names (`smart_heating.*` instead of `zone_heater_manager.*`)
+6. Update entity references in dashboards (e.g., `climate.zone_living_room` → `climate.smart_heating_living_room`)
 
 ## [0.1.0] - 2025-12-04
 
 ### ✨ Added
 - **Zone Management System**
-  - Create, delete and manage heating zones
-  - Persistent storage of zone configuration
+  - Create, delete and manage heating areas
+  - Persistent storage of area configuration
   - Zone enable/disable functionality
   
 - **Multi-Platform Support**
-  - Climate entities per zone for thermostat control
-  - Switch entities for zone on/off switching
+  - Climate entities per area for thermostat control
+  - Switch entities for area on/off switching
   - Sensor entity for system status
   
 - **Zigbee2MQTT Integration**
@@ -43,7 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   - `delete_zone` - Delete zone
   - `add_device_to_zone` - Add device to zone
   - `remove_device_from_zone` - Remove device from zone
-  - `set_zone_temperature` - Set target temperature
+  - `set_area_temperature` - Set target temperature
   - `enable_zone` - Enable zone
   - `disable_zone` - Disable zone
   - `refresh` - Manually refresh data
@@ -71,7 +107,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### 📚 Technical
 - **New Files**:
-  - `zone_manager.py` - Core zone management logic
+  - `area_manager.py` - Core area management logic
   - `climate.py` - Climate platform implementation
   - `switch.py` - Switch platform implementation
   
@@ -144,6 +180,6 @@ We use [SemVer](https://semver.org/) for version numbering:
 
 ## Links
 
-- [Repository](https://github.com/TheFlexican/zone_heater_manager)
-- [Issues](https://github.com/TheFlexican/zone_heater_manager/issues)
-- [Pull Requests](https://github.com/TheFlexican/zone_heater_manager/pulls)
+- [Repository](https://github.com/TheFlexican/smart_heating)
+- [Issues](https://github.com/TheFlexican/smart_heating/issues)
+- [Pull Requests](https://github.com/TheFlexican/smart_heating/pulls)

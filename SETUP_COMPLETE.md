@@ -58,16 +58,16 @@ On first run:
 
 1. Go to **Settings** → **Devices & Services**
 2. Click **+ ADD INTEGRATION**
-3. Search for **"Zone Heater Manager"**
+3. Search for **"Smart Heating"**
 4. Click to add (no configuration needed)
-5. Check the sidebar for the "Zone Heater Manager" panel (radiator icon)
+5. Check the sidebar for the "Smart Heating" panel (radiator icon)
 
 ### 5. Build the Frontend
 
 In the DevContainer terminal:
 
 ```bash
-cd custom_components/zone_heater_manager/frontend
+cd custom_components/smart_heating/frontend
 npm install
 npm run build
 ```
@@ -81,7 +81,7 @@ Then restart Home Assistant to load the built frontend.
 
 ### Making Changes
 
-1. **Edit Python files** in `custom_components/zone_heater_manager/`
+1. **Edit Python files** in `custom_components/smart_heating/`
 2. **Restart Home Assistant**:
    - Press `Shift+F5` in debug mode
    - Or run task: "Restart Home Assistant"
@@ -91,7 +91,7 @@ Then restart Home Assistant to load the built frontend.
 
 ```bash
 # Development with hot reload
-cd custom_components/zone_heater_manager/frontend
+cd custom_components/smart_heating/frontend
 npm run dev
 # Access at http://localhost:5173
 
@@ -109,7 +109,7 @@ container logs
 tail -f /config/home-assistant.log
 
 # Filter for your integration
-grep zone_heater_manager /config/home-assistant.log
+grep smart_heating /config/home-assistant.log
 ```
 
 ### Debugging Tips
@@ -159,7 +159,7 @@ container logs
 
 ### Frontend not loading
 ```bash
-cd custom_components/zone_heater_manager/frontend
+cd custom_components/smart_heating/frontend
 npm install
 npm run build
 # Then restart HA

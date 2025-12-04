@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Build script for Zone Heater Manager frontend
+# Build script for Smart Heating frontend
 
 set -e
 
@@ -10,12 +10,12 @@ BLUE='\033[0;34m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}Building Zone Heater Manager Frontend${NC}"
+echo -e "${BLUE}Building Smart Heating Frontend${NC}"
 echo ""
 
 # Get script directory
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-FRONTEND_DIR="${SCRIPT_DIR}/custom_components/zone_heater_manager/frontend"
+FRONTEND_DIR="${SCRIPT_DIR}/custom_components/smart_heating/frontend"
 
 # Check if Node.js is installed
 if ! command -v node &> /dev/null; then
@@ -57,4 +57,4 @@ echo -e "${BLUE}The frontend is ready to use.${NC}"
 echo "Restart Home Assistant to load the new build."
 echo ""
 echo "Access the frontend at:"
-echo "  http://your-ha-instance:8123/zone_heater_manager/"
+echo "  http://your-ha-instance:8123/smart_heating/"

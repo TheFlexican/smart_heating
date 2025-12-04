@@ -1,6 +1,6 @@
 # Architecture Overview
 
-Zone Heater Manager is a Home Assistant integration with a modern web-based interface for managing multi-zone heating systems.
+Smart Heating is a Home Assistant integration with a modern web-based interface for managing multi-area heating systems.
 
 ## High-Level Architecture
 
@@ -8,7 +8,7 @@ Zone Heater Manager is a Home Assistant integration with a modern web-based inte
 ┌─────────────────────────────────────────────────────────────┐
 │                     Home Assistant                           │
 │  ┌────────────────────────────────────────────────────────┐ │
-│  │         Zone Heater Manager Integration               │ │
+│  │         Smart Heating Integration               │ │
 │  │                                                         │ │
 │  │  ┌──────────────┐  ┌──────────────┐  ┌─────────────┐ │ │
 │  │  │ Zone Manager │  │ Coordinator  │  │  Platforms  │ │ │
@@ -18,14 +18,14 @@ Zone Heater Manager is a Home Assistant integration with a modern web-based inte
 │  │  ┌──────┴──────────────────┴──────────────────────┐   │ │
 │  │  │                                                  │   │ │
 │  │  │        REST API + WebSocket API                │   │ │
-│  │  │   (/api/zone_heater_manager/*)                 │   │ │
+│  │  │   (/api/smart_heating/*)                 │   │ │
 │  │  │                                                  │   │ │
 │  │  └───────────────────────┬──────────────────────────┘   │ │
 │  │                          │                              │ │
 │  │  ┌───────────────────────┴──────────────────────────┐  │ │
 │  │  │                                                    │  │ │
 │  │  │         Static File Server                        │  │ │
-│  │  │    (/zone_heater_manager/* → frontend/dist)      │  │ │
+│  │  │    (/smart_heating/* → frontend/dist)      │  │ │
 │  │  │                                                    │  │ │
 │  │  └───────────────────────┬──────────────────────────┘  │ │
 │  └──────────────────────────┼─────────────────────────────┘ │
@@ -56,13 +56,13 @@ Zone Heater Manager is a Home Assistant integration with a modern web-based inte
 
 ## Backend Components
 
-### 1. Zone Manager (`zone_manager.py`)
+### 1. Zone Manager (`area_manager.py`)
 
-Core business logic for managing heating zones.
+Core business logic for managing heating areas.
 
 **Responsibilities:**
 - Zone CRUD operations
-- Device assignment to zones
+- Device assignment to areas
 - Temperature control
 - Zone enable/disable
 - Persistent storage (via HA storage API)
@@ -81,7 +81,7 @@ Device:
   - id: str
   - name: str
   - type: str (thermostat/sensor/gateway/valve)
-  - zone_id: Optional[str]
+  - area_id: Optional[str]
 ```
 
 ### 2. Coordinator (`coordinator.py`)
@@ -96,7 +96,7 @@ Data update coordinator using Home Assistant's `DataUpdateCoordinator`.
 ### 3. Platforms
 
 #### Climate Platform (`climate.py`)
-Creates one `climate.zone_<name>` entity per zone.
+Creates one `climate.area_<name>` entity per area.
 
 **Features:**
 - HVAC modes: HEAT, OFF
@@ -105,19 +105,19 @@ Creates one `climate.zone_<name>` entity per zone.
 - Zone attributes (devices, enabled)
 
 #### Switch Platform (`switch.py`)
-Creates one `switch.zone_<name>_control` entity per zone.
+Creates one `switch.area_<name>_control` entity per area.
 
 **Features:**
 - Simple on/off control
-- Tied to zone.enabled property
+- Tied to area.enabled property
 
 #### Sensor Platform (`sensor.py`)
-Creates `sensor.zone_heater_manager_status` entity.
+Creates `sensor.smart_heating_status` entity.
 
 **Features:**
 - Overall system status
 - Zone count
-- Active zones count
+- Active areas count
 
 ### 4. REST API (`api.py`)
 
@@ -127,39 +127,39 @@ HTTP API using `HomeAssistantView` for frontend communication.
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/zone_heater_manager/zones` | Get all zones |
-| GET | `/api/zone_heater_manager/zones/{id}` | Get specific zone |
-| POST | `/api/zone_heater_manager/zones` | Create zone |
-| DELETE | `/api/zone_heater_manager/zones/{id}` | Delete zone |
-| POST | `/api/zone_heater_manager/zones/{id}/devices` | Add device to zone |
-| DELETE | `/api/zone_heater_manager/zones/{id}/devices/{device_id}` | Remove device |
-| POST | `/api/zone_heater_manager/zones/{id}/temperature` | Set temperature |
-| POST | `/api/zone_heater_manager/zones/{id}/enable` | Enable zone |
-| POST | `/api/zone_heater_manager/zones/{id}/disable` | Disable zone |
-| GET | `/api/zone_heater_manager/devices` | Get available devices |
-| GET | `/api/zone_heater_manager/status` | Get system status |
+| GET | `/api/smart_heating/zones` | Get all areas |
+| GET | `/api/smart_heating/zones/{id}` | Get specific zone |
+| POST | `/api/smart_heating/zones` | Create zone |
+| DELETE | `/api/smart_heating/zones/{id}` | Delete zone |
+| POST | `/api/smart_heating/zones/{id}/devices` | Add device to zone |
+| DELETE | `/api/smart_heating/zones/{id}/devices/{device_id}` | Remove device |
+| POST | `/api/smart_heating/zones/{id}/temperature` | Set temperature |
+| POST | `/api/smart_heating/zones/{id}/enable` | Enable zone |
+| POST | `/api/smart_heating/zones/{id}/disable` | Disable zone |
+| GET | `/api/smart_heating/devices` | Get available devices |
+| GET | `/api/smart_heating/status` | Get system status |
 
 ### 5. WebSocket API (`websocket.py`)
 
 Real-time communication using HA WebSocket API.
 
 **Commands:**
-- `zone_heater_manager/subscribe_updates` - Subscribe to zone updates
-- `zone_heater_manager/get_zones` - Get zones via WebSocket
-- `zone_heater_manager/create_zone` - Create zone via WebSocket
+- `smart_heating/subscribe_updates` - Subscribe to zone updates
+- `smart_heating/get_zones` - Get areas via WebSocket
+- `smart_heating/create_zone` - Create zone via WebSocket
 
 ### 6. Service Calls
 
 Eight service calls for automation/script integration:
 
-1. `zone_heater_manager.create_zone`
-2. `zone_heater_manager.delete_zone`
-3. `zone_heater_manager.add_device_to_zone`
-4. `zone_heater_manager.remove_device_from_zone`
-5. `zone_heater_manager.set_zone_temperature`
-6. `zone_heater_manager.enable_zone`
-7. `zone_heater_manager.disable_zone`
-8. `zone_heater_manager.refresh`
+1. `smart_heating.create_zone`
+2. `smart_heating.delete_zone`
+3. `smart_heating.add_device_to_zone`
+4. `smart_heating.remove_device_from_zone`
+5. `smart_heating.set_area_temperature`
+6. `smart_heating.enable_zone`
+7. `smart_heating.disable_zone`
+8. `smart_heating.refresh`
 
 ## Frontend Components
 
@@ -201,13 +201,13 @@ src/
 
 **DevicePanel Component:**
 - Lists available Zigbee2MQTT devices
-- Filters out devices already in zones
+- Filters out devices already in areas
 - Drag source for device assignment (planned)
 - Device type icons
 
 **CreateZoneDialog Component:**
 - Zone name input
-- Auto-generated zone_id
+- Auto-generated area_id
 - Initial temperature setting
 - Form validation
 
@@ -216,8 +216,8 @@ src/
 All API calls go through `src/api.ts`:
 
 ```typescript
-// Get zones
-const zones = await getZones()
+// Get areas
+const areas = await getZones()
 
 // Create zone
 await createZone('living_room', 'Living Room', 21.0)
@@ -246,11 +246,11 @@ User clicks "Create Zone"
     ↓
 CreateZoneDialog collects input
     ↓
-api.createZone() calls POST /api/zone_heater_manager/zones
+api.createZone() calls POST /api/smart_heating/zones
     ↓
 ZoneHeaterAPIView.post() in api.py
     ↓
-zone_manager.async_create_zone()
+area_manager.async_create_zone()
     ↓
 Zone saved to storage
     ↓
@@ -272,7 +272,7 @@ api.setZoneTemperature() calls POST /api/.../temperature
     ↓
 ZoneHeaterAPIView.post() routes to set_temperature()
     ↓
-zone_manager.async_set_zone_temperature()
+area_manager.async_set_area_temperature()
     ↓
 Zone updated in storage
     ↓
@@ -287,7 +287,7 @@ Physical devices adjust
 
 Zones and configuration are stored using Home Assistant's storage API:
 
-**File:** `.storage/zone_heater_manager_zones`
+**File:** `.storage/smart_heating_zones`
 
 **Format:**
 ```json
@@ -353,7 +353,7 @@ Example:
 ### Adding New Device Types
 
 1. Add device type constant in `const.py`
-2. Update device handling in `zone_manager.py`
+2. Update device handling in `area_manager.py`
 3. Add icon in `DevicePanel.tsx`
 
 ### Adding New Platforms

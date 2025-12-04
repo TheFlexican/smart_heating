@@ -1,31 +1,31 @@
 #!/bin/bash
-# Deploy script voor Zone Heater Manager naar HAOS
+# Deploy script for Smart Heating to HAOS
 
-# Configuratie
-HA_HOST="homeassistant.local"  # Pas aan naar jouw HA IP/hostname
-SOURCE_DIR="/Users/ralf/git/Tempie/custom_components/zone_heater_manager"
-DEST_DIR="/Volumes/config/custom_components/zone_heater_manager"
+# Configuration
+HA_HOST="homeassistant.local"  # Adjust to your HA IP/hostname
+SOURCE_DIR="/Users/ralf/git/zone_heater_manager/custom_components/smart_heating"
+DEST_DIR="/Volumes/config/custom_components/smart_heating"
 
-echo "🚀 Deploying Zone Heater Manager to Home Assistant OS..."
+echo "🚀 Deploying Smart Heating to Home Assistant OS..."
 
-# Check of Samba share gemount is
+# Check if Samba share is mounted
 if [ ! -d "/Volumes/config" ]; then
     echo "📁 Mounting Samba share..."
     open "smb://${HA_HOST}"
     sleep 3
 fi
 
-# Check nogmaals
+# Check again
 if [ ! -d "/Volumes/config" ]; then
     echo "❌ Error: Could not mount Samba share"
     echo "   Make sure Samba add-on is installed and running"
     exit 1
 fi
 
-# Maak custom_components directory aan als die niet bestaat
+# Create custom_components directory if it doesn't exist
 mkdir -p /Volumes/config/custom_components
 
-# Kopieer bestanden
+# Copy files
 echo "📦 Copying files..."
 cp -r "${SOURCE_DIR}" "${DEST_DIR}"
 
@@ -35,7 +35,7 @@ if [ $? -eq 0 ]; then
     echo "Next steps:"
     echo "1. Go to Settings → System → Restart → Quick Reload"
     echo "2. Go to Settings → Devices & Services → Add Integration"
-    echo "3. Search for 'Zone Heater Manager'"
+    echo "3. Search for 'Smart Heating'"
     echo ""
     echo "Or restart HA completely for clean start"
 else

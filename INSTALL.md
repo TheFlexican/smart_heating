@@ -1,6 +1,6 @@
-# Installation Guide - Zone Heater Manager
+# Installation Guide - Smart Heating
 
-Complete installation guide for the Zone Heater Manager Home Assistant integration.
+Complete installation guide for the Smart Heating Home Assistant integration.
 
 ## Prerequisites
 
@@ -23,15 +23,15 @@ ssh -p 22222 root@homeassistant.local
 cd /config/custom_components
 
 # Clone the repository
-git clone https://github.com/TheFlexican/zone_heater_manager.git temp
-mv temp/custom_components/zone_heater_manager .
+git clone https://github.com/TheFlexican/smart_heating.git temp
+mv temp/custom_components/smart_heating .
 rm -rf temp
 ```
 
 **Option B: Manual Download**
 
 1. Download the latest release from GitHub
-2. Extract the `custom_components/zone_heater_manager` folder
+2. Extract the `custom_components/smart_heating` folder
 3. Copy it to your Home Assistant `config/custom_components/` directory
 
 ### Step 2: Build the Frontend
@@ -40,7 +40,7 @@ The React frontend needs to be built before it can be used:
 
 ```bash
 # Navigate to the integration directory
-cd /config/custom_components/zone_heater_manager
+cd /config/custom_components/smart_heating
 
 # Run the build script
 ./build_frontend.sh
@@ -49,7 +49,7 @@ cd /config/custom_components/zone_heater_manager
 Or manually:
 
 ```bash
-cd /config/custom_components/zone_heater_manager/frontend
+cd /config/custom_components/smart_heating/frontend
 npm install
 npm run build
 ```
@@ -66,21 +66,21 @@ Or restart via the UI: **Settings** → **System** → **Restart**
 
 1. Go to **Settings** → **Devices & Services**
 2. Click **+ ADD INTEGRATION**
-3. Search for **Zone Heater Manager**
+3. Search for **Smart Heating**
 4. Click on it to add (no configuration needed)
 
 ### Step 5: Access the Web Interface
 
-The **Zone Heater Manager** panel will automatically appear in your Home Assistant sidebar with a radiator icon.
+The **Smart Heating** panel will automatically appear in your Home Assistant sidebar with a radiator icon.
 
-Alternatively, navigate directly to: `http://your-ha-instance:8123/zone_heater_manager/`
+Alternatively, navigate directly to: `http://your-ha-instance:8123/smart_heating/`
 
 ## Post-Installation
 
 ### Create Your First Zone
 
 Via the Web Interface:
-1. Open the Zone Heater Manager panel
+1. Open the Smart Heating panel
 2. Click **+ Create Zone**
 3. Enter zone name (e.g., "Living Room")
 4. Set initial temperature
@@ -88,10 +88,10 @@ Via the Web Interface:
 
 Via Service Call:
 ```yaml
-service: zone_heater_manager.create_zone
+service: smart_heating.create_zone
 data:
-  zone_id: "living_room"
-  zone_name: "Living Room"
+  area_id: "living_room"
+  area_name: "Living Room"
   temperature: 21.0
 ```
 
@@ -102,9 +102,9 @@ data:
 3. Or use service calls:
 
 ```yaml
-service: zone_heater_manager.add_device_to_zone
+service: smart_heating.add_device_to_zone
 data:
-  zone_id: "living_room"
+  area_id: "living_room"
   device_id: "zigbee2mqtt/0x00158d0001a2b3c4"
 ```
 
@@ -121,12 +121,12 @@ automation:
     action:
       - service: climate.set_temperature
         target:
-          entity_id: climate.zone_living_room
+          entity_id: climate.area_living_room
         data:
           temperature: 22
       - service: switch.turn_on
         target:
-          entity_id: switch.zone_living_room_control
+          entity_id: switch.area_living_room_control
 ```
 
 ## Troubleshooting
@@ -136,17 +136,17 @@ automation:
 **Problem**: Blank page or 404 error when accessing the web interface.
 
 **Solution**:
-1. Ensure frontend was built: `ls /config/custom_components/zone_heater_manager/frontend/dist`
+1. Ensure frontend was built: `ls /config/custom_components/smart_heating/frontend/dist`
 2. Rebuild if necessary: `./build_frontend.sh`
 3. Restart Home Assistant
 4. Clear browser cache
 
 ### Integration Not Showing Up
 
-**Problem**: Can't find "Zone Heater Manager" in integrations list.
+**Problem**: Can't find "Smart Heating" in integrations list.
 
 **Solution**:
-1. Verify installation path: `/config/custom_components/zone_heater_manager/manifest.json` should exist
+1. Verify installation path: `/config/custom_components/smart_heating/manifest.json` should exist
 2. Check Home Assistant logs for errors: **Settings** → **System** → **Logs**
 3. Restart Home Assistant
 4. Force refresh browser (Ctrl+F5 or Cmd+Shift+R)
@@ -171,10 +171,10 @@ automation:
    logger:
      default: info
      logs:
-       custom_components.zone_heater_manager: debug
+       custom_components.smart_heating: debug
    ```
 2. Check logs for detailed error messages
-3. Verify zone_id and device_id values are correct
+3. Verify area_id and device_id values are correct
 4. Ensure zone exists before adding devices
 
 ### Build Script Fails
@@ -193,12 +193,12 @@ To update to the latest version:
 
 ```bash
 cd /config/custom_components
-rm -rf zone_heater_manager
-git clone https://github.com/TheFlexican/zone_heater_manager.git temp
-mv temp/custom_components/zone_heater_manager .
+rm -rf smart_heating
+git clone https://github.com/TheFlexican/smart_heating.git temp
+mv temp/custom_components/smart_heating .
 rm -rf temp
 
-cd zone_heater_manager
+cd smart_heating
 ./build_frontend.sh
 
 ha core restart
@@ -206,10 +206,10 @@ ha core restart
 
 ## Uninstalling
 
-1. Remove the integration via UI: **Settings** → **Devices & Services** → **Zone Heater Manager** → **Delete**
+1. Remove the integration via UI: **Settings** → **Devices & Services** → **Smart Heating** → **Delete**
 2. Delete files:
    ```bash
-   rm -rf /config/custom_components/zone_heater_manager
+   rm -rf /config/custom_components/smart_heating
    ```
 3. Restart Home Assistant
 
@@ -221,8 +221,8 @@ For developers who want to work on the integration:
 
 ```bash
 # Clone the repository
-git clone https://github.com/TheFlexican/zone_heater_manager.git
-cd zone_heater_manager
+git clone https://github.com/TheFlexican/smart_heating.git
+cd smart_heating
 
 # Install development dependencies (optional)
 pip install -r requirements_dev.txt  # if exists
@@ -231,7 +231,7 @@ pip install -r requirements_dev.txt  # if exists
 ### Frontend Development
 
 ```bash
-cd custom_components/zone_heater_manager/frontend
+cd custom_components/smart_heating/frontend
 
 # Install dependencies
 npm install
@@ -259,13 +259,13 @@ vim deploy.sh
 
 ## Support
 
-- **Issues**: https://github.com/TheFlexican/zone_heater_manager/issues
-- **Discussions**: https://github.com/TheFlexican/zone_heater_manager/discussions
+- **Issues**: https://github.com/TheFlexican/smart_heating/issues
+- **Discussions**: https://github.com/TheFlexican/smart_heating/discussions
 - **Documentation**: See README.md and other docs in the repository
 
 ## Next Steps
 
-- Configure zones and add devices
+- Configure areas and add devices
 - Create automations using the climate entities
 - Explore the REST API for advanced integrations
 - Check out example configurations in `examples/`

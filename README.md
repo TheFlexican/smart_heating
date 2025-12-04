@@ -1,18 +1,18 @@
-# Zone Heater Manager
+# Smart Heating
 
-A Home Assistant custom integration for managing multi-zone heating systems with Zigbee2MQTT devices. Features a modern React-based web interface for easy zone configuration and device management.
+A Home Assistant custom integration for managing multi-area heating systems with Zigbee2MQTT devices. Features a modern React-based web interface for easy area configuration and device management.
 
 ## ✨ Features
 
-- 🏠 **Multi-zone heating control** - Create and manage multiple heating zones
+- 🏠 **Multi-zone heating control** - Create and manage multiple heating areas
 - 🌡️ **Zigbee2MQTT integration** - Support for thermostats, temperature sensors and OpenTherm gateways
 - 🎛️ **Web-based GUI** - Modern React interface with drag-and-drop device management
 - 🌐 **REST API** - Full API for programmatic control
 - 📡 **WebSocket support** - Real-time updates
-- 🎛️ **Climate entities** - Full thermostat control per zone
-- 🔌 **Switch entities** - Easy zone on/off control
+- 🎛️ **Climate entities** - Full thermostat control per area
+- 🔌 **Switch entities** - Easy area on/off control
 - 📊 **Sensor entities** - System status monitoring
-- 🛠️ **Service calls** - Manage zones and devices via Home Assistant services
+- 🛠️ **Service calls** - Manage areas and devices via Home Assistant services
 - 💾 **Persistent storage** - Configuration automatically saved
 - 🔄 **Auto-update** - Data coordinator with 30-second interval
 - 📝 **Debug logging** - Extensive logging for troubleshooting
@@ -44,8 +44,8 @@ This integration will be available via HACS in the future.
 
 3. **Clone this repository:**
    ```bash
-   git clone https://github.com/TheFlexican/zone_heater_manager.git temp
-   mv temp/custom_components/zone_heater_manager .
+   git clone https://github.com/TheFlexican/smart_heating.git temp
+   mv temp/custom_components/smart_heating .
    rm -rf temp
    ```
 
@@ -91,22 +91,22 @@ See [.devcontainer/README.md](.devcontainer/README.md) for detailed development 
 
 1. Go to **Settings** → **Devices & Services**
 2. Click **+ ADD INTEGRATION**
-3. Search for **Zone Heater Manager**
+3. Search for **Smart Heating**
 4. Click on it to add (no configuration needed)
 
 ## 🎨 Web Interface
 
-Once installed, the Zone Heater Manager panel will automatically appear in your Home Assistant sidebar with a radiator icon (🔥).
+Once installed, the Smart Heating panel will automatically appear in your Home Assistant sidebar with a radiator icon (🔥).
 
 You can also access it directly via:
-- **Direct URL**: `http://your-ha-instance:8123/zone_heater_manager/`
+- **Direct URL**: `http://your-ha-instance:8123/smart_heating/`
 
 The web interface allows you to:
-- Create and delete zones
+- Create and delete areas
 - Set target temperatures with visual sliders (5-30°C)
-- Enable/disable zones with toggle switches
+- Enable/disable areas with toggle switches
 - View available Zigbee2MQTT devices in the right panel
-- Drag and drop devices into zones (coming soon)
+- Drag and drop devices into areas (coming soon)
 - Monitor zone states in real-time (heating/idle/off)
 
 ### Building the Frontend
@@ -114,7 +114,7 @@ The web interface allows you to:
 The frontend is a React application that needs to be built before use:
 
 ```bash
-cd custom_components/zone_heater_manager/frontend
+cd custom_components/smart_heating/frontend
 npm install
 npm run build
 ```
@@ -124,134 +124,134 @@ For development with hot reload:
 npm run dev
 ```
 
-See `custom_components/zone_heater_manager/frontend/README.md` for more details.
+See `custom_components/smart_heating/frontend/README.md` for more details.
 
 ## 📦 Entities
 
 After installation, the following entities will be created:
 
 ### Per Zone:
-- `climate.zone_<zone_name>` - Climate entity for temperature control
-- `switch.zone_<zone_name>_control` - Switch to turn zone on/off
-- `sensor.zone_heater_manager_status` - General status sensor
+- `climate.area_<area_name>` - Climate entity for temperature control
+- `switch.area_<area_name>_control` - Switch to turn area on/off
+- `sensor.smart_heating_status` - General status sensor
 
 ## 🛠️ Services
 
 ### Zone Management
 
-#### `zone_heater_manager.create_zone`
-Create a new heating zone.
+#### `smart_heating.create_zone`
+Create a new heating area.
 
 **Parameters:**
-- `zone_id` (required): Unique identifier (e.g. "living_room")
-- `zone_name` (required): Display name (e.g. "Living Room")
+- `area_id` (required): Unique identifier (e.g. "living_room")
+- `area_name` (required): Display name (e.g. "Living Room")
 - `temperature` (optional): Initial target temperature in °C (default: 20.0)
 
 **Example:**
 ```yaml
-service: zone_heater_manager.create_zone
+service: smart_heating.create_zone
 data:
-  zone_id: "living_room"
-  zone_name: "Living Room"
+  area_id: "living_room"
+  area_name: "Living Room"
   temperature: 21.5
 ```
 
-#### `zone_heater_manager.delete_zone`
-Delete an existing zone.
+#### `smart_heating.delete_zone`
+Delete an existing area.
 
 **Parameters:**
-- `zone_id` (required): Zone identifier
+- `area_id` (required): Zone identifier
 
 **Example:**
 ```yaml
-service: zone_heater_manager.delete_zone
+service: smart_heating.delete_zone
 data:
-  zone_id: "living_room"
+  area_id: "living_room"
 ```
 
-#### `zone_heater_manager.enable_zone`
-Enable heating for a zone.
+#### `smart_heating.enable_zone`
+Enable heating for a area.
 
 **Parameters:**
-- `zone_id` (required): Zone identifier
+- `area_id` (required): Zone identifier
 
 **Example:**
 ```yaml
-service: zone_heater_manager.enable_zone
+service: smart_heating.enable_zone
 data:
-  zone_id: "living_room"
+  area_id: "living_room"
 ```
 
-#### `zone_heater_manager.disable_zone`
-Disable heating for a zone.
+#### `smart_heating.disable_zone`
+Disable heating for a area.
 
 **Parameters:**
-- `zone_id` (required): Zone identifier
+- `area_id` (required): Zone identifier
 
 **Example:**
 ```yaml
-service: zone_heater_manager.disable_zone
+service: smart_heating.disable_zone
 data:
-  zone_id: "living_room"
+  area_id: "living_room"
 ```
 
 ### Device Management
 
-#### `zone_heater_manager.add_device_to_zone`
-Add a Zigbee2MQTT device to a zone.
+#### `smart_heating.add_device_to_zone`
+Add a Zigbee2MQTT device to a area.
 
 **Parameters:**
-- `zone_id` (required): Zone identifier
+- `area_id` (required): Zone identifier
 - `device_id` (required): Zigbee2MQTT device ID (e.g. "0x00158d0001a2b3c4")
 - `device_type` (required): Device type (`thermostat`, `temperature_sensor`, `opentherm_gateway`, `valve`)
 
 **Example:**
 ```yaml
-service: zone_heater_manager.add_device_to_zone
+service: smart_heating.add_device_to_zone
 data:
-  zone_id: "living_room"
+  area_id: "living_room"
   device_id: "0x00158d0001a2b3c4"
   device_type: "thermostat"
 ```
 
-#### `zone_heater_manager.remove_device_from_zone`
-Remove a device from a zone.
+#### `smart_heating.remove_device_from_zone`
+Remove a device from a area.
 
 **Parameters:**
-- `zone_id` (required): Zone identifier
+- `area_id` (required): Zone identifier
 - `device_id` (required): Device identifier
 
 **Example:**
 ```yaml
-service: zone_heater_manager.remove_device_from_zone
+service: smart_heating.remove_device_from_zone
 data:
-  zone_id: "living_room"
+  area_id: "living_room"
   device_id: "0x00158d0001a2b3c4"
 ```
 
 ### Temperature Control
 
-#### `zone_heater_manager.set_zone_temperature`
-Set the target temperature for a zone.
+#### `smart_heating.set_area_temperature`
+Set the target temperature for a area.
 
 **Parameters:**
-- `zone_id` (required): Zone identifier
+- `area_id` (required): Zone identifier
 - `temperature` (required): Target temperature in °C (5-30°C)
 
 **Example:**
 ```yaml
-service: zone_heater_manager.set_zone_temperature
+service: smart_heating.set_area_temperature
 data:
-  zone_id: "living_room"
+  area_id: "living_room"
   temperature: 22.0
 ```
 
-#### `zone_heater_manager.refresh`
-Manually refresh Zone Heater Manager data.
+#### `smart_heating.refresh`
+Manually refresh Smart Heating data.
 
 **Example:**
 ```yaml
-service: zone_heater_manager.refresh
+service: smart_heating.refresh
 ```
 
 ## 📖 Usage
@@ -259,15 +259,15 @@ service: zone_heater_manager.refresh
 ### Basic Setup Workflow
 
 1. **Install the integration** via the Home Assistant UI
-2. **Create zones** using the `create_zone` service
+2. **Create areas** using the `create_zone` service
 3. **Add devices** using the `add_device_to_zone` service
 4. **Configure temperatures** via climate entities or service calls
-5. **Manage zones** via switches or service calls
+5. **Manage areas** via switches or service calls
 
 ### Example Configuration
 
 ```yaml
-# Automation to create zones at startup
+# Automation to create areas at startup
 automation:
   - alias: "Setup Heating Zones"
     trigger:
@@ -275,23 +275,23 @@ automation:
         event: start
     action:
       # Create living room zone
-      - service: zone_heater_manager.create_zone
+      - service: smart_heating.create_zone
         data:
-          zone_id: "living_room"
-          zone_name: "Living Room"
+          area_id: "living_room"
+          area_name: "Living Room"
           temperature: 21.0
       
       # Add thermostat
-      - service: zone_heater_manager.add_device_to_zone
+      - service: smart_heating.add_device_to_zone
         data:
-          zone_id: "living_room"
+          area_id: "living_room"
           device_id: "0x00158d0001a2b3c4"
           device_type: "thermostat"
       
       # Add temperature sensor
-      - service: zone_heater_manager.add_device_to_zone
+      - service: smart_heating.add_device_to_zone
         data:
-          zone_id: "living_room"
+          area_id: "living_room"
           device_id: "0x00158d0001a2b3c5"
           device_type: "temperature_sensor"
 ```
@@ -302,7 +302,7 @@ Add climate cards to your dashboard:
 
 ```yaml
 type: thermostat
-entity: climate.zone_living_room
+entity: climate.area_living_room
 ```
 
 Or use switch cards:
@@ -310,8 +310,8 @@ Or use switch cards:
 ```yaml
 type: entities
 entities:
-  - entity: switch.zone_living_room_control
-  - entity: climate.zone_living_room
+  - entity: switch.area_living_room_control
+  - entity: climate.area_living_room
     type: custom:simple-thermostat
 ```
 
@@ -325,15 +325,15 @@ Add this to your `configuration.yaml`:
 logger:
   default: info
   logs:
-    custom_components.zone_heater_manager: debug
+    custom_components.smart_heating: debug
 ```
 
 ### File Structure
 
 ```
-custom_components/zone_heater_manager/
+custom_components/smart_heating/
 ├── __init__.py          # Integration setup and services
-├── climate.py           # Climate platform for zones
+├── climate.py           # Climate platform for areas
 ├── config_flow.py       # UI configuration flow
 ├── const.py             # Constants and configuration
 ├── coordinator.py       # Data update coordinator
@@ -342,7 +342,7 @@ custom_components/zone_heater_manager/
 ├── services.yaml        # Service definitions
 ├── strings.json         # UI translations
 ├── switch.py            # Switch platform for zone control
-└── zone_manager.py      # Zone management logic
+└── area_manager.py      # Zone management logic
 ```
 
 ### Future Features (Roadmap)
@@ -351,9 +351,9 @@ custom_components/zone_heater_manager/
 - 🤖 **Smart Heating** - AI-driven heating optimization
 - 📊 **Analytics** - Energy monitoring and statistics
 - 🔗 **MQTT Auto-discovery** - Automatic detection of Zigbee2MQTT devices
-- ⏱️ **Schedules** - Time-based temperature profiles per zone
+- ⏱️ **Schedules** - Time-based temperature profiles per area
 - 👥 **Presence Detection** - Presence-based heating
-- 🌡️ **Multi-sensor averaging** - Multiple sensors per zone
+- 🌡️ **Multi-sensor averaging** - Multiple sensors per area
 - 🔥 **Boiler Control** - Direct OpenTherm boiler control
 
 ## 📝 Version
@@ -364,7 +364,7 @@ Current version: **0.1.0**
 
 #### v0.1.0 (2025-12-04)
 - ✨ Zone management system
-- ✨ Climate entities per zone
+- ✨ Climate entities per area
 - ✨ Switch entities for zone control
 - ✨ Extensive service calls
 - ✨ Zigbee2MQTT device support
@@ -385,7 +385,7 @@ Contributions are welcome! Feel free to submit a Pull Request.
 ### Development Setup
 
 1. Clone the repository
-2. Make changes in `custom_components/zone_heater_manager/`
+2. Make changes in `custom_components/smart_heating/`
 3. Test with `./deploy.sh` to your development Home Assistant instance
 4. Check logs for errors
 5. Submit PR with description of changes
@@ -393,7 +393,7 @@ Contributions are welcome! Feel free to submit a Pull Request.
 ## ❓ Troubleshooting
 
 ### Zone not being created
-- Check if `zone_id` is unique
+- Check if `area_id` is unique
 - Check debug logs: add `logger` configuration
 - Verify that the integration is loaded correctly
 

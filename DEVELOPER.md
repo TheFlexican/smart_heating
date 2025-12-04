@@ -1,12 +1,12 @@
 # Developer Quick Reference
 
-Quick reference for developing and extending Zone Heater Manager.
+Quick reference for developing and extending Smart Heating.
 
 ## Project Structure
 
 ```
-zone_heater_manager/
-├── custom_components/zone_heater_manager/
+smart_heating/
+├── custom_components/smart_heating/
 │   ├── __init__.py           # Integration setup, service registration
 │   ├── manifest.json         # Integration metadata
 │   ├── const.py              # Constants and configuration
@@ -14,7 +14,7 @@ zone_heater_manager/
 │   ├── strings.json          # UI strings
 │   ├── services.yaml         # Service definitions
 │   │
-│   ├── zone_manager.py       # Core zone management logic
+│   ├── area_manager.py       # Core area management logic
 │   ├── coordinator.py        # Data update coordinator
 │   ├── api.py                # REST API endpoints
 │   ├── websocket.py          # WebSocket handlers
@@ -93,7 +93,7 @@ zone_heater_manager/
    async def my_endpoint(self, request: web.Request) -> web.Response:
        """Handle my endpoint."""
        data = await request.json()
-       result = await self.zone_manager.do_something(data)
+       result = await self.area_manager.do_something(data)
        return self.json(result)
    ```
 
@@ -150,16 +150,16 @@ zone_heater_manager/
 
 ### Adding Zone Manager Methods
 
-1. **Add method** to `ZoneManager` class in `zone_manager.py`:
+1. **Add method** to `ZoneManager` class in `area_manager.py`:
    ```python
-   async def async_my_method(self, zone_id: str, param: str) -> bool:
+   async def async_my_method(self, area_id: str, param: str) -> bool:
        """My method description."""
-       zone = self.get_zone(zone_id)
+       zone = self.get_zone(area_id)
        if not zone:
            return False
        
        # Do something
-       zone.custom_property = param
+       area.custom_property = param
        
        await self.async_save()
        return True
@@ -167,12 +167,12 @@ zone_heater_manager/
 
 2. **Call from API**:
    ```python
-   result = await self.zone_manager.async_my_method(zone_id, param)
+   result = await self.area_manager.async_my_method(area_id, param)
    ```
 
 ## Key Classes
 
-### Zone Class (`zone_manager.py`)
+### Zone Class (`area_manager.py`)
 
 ```python
 class Zone:
@@ -188,30 +188,30 @@ class Zone:
     def to_dict() -> dict
 ```
 
-### ZoneManager Class (`zone_manager.py`)
+### ZoneManager Class (`area_manager.py`)
 
 ```python
 class ZoneManager:
     async def async_load() -> None
     async def async_save() -> None
     
-    def get_zone(zone_id: str) -> Optional[Zone]
+    def get_zone(area_id: str) -> Optional[Zone]
     def get_all_zones() -> List[Zone]
     
     async def async_create_zone(...) -> Zone
-    async def async_delete_zone(zone_id: str) -> bool
+    async def async_delete_zone(area_id: str) -> bool
     async def async_add_device_to_zone(...) -> bool
     async def async_remove_device_from_zone(...) -> bool
-    async def async_set_zone_temperature(...) -> bool
-    async def async_enable_zone(zone_id: str) -> bool
-    async def async_disable_zone(zone_id: str) -> bool
+    async def async_set_area_temperature(...) -> bool
+    async def async_enable_zone(area_id: str) -> bool
+    async def async_disable_zone(area_id: str) -> bool
 ```
 
 ### Coordinator (`coordinator.py`)
 
 ```python
 class ZoneHeaterManagerCoordinator(DataUpdateCoordinator):
-    zone_manager: ZoneManager
+    area_manager: ZoneManager
     
     async def _async_update_data() -> Dict[str, Any]
 ```
@@ -242,7 +242,7 @@ class ZoneHeaterManagerCoordinator(DataUpdateCoordinator):
 
 1. **Start dev server**:
    ```bash
-   cd custom_components/zone_heater_manager/frontend
+   cd custom_components/smart_heating/frontend
    npm run dev
    ```
 
@@ -255,16 +255,16 @@ class ZoneHeaterManagerCoordinator(DataUpdateCoordinator):
 Use curl or Postman:
 
 ```bash
-# Get zones
+# Get areas
 curl -H "Authorization: Bearer YOUR_TOKEN" \
-  http://localhost:8123/api/zone_heater_manager/zones
+  http://localhost:8123/api/smart_heating/zones
 
 # Create zone
 curl -X POST \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"zone_id":"test","zone_name":"Test","temperature":20}' \
-  http://localhost:8123/api/zone_heater_manager/zones
+  -d '{"area_id":"test","area_name":"Test","temperature":20}' \
+  http://localhost:8123/api/smart_heating/zones
 ```
 
 ## Debugging
@@ -277,7 +277,7 @@ Enable debug logging in `configuration.yaml`:
 logger:
   default: info
   logs:
-    custom_components.zone_heater_manager: debug
+    custom_components.smart_heating: debug
 ```
 
 Add logging in code:

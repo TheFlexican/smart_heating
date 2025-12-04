@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-Get Zone Heater Manager running in 5 minutes!
+Get Smart Heating running in 5 minutes!
 
 ## Prerequisites
 
@@ -18,15 +18,15 @@ ssh -p 22222 root@homeassistant.local
 
 # Clone repository
 cd /config/custom_components
-git clone https://github.com/TheFlexican/zone_heater_manager.git temp
-mv temp/custom_components/zone_heater_manager .
+git clone https://github.com/TheFlexican/smart_heating.git temp
+mv temp/custom_components/smart_heating .
 rm -rf temp
 ```
 
 ### 2. Build Frontend
 
 ```bash
-cd /config/custom_components/zone_heater_manager
+cd /config/custom_components/smart_heating
 ./build_frontend.sh
 ```
 
@@ -39,14 +39,14 @@ ha core restart
 Then:
 1. Go to **Settings** → **Devices & Services**
 2. Click **+ ADD INTEGRATION**
-3. Search for **Zone Heater Manager**
+3. Search for **Smart Heating**
 4. Click to add
 
 ## Access the Interface
 
-The **Zone Heater Manager** panel appears automatically in your Home Assistant sidebar with a radiator icon 🔥
+The **Smart Heating** panel appears automatically in your Home Assistant sidebar with a radiator icon 🔥
 
-Or navigate to: `http://your-ha-instance:8123/zone_heater_manager/`
+Or navigate to: `http://your-ha-instance:8123/smart_heating/`
 
 ## Create Your First Zone
 
@@ -58,7 +58,7 @@ Or navigate to: `http://your-ha-instance:8123/zone_heater_manager/`
 ## Next Steps
 
 - Configure MQTT/Zigbee2MQTT for device discovery
-- Add devices to your zones
+- Add devices to your areas
 - Create automations using the climate entities
 - Explore the REST API for advanced integrations
 
@@ -67,7 +67,7 @@ Or navigate to: `http://your-ha-instance:8123/zone_heater_manager/`
 - Read [INSTALL.md](INSTALL.md) for detailed installation
 - Check [ARCHITECTURE.md](ARCHITECTURE.md) to understand the system
 - See [DEVELOPER.md](DEVELOPER.md) for development info
-- Visit [GitHub Issues](https://github.com/TheFlexican/zone_heater_manager/issues)
+- Visit [GitHub Issues](https://github.com/TheFlexican/smart_heating/issues)
 
 ## Key Features
 
@@ -75,7 +75,7 @@ Or navigate to: `http://your-ha-instance:8123/zone_heater_manager/`
 ✅ **Modern Web UI** - React-based interface with Material Design
 ✅ **Real-time Updates** - See changes instantly
 ✅ **Temperature Sliders** - Visual control (5-30°C)
-✅ **Zone Management** - Create, delete, enable/disable zones
+✅ **Zone Management** - Create, delete, enable/disable areas
 ✅ **Climate Entities** - Full Home Assistant integration
 ✅ **Service Calls** - Automation-ready
 
