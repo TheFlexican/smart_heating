@@ -8,7 +8,7 @@ A Home Assistant custom integration for managing multi-area heating systems with
 - 🌡️ **Zigbee2MQTT integration** - Support for thermostats, temperature sensors and OpenTherm gateways
 - 🎛️ **Web-based GUI** - Modern React interface with drag-and-drop device management
 - 📅 **Smart Scheduling** - Time-based temperature profiles with day-of-week selection
-- 🌙 **Night Boost** - Gradual temperature increase during night hours (22:00-06:00)
+- 🌙 **Night Boost** - Configurable temperature increase during night hours (customizable start/end times)
 - 📊 **Temperature History** - Track and visualize temperature trends with interactive charts
 - ⚙️ **Advanced Settings** - Hysteresis control, temperature limits, and fine-tuning
 - 🌐 **REST API** - Full API for programmatic control
@@ -405,12 +405,14 @@ Enable or disable a specific schedule.
 ### Advanced Settings
 
 #### `smart_heating.set_night_boost`
-Configure night boost for an area (gradually increase temperature during night hours).
+Configure night boost for an area (gradually increase temperature during configurable night hours).
 
 **Parameters:**
 - `area_id` (required): Area identifier
 - `night_boost_enabled` (optional): Enable/disable night boost
 - `night_boost_offset` (optional): Temperature offset in °C (0-3°C)
+- `night_boost_start_time` (optional): Start time in HH:MM format (default: 22:00)
+- `night_boost_end_time` (optional): End time in HH:MM format (default: 06:00)
 
 **Example:**
 ```yaml
@@ -419,6 +421,8 @@ data:
   area_id: "bedroom"
   night_boost_enabled: true
   night_boost_offset: 0.5  # Add 0.5°C during night hours
+  night_boost_start_time: "23:00"  # Start at 11 PM
+  night_boost_end_time: "07:00"    # End at 7 AM
 ```
 
 #### `smart_heating.set_hysteresis`
@@ -664,6 +668,11 @@ Current version: **0.1.0**
   - Configuration UI in integration options (gear icon)
   - Real-time status card on overview page
   - Automatic filtering of OpenTherm-compatible devices
+- ✨ **Configurable Night Boost** with customizable time periods
+  - Set custom start and end times (default: 22:00-06:00)
+  - Supports periods crossing midnight (e.g., 23:00-07:00)
+  - Time picker UI in area settings
+  - Adjustable temperature offset (0-3°C)
 - ✨ Schedule management (time-based temperature profiles)
 - ✨ Temperature history tracking with interactive charts
 - ✨ Real-time device status display in area cards

@@ -101,9 +101,11 @@ See `src/types.ts` for all interface definitions:
 - Enable/disable individual schedules
 
 ### Night Boost
-- Automatic temperature increase 22:00-06:00
-- Configurable offset (0-3°C)
+- Configurable temperature increase during night hours
+- Customizable start and end times (default: 22:00-06:00)
+- Adjustable offset (0-3°C)
 - Per-area enable/disable
+- Supports periods crossing midnight (e.g., 23:00-07:00)
 
 ### Temperature History
 - Records every 5 minutes

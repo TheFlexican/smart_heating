@@ -221,7 +221,7 @@ disable_schedule:
 
 set_night_boost:
   name: Set Night Boost
-  description: Configure night boost for an area (gradually increase temperature during night hours 22:00-06:00)
+  description: Configure night boost for an area (gradually increase temperature during configurable night hours)
   fields:
     area_id:
       name: Zone ID
@@ -248,6 +248,22 @@ set_night_boost:
           max: 3
           step: 0.1
           unit_of_measurement: "°C"
+    night_boost_start_time:
+      name: Night Boost Start Time
+      description: Start time for night boost period in HH:MM format (24-hour)
+      required: false
+      default: "22:00"
+      example: "22:00"
+      selector:
+        time:
+    night_boost_end_time:
+      name: Night Boost End Time
+      description: End time for night boost period in HH:MM format (24-hour). Can cross midnight (e.g., 22:00-06:00)
+      required: false
+      default: "06:00"
+      example: "06:00"
+      selector:
+        time:
 
 set_hysteresis:
   name: Set Hysteresis
