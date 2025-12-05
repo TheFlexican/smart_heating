@@ -455,10 +455,6 @@ class SmartHeatingAPIView(HomeAssistantView):
                         if area.hidden:
                             assigned_to_hidden_area = True
                 
-                # Skip devices assigned to hidden areas
-                if assigned_to_hidden_area:
-                    continue
-                
                 # Get Home Assistant area for this entity
                 ha_area_id = None
                 ha_area_name = None
@@ -469,6 +465,17 @@ class SmartHeatingAPIView(HomeAssistantView):
                         if area_entry:
                             ha_area_id = area_entry.id
                             ha_area_name = area_entry.name
+                            
+                            # Also skip if HA area matches a hidden Smart Heating area
+                            if not assigned_to_hidden_area:
+                                for area_id, area in self.area_manager.get_all_areas().items():
+                                    if area.hidden and area.name.lower() == ha_area_name.lower():
+                                        assigned_to_hidden_area = True
+                                        break
+                
+                # Skip devices assigned to hidden areas (either directly or via HA area match)
+                if assigned_to_hidden_area:
+                    continue
                 
                 devices.append({
                     "id": entity.entity_id,
