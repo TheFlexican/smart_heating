@@ -44,8 +44,8 @@ jobs:
           cp smart_heating/*.json release/custom_components/smart_heating/ 2>/dev/null || true
           
           # Copy built frontend
-          mkdir -p release/custom_components/smart_heating/frontend
-          cp -r smart_heating/frontend/dist/* release/custom_components/smart_heating/frontend/
+          mkdir -p release/custom_components/smart_heating/frontend/dist
+          cp -r smart_heating/frontend/dist/* release/custom_components/smart_heating/frontend/dist/
           cp smart_heating/frontend/index.html release/custom_components/smart_heating/frontend/
           
           # Copy icons if they exist
