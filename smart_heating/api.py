@@ -48,6 +48,8 @@ class SmartHeatingAPIView(HomeAssistantView):
                 return await self.get_areas(request)
             elif endpoint == "devices":
                 return await self.get_devices(request)
+            elif endpoint == "devices/refresh":
+                return await self.refresh_devices(request)
             elif endpoint == "status":
                 return await self.get_status(request)
             elif endpoint == "config":
@@ -478,6 +480,125 @@ class SmartHeatingAPIView(HomeAssistantView):
                 })
         
         return web.json_response({"devices": devices})
+
+    async def refresh_devices(self, request: web.Request) -> web.Response:
+        """Refresh all devices from Home Assistant and update area assignments.
+        
+        This will re-discover all MQTT devices and overwrite existing device
+        configurations with current Home Assistant settings.
+        
+        Args:
+            request: Request object
+            
+        Returns:
+            JSON response with refreshed device count
+        """
+        _LOGGER.info("Refreshing devices from Home Assistant")
+        
+        try:
+            # Get all MQTT entities from Home Assistant
+            entity_registry = er.async_get(self.hass)
+            device_registry = dr.async_get(self.hass)
+            area_registry = ar.async_get(self.hass)
+            
+            updated_count = 0
+            added_count = 0
+            
+            # Find entities that are from MQTT and could be heating-related
+            for entity in entity_registry.entities.values():
+                # Check if entity is from MQTT integration
+                if entity.platform == "mqtt":
+                    # Get entity state for additional info
+                    state = self.hass.states.get(entity.entity_id)
+                    if not state:
+                        continue
+                    
+                    # Determine device type based on entity domain
+                    device_type = None
+                    device_class = state.attributes.get("device_class")
+                    
+                    if entity.domain == "climate":
+                        device_type = "thermostat"
+                    elif entity.domain == "sensor":
+                        if device_class == "temperature":
+                            device_type = "temperature_sensor"
+                        else:
+                            unit = state.attributes.get("unit_of_measurement", "")
+                            if "°C" in unit or "°F" in unit or "temperature" in entity.entity_id.lower():
+                                device_type = "temperature_sensor"
+                            else:
+                                continue
+                    elif entity.domain == "switch":
+                        if any(keyword in entity.entity_id.lower() 
+                               for keyword in ["thermostat", "heater", "radiator", "heating", "pump", "floor", "relay"]):
+                            device_type = "switch"
+                        else:
+                            continue
+                    elif entity.domain == "number":
+                        if "valve" in entity.entity_id.lower() or device_class == "valve":
+                            device_type = "valve"
+                        else:
+                            continue
+                    else:
+                        continue
+                    
+                    if not device_type:
+                        continue
+                    
+                    # Get HA area assignment
+                    ha_area_id = None
+                    ha_area_name = None
+                    if entity.device_id:
+                        device_entry = device_registry.async_get(entity.device_id)
+                        if device_entry and device_entry.area_id:
+                            area_entry = area_registry.async_get_area(device_entry.area_id)
+                            if area_entry:
+                                ha_area_id = area_entry.id
+                                ha_area_name = area_entry.name
+                    
+                    # Update device in all areas that have it assigned
+                    device_updated = False
+                    for area_id, area in self.area_manager.get_all_areas().items():
+                        if entity.entity_id in area.devices:
+                            # Update the device configuration
+                            area.devices[entity.entity_id] = {
+                                "type": device_type,
+                                "mqtt_topic": None  # Will be populated by climate_controller if needed
+                            }
+                            device_updated = True
+                            updated_count += 1
+                            _LOGGER.info(
+                                "Updated device %s in area %s (type: %s, HA area: %s)",
+                                entity.entity_id, area_id, device_type, ha_area_name or "none"
+                            )
+                    
+                    if not device_updated:
+                        # Device exists in HA but not assigned to any Smart Heating area
+                        added_count += 1
+            
+            # Save updated configuration
+            await self.area_manager.async_save()
+            
+            # Trigger coordinator update to refresh frontend
+            await self.coordinator.async_request_refresh()
+            
+            _LOGGER.info(
+                "Device refresh complete: %d updated, %d available for assignment",
+                updated_count, added_count
+            )
+            
+            return web.json_response({
+                "success": True,
+                "updated": updated_count,
+                "available": added_count,
+                "message": f"Refreshed {updated_count} devices, {added_count} available for assignment"
+            })
+            
+        except Exception as err:
+            _LOGGER.error("Error refreshing devices: %s", err)
+            return web.json_response(
+                {"error": str(err)}, status=500
+            )
 
     async def get_status(self, request: web.Request) -> web.Response:
         """Get system status.

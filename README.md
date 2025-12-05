@@ -1165,6 +1165,25 @@ Current version: **0.3.3**
 
 ### Changelog
 
+#### v0.3.11 (2025-12-05)
+**Device Refresh & Sync Feature**
+
+- 🔄 **Device Refresh Button**
+  - Added refresh button to Available Devices panel (top-right corner)
+  - Re-discovers all MQTT devices from Home Assistant
+  - Overwrites existing device configurations with current HA settings
+  - Updates device types, names, and area assignments from HA
+  - Useful after adding/removing devices or changing HA configurations
+  - Shows spinner during refresh operation
+  - Automatically reloads device list after refresh completes
+  - Backend logs refresh activity (devices updated, available for assignment)
+
+- 🎯 **Improved Device Management**
+  - Tooltip explains refresh function: "Refresh devices from Home Assistant"
+  - Smooth UX with loading indicator during sync
+  - Backend endpoint: `GET /api/smart_heating/devices/refresh`
+  - Returns count of updated and available devices
+
 #### v0.3.10 (2025-12-05)
 **Show Device Home Assistant Area Locations**
 

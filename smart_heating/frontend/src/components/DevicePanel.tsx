@@ -7,21 +7,45 @@ import {
   ListItemText,
   ListItemIcon,
   Chip,
-  Divider
+  Divider,
+  IconButton,
+  Tooltip,
+  CircularProgress
 } from '@mui/material'
 import { Droppable, Draggable } from 'react-beautiful-dnd'
 import ThermostatIcon from '@mui/icons-material/Thermostat'
 import SensorsIcon from '@mui/icons-material/Sensors'
 import RouterIcon from '@mui/icons-material/Router'
 import WaterIcon from '@mui/icons-material/Water'
+import RefreshIcon from '@mui/icons-material/Refresh'
 import { Device } from '../types'
+import { refreshDevices } from '../api'
+import { useState } from 'react'
 
 interface DevicePanelProps {
   devices: Device[]
   onUpdate: () => void
 }
 
-const DevicePanel = ({ devices }: DevicePanelProps) => {
+const DevicePanel = ({ devices, onUpdate }: DevicePanelProps) => {
+  const [refreshing, setRefreshing] = useState(false)
+
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    try {
+      const result = await refreshDevices()
+      console.log('Devices refreshed:', result.message)
+      // Wait a moment for backend to update
+      setTimeout(() => {
+        onUpdate()
+        setRefreshing(false)
+      }, 500)
+    } catch (error) {
+      console.error('Failed to refresh devices:', error)
+      setRefreshing(false)
+    }
+  }
+
   const getDeviceIcon = (type: string) => {
     switch (type) {
       case 'thermostat':
@@ -54,13 +78,25 @@ const DevicePanel = ({ devices }: DevicePanelProps) => {
       }}
       elevation={0}
     >
-      <Box sx={{ p: 2 }}>
-        <Typography variant="h6" color="text.primary">
-          Available Devices
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Drag devices to areas
-        </Typography>
+      <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box>
+          <Typography variant="h6" color="text.primary">
+            Available Devices
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Drag devices to areas
+          </Typography>
+        </Box>
+        <Tooltip title="Refresh devices from Home Assistant">
+          <IconButton
+            onClick={handleRefresh}
+            disabled={refreshing}
+            size="small"
+            sx={{ color: 'primary.main' }}
+          >
+            {refreshing ? <CircularProgress size={20} /> : <RefreshIcon />}
+          </IconButton>
+        </Tooltip>
       </Box>
 
       <Divider />

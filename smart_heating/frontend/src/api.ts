@@ -55,6 +55,11 @@ export const getDevices = async (): Promise<Device[]> => {
   return response.data.devices
 }
 
+export const refreshDevices = async (): Promise<{success: boolean, updated: number, available: number, message: string}> => {
+  const response = await axios.get(`${API_BASE}/devices/refresh`)
+  return response.data
+}
+
 export const getStatus = async (): Promise<any> => {
   const response = await axios.get(`${API_BASE}/status`)
   return response.data
