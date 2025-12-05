@@ -454,6 +454,23 @@ class SmartHeatingAPIView(HomeAssistantView):
                         # Check if any assigned area is hidden
                         if area.hidden:
                             assigned_to_hidden_area = True
+                    
+                    # Also check if device name/entity_id contains a hidden area name
+                    if area.hidden and not assigned_to_hidden_area:
+                        area_name_lower = area.name.lower()
+                        entity_id_lower = entity.entity_id.lower()
+                        friendly_name_lower = state.attributes.get("friendly_name", "").lower()
+                        
+                        if area_name_lower in entity_id_lower or area_name_lower in friendly_name_lower:
+                            _LOGGER.debug(
+                                "Filtering device %s - contains hidden area name '%s'",
+                                entity.entity_id, area.name
+                            )
+                            assigned_to_hidden_area = True
+                
+                # Skip devices assigned to hidden areas
+                if assigned_to_hidden_area:
+                    continue
                 
                 # Get Home Assistant area for this entity
                 ha_area_id = None
@@ -470,10 +487,14 @@ class SmartHeatingAPIView(HomeAssistantView):
                             if not assigned_to_hidden_area:
                                 for area_id, area in self.area_manager.get_all_areas().items():
                                     if area.hidden and area.name.lower() == ha_area_name.lower():
+                                        _LOGGER.debug(
+                                            "Filtering device %s - HA area %s matches hidden Smart Heating area",
+                                            entity.entity_id, ha_area_name
+                                        )
                                         assigned_to_hidden_area = True
                                         break
                 
-                # Skip devices assigned to hidden areas (either directly or via HA area match)
+                # Skip devices assigned to hidden areas (any method)
                 if assigned_to_hidden_area:
                     continue
                 
