@@ -1165,6 +1165,22 @@ Current version: **0.3.3**
 
 ### Changelog
 
+#### v0.3.14 (2025-12-05)
+**Improved Device Discovery**
+
+- 🔍 **Enhanced Temperature Sensor Detection**
+  - More inclusive temperature sensor discovery
+  - Now detects sensors with "temp" or "thermostat" in entity_id
+  - Better compatibility with Zigbee2MQTT temperature sensors
+  - Improved fallback detection for devices without proper device_class
+
+- 📊 **Better Discovery Logging**
+  - Added comprehensive logging for device discovery process
+  - Logs each discovered device with type, domain, and HA area
+  - Shows which devices are filtered and why
+  - Helps troubleshoot missing device issues
+  - INFO level summary of total devices found
+
 #### v0.3.13 (2025-12-05)
 **Enhanced Hidden Area Device Filtering**
 
