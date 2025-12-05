@@ -4,6 +4,8 @@ export interface Device {
   mqtt_topic?: string
   name?: string
   state?: string
+  ha_area_id?: string
+  ha_area_name?: string
   // Thermostat specific
   hvac_action?: string
   current_temperature?: number

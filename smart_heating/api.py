@@ -8,7 +8,7 @@ import aiofiles
 
 from homeassistant.components.http import HomeAssistantView
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_registry as er, area_registry as ar
+from homeassistant.helpers import entity_registry as er, area_registry as ar, device_registry as dr
 
 from .const import DOMAIN
 from .area_manager import AreaManager, Area
@@ -384,6 +384,8 @@ class SmartHeatingAPIView(HomeAssistantView):
         
         # Get all MQTT entities from Home Assistant
         entity_registry = er.async_get(self.hass)
+        device_registry = dr.async_get(self.hass)
+        area_registry = ar.async_get(self.hass)
         
         # Find entities that are from MQTT and could be heating-related
         heating_platforms = ["climate", "sensor", "number", "switch"]
@@ -397,32 +399,58 @@ class SmartHeatingAPIView(HomeAssistantView):
                     continue
                 
                 # Determine device type based on entity domain and attributes
-                device_type = "temperature_sensor"  # default
+                device_type = None
+                device_class = state.attributes.get("device_class")
                 
                 if entity.domain == "climate":
                     device_type = "thermostat"
                 elif entity.domain == "sensor":
-                    # Check if it's a temperature sensor
-                    unit = state.attributes.get("unit_of_measurement", "")
-                    if "°C" in unit or "°F" in unit or "temperature" in entity.entity_id.lower():
+                    # Use device_class if available
+                    if device_class == "temperature":
                         device_type = "temperature_sensor"
                     else:
-                        continue  # Skip non-temperature sensors
-                elif entity.domain == "number" and "valve" in entity.entity_id.lower():
-                    device_type = "valve"
-                elif entity.domain == "switch" and any(keyword in entity.entity_id.lower() 
-                                                       for keyword in ["thermostat", "heater", "radiator"]):
-                    device_type = "thermostat"
+                        # Fallback to unit check
+                        unit = state.attributes.get("unit_of_measurement", "")
+                        if "°C" in unit or "°F" in unit or "temperature" in entity.entity_id.lower():
+                            device_type = "temperature_sensor"
+                        else:
+                            continue  # Skip non-temperature sensors
+                elif entity.domain == "switch":
+                    # Only include switches that are heating-related
+                    if any(keyword in entity.entity_id.lower() 
+                           for keyword in ["thermostat", "heater", "radiator", "heating"]):
+                        device_type = "thermostat"
+                    else:
+                        continue  # Skip non-heating switches
+                elif entity.domain == "number":
+                    if "valve" in entity.entity_id.lower() or device_class == "valve":
+                        device_type = "valve"
+                    else:
+                        continue
                 else:
                     # Skip entities that don't match heating domains
-                    if entity.domain not in heating_platforms:
-                        continue
+                    continue
+                
+                # Skip if device type couldn't be determined
+                if not device_type:
+                    continue
                 
                 # Check if device is already assigned to a area
                 assigned_areas = []
                 for area_id, area in self.area_manager.get_all_areas().items():
                     if entity.entity_id in area.devices:
                         assigned_areas.append(area_id)
+                
+                # Get Home Assistant area for this entity
+                ha_area_id = None
+                ha_area_name = None
+                if entity.device_id:
+                    device_entry = device_registry.async_get(entity.device_id)
+                    if device_entry and device_entry.area_id:
+                        area_entry = area_registry.async_get_area(device_entry.area_id)
+                        if area_entry:
+                            ha_area_id = area_entry.id
+                            ha_area_name = area_entry.name
                 
                 devices.append({
                     "id": entity.entity_id,
@@ -431,6 +459,8 @@ class SmartHeatingAPIView(HomeAssistantView):
                     "entity_id": entity.entity_id,
                     "domain": entity.domain,
                     "assigned_areas": assigned_areas,
+                    "ha_area_id": ha_area_id,
+                    "ha_area_name": ha_area_name,
                     "state": state.state,
                     "attributes": {
                         "temperature": state.attributes.get("temperature"),

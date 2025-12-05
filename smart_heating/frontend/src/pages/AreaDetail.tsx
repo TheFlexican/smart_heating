@@ -143,12 +143,17 @@ const ZoneDetail = () => {
       setZone(currentZone)
       setTemperature(currentZone.target_temperature)
       
-      // Filter available devices (not assigned to any area)
+      // Filter available devices:
+      // 1. Match Home Assistant area name with zone name
+      // 2. Not assigned to any zone in our system
       const assignedDeviceIds = new Set(
         areasData.flatMap(z => z.devices.map(d => d.id))
       )
       setAvailableDevices(
-        devicesData.filter(device => !assignedDeviceIds.has(device.id))
+        devicesData.filter(device => 
+          !assignedDeviceIds.has(device.id) && 
+          device.ha_area_name === currentZone.name
+        )
       )
     } catch (error) {
       console.error('Failed to load area:', error)
@@ -1238,7 +1243,7 @@ const ZoneDetail = () => {
                       <ListItemText
                         primary={device.name || device.id}
                         primaryTypographyProps={{ color: 'text.primary' }}
-                        secondary={device.type.replace(/_/g, ' ')}
+                        secondary={`${device.type.replace(/_/g, ' ')}${device.ha_area_name ? ` • ${device.ha_area_name}` : ''}`}
                         secondaryTypographyProps={{ color: 'text.secondary' }}
                       />
                     </ListItem>
@@ -1264,7 +1269,7 @@ const ZoneDetail = () => {
                       <ListItemText
                         primary={device.name || device.id}
                         primaryTypographyProps={{ color: 'text.primary' }}
-                        secondary={device.type.replace(/_/g, ' ')}
+                        secondary={`${device.type.replace(/_/g, ' ')}${device.ha_area_name ? ` • ${device.ha_area_name}` : ''}`}
                         secondaryTypographyProps={{ color: 'text.secondary' }}
                       />
                     </ListItem>
