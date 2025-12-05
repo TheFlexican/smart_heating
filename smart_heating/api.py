@@ -587,9 +587,6 @@ class SmartHeatingAPIView(HomeAssistantView):
             # Save updated configuration
             await self.area_manager.async_save()
             
-            # Trigger coordinator update to refresh frontend
-            await self.coordinator.async_request_refresh()
-            
             _LOGGER.info(
                 "Device refresh complete: %d updated, %d available for assignment",
                 updated_count, added_count
