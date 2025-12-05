@@ -159,6 +159,50 @@ class ClimateController:
                     area_id, avg_temp, len(temps)
                 )
 
+    async def _async_update_sensor_states(self) -> None:
+        """Update window and presence sensor states for all areas."""
+        for area_id, area in self.area_manager.get_all_areas().items():
+            # Update window sensor states
+            if area.window_sensors:
+                any_window_open = False
+                for sensor_id in area.window_sensors:
+                    state = self.hass.states.get(sensor_id)
+                    if state:
+                        # Binary sensors: on/open = window open
+                        is_open = state.state in ("on", "open", "true", "True")
+                        if is_open:
+                            any_window_open = True
+                            _LOGGER.debug("Window sensor %s is open in area %s", sensor_id, area_id)
+                
+                # Update cached state
+                if area.window_is_open != any_window_open:
+                    area.window_is_open = any_window_open
+                    if any_window_open:
+                        _LOGGER.info("Window(s) opened in area %s - temperature adjustment active", area_id)
+                    else:
+                        _LOGGER.info("All windows closed in area %s - normal heating resumed", area_id)
+            
+            # Update presence sensor states
+            if area.presence_sensors:
+                any_presence_detected = False
+                for sensor_id in area.presence_sensors:
+                    state = self.hass.states.get(sensor_id)
+                    if state:
+                        # Binary sensors or motion sensors: on/home/detected = presence
+                        is_present = state.state in ("on", "home", "detected", "true", "True")
+                        if is_present:
+                            any_presence_detected = True
+                            _LOGGER.debug("Presence detected by %s in area %s", sensor_id, area_id)
+                
+                # Update cached state
+                if area.presence_detected != any_presence_detected:
+                    area.presence_detected = any_presence_detected
+                    if any_presence_detected:
+                        _LOGGER.info("Presence detected in area %s - temperature boost active", area_id)
+                    else:
+                        _LOGGER.info("No presence in area %s - boost removed", area_id)
+
+
     async def async_control_heating(self) -> None:
         """Control heating for all areas based on temperature and schedules."""
         from .const import DOMAIN
@@ -167,6 +211,14 @@ class ClimateController:
         
         # First update all temperatures
         await self.async_update_area_temperatures()
+        
+        # Update window and presence sensor states
+        await self._async_update_sensor_states()
+        
+        # Check for expired boost modes
+        for area in self.area_manager.get_all_areas().values():
+            if area.boost_mode_active:
+                area.check_boost_expiry(current_time)
         
         # Increment counter for history recording (every 10 cycles = 5 minutes)
         self._record_counter += 1
@@ -189,6 +241,26 @@ class ClimateController:
             
             # Get effective target (considering schedules and night boost)
             target_temp = area.get_effective_target_temperature(current_time)
+            
+            # Apply frost protection if enabled (global setting)
+            if self.area_manager.frost_protection_enabled:
+                frost_temp = self.area_manager.frost_protection_temp
+                if target_temp < frost_temp:
+                    _LOGGER.debug(
+                        "Area %s: Frost protection active - raising target from %.1f°C to %.1f°C",
+                        area_id, target_temp, frost_temp
+                    )
+                    target_temp = frost_temp
+            
+            # Apply HVAC mode (off/heat/cool/auto)
+            if hasattr(area, 'hvac_mode'):
+                if area.hvac_mode == "off":
+                    # HVAC mode is off - disable heating for this area
+                    await self._async_set_area_heating(area, False)
+                    area.state = "off"
+                    _LOGGER.debug("Area %s: HVAC mode is OFF - skipping", area_id)
+                    continue
+            
             current_temp = area.current_temperature
             
             if current_temp is None:
