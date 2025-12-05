@@ -11,11 +11,83 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - 🤖 Enhanced AI-driven heating optimization with multi-factor analysis
 - 📊 Advanced energy analytics dashboard
 - 🔗 MQTT auto-discovery for Zigbee2MQTT devices
-- 👥 Presence-based heating control
 - 🌡️ Extended weather integration (forecasts, humidity)
 - 🔥 PID control for OpenTherm gateways
 - 📱 Mobile app notifications
 - 🏡 Multi-home support
+
+## [0.3.3] - 2025-12-05
+
+### ✨ Added - User-Controlled History Data Management
+
+**Configurable History Retention**
+- User-configurable retention period (1-365 days, default: 30 days)
+- Automatic hourly cleanup of expired data
+- Immediate cleanup when retention period is reduced
+- Persistent storage of retention settings
+- Service: `smart_heating.set_history_retention`
+- Configuration validation (1-365 days range)
+
+**Enhanced History Querying**
+- Preset time ranges: 6h, 12h, 24h, 3d, 7d, 30d
+- Custom date/time range selection
+- Query all available history within retention period
+- Server-side filtering for efficiency
+- No data aggregation - raw 5-minute resolution maintained
+
+**Backend Improvements**
+- `HistoryTracker` class enhancements:
+  - Configurable retention via `set_retention_days()`/`get_retention_days()`
+  - Scheduled cleanup task (runs every hour)
+  - Flexible `get_history()` method supporting hours, custom ranges, or all data
+  - Proper cleanup on integration unload
+- New constants:
+  - `DEFAULT_HISTORY_RETENTION_DAYS = 30`
+  - `HISTORY_RECORD_INTERVAL_SECONDS = 300` (5 minutes)
+- API endpoints:
+  - `GET /api/smart_heating/history/config` - Get retention settings
+  - `POST /api/smart_heating/history/config` - Update retention period
+  - Enhanced `GET /api/smart_heating/areas/{id}/history` with query parameters
+
+**Frontend Features**
+- History Data Management panel in Settings tab:
+  - Retention period slider (1-365 days)
+  - Visual markers for common periods (1d, 7d, 30d, 90d, 180d, 365d)
+  - Save button with confirmation
+  - Info alert explaining automatic cleanup
+  - Display of current recording interval (5 minutes)
+- Enhanced HistoryChart component:
+  - Added 30-day preset range
+  - Custom date/time range picker
+  - Start and end datetime inputs
+  - Apply button for custom ranges
+  - Improved time range selection UI
+- API client functions:
+  - `getHistoryConfig()` - Fetch retention settings
+  - `setHistoryRetention(days)` - Update retention
+  - `getHistory(areaId, options)` - Flexible history queries
+
+**Service Definition**
+- `set_history_retention` service in `services.yaml`:
+  - Clear description and field labels
+  - Number selector with validation (1-365 range)
+  - Default value of 30 days
+  - Unit of measurement display
+
+**Technical Details**
+- Recording interval: 5 minutes (300 seconds) - fixed, not configurable
+- Data points stored: timestamp, current_temperature, target_temperature, state
+- Storage location: `.storage/smart_heating_history`
+- Cleanup frequency: Every 1 hour
+- No data aggregation - all points kept at original resolution
+- Automatic validation and error handling
+
+**Benefits**
+- User control over storage space vs historical data
+- Flexible analysis periods for different needs
+- Automatic maintenance - no manual cleanup required
+- Better machine learning with longer retention
+- Transparent operation with visible settings
 
 ## [0.2.0] - 2025-12-04
 

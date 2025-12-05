@@ -655,3 +655,20 @@ copy_schedule:
               value: "sat"
             - label: "Sunday"
               value: "sun"
+
+set_history_retention:
+  name: Set History Retention
+  description: Configure how long temperature history data is kept before automatic cleanup
+  fields:
+    history_retention_days:
+      name: Retention Period
+      description: Number of days to keep history data (1-365 days)
+      required: true
+      default: 30
+      example: 30
+      selector:
+        number:
+          min: 1
+          max: 365
+          step: 1
+          unit_of_measurement: "days"

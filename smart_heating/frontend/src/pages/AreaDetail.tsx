@@ -49,7 +49,9 @@ import {
   addWindowSensor,
   removeWindowSensor,
   addPresenceSensor,
-  removePresenceSensor
+  removePresenceSensor,
+  getHistoryConfig,
+  setHistoryRetention
 } from '../api'
 import ScheduleEditor from '../components/ScheduleEditor'
 import HistoryChart from '../components/HistoryChart'
@@ -85,6 +87,8 @@ const ZoneDetail = () => {
   const [loading, setLoading] = useState(true)
   const [tabValue, setTabValue] = useState(0)
   const [temperature, setTemperature] = useState(21)
+  const [historyRetention, setHistoryRetentionState] = useState(30)
+  const [recordInterval, setRecordInterval] = useState(5)
 
   // WebSocket for real-time updates
   useWebSocket({
@@ -105,6 +109,7 @@ const ZoneDetail = () => {
 
   useEffect(() => {
     loadData()
+    loadHistoryConfig()
   }, [areaId])
 
   const loadData = async () => {
@@ -137,6 +142,16 @@ const ZoneDetail = () => {
       console.error('Failed to load area:', error)
     } finally {
       setLoading(false)
+    }
+  }
+  
+  const loadHistoryConfig = async () => {
+    try {
+      const config = await getHistoryConfig()
+      setHistoryRetentionState(config.retention_days)
+      setRecordInterval(config.record_interval_minutes)
+    } catch (error) {
+      console.error('Failed to load history config:', error)
     }
   }
 
@@ -947,6 +962,60 @@ const ZoneDetail = () => {
                     </Typography>
                   </Box>
                 </Box>
+              </Box>
+            </Paper>
+
+            {/* History Data Management */}
+            <Paper sx={{ p: 3, mb: 3 }}>
+              <Typography variant="h6" gutterBottom color="text.primary">
+                History Data Management
+              </Typography>
+              <Typography variant="body2" color="text.secondary" paragraph>
+                Configure how long temperature history is stored. Data is recorded every {recordInterval} minutes and automatically cleaned up after the retention period.
+              </Typography>
+              
+              <Box sx={{ mt: 3 }}>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Data Retention Period: {historyRetention} days
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mt: 2 }}>
+                  <Slider
+                    value={historyRetention}
+                    onChange={(_, value) => setHistoryRetentionState(value as number)}
+                    min={1}
+                    max={365}
+                    step={1}
+                    marks={[
+                      { value: 1, label: '1 day' },
+                      { value: 7, label: '7 days' },
+                      { value: 30, label: '30 days' },
+                      { value: 90, label: '90 days' },
+                      { value: 180, label: '180 days' },
+                      { value: 365, label: '1 year' }
+                    ]}
+                    valueLabelDisplay="auto"
+                    valueLabelFormat={(value) => `${value} days`}
+                    sx={{ flexGrow: 1 }}
+                  />
+                  <Button
+                    variant="contained"
+                    onClick={async () => {
+                      try {
+                        await setHistoryRetention(historyRetention)
+                        await loadHistoryConfig()
+                      } catch (error) {
+                        console.error('Failed to update history retention:', error)
+                      }
+                    }}
+                  >
+                    Save
+                  </Button>
+                </Box>
+                
+                <Alert severity="info" sx={{ mt: 2 }}>
+                  <strong>Note:</strong> History data older than the retention period will be automatically deleted during the next cleanup cycle (runs every hour). 
+                  Reducing the retention period will trigger an immediate cleanup. Recording interval is fixed at {recordInterval} minutes and cannot be changed.
+                </Alert>
               </Box>
             </Paper>
 

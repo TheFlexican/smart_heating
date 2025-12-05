@@ -66,7 +66,11 @@ npm run type-check
 - **CreateZoneDialog** - Modal dialog for creating new areas
 - **DevicePanel** - Sidebar with draggable Zigbee2MQTT devices
 - **ScheduleEditor** - Time-based temperature schedule management
-- **HistoryChart** - Interactive Recharts visualization (6h-7d)
+- **HistoryChart** - Interactive Recharts visualization with configurable time ranges
+  - Preset buttons: 6h, 12h, 24h, 3d, 7d, 30d, Custom
+  - Custom date/time range picker with start/end inputs
+  - Auto-refresh every 5 minutes
+  - Visual indicators for heating periods
 
 ### Hooks
 
@@ -83,7 +87,10 @@ The `src/api.ts` file contains all API interaction functions:
 - `addDeviceToZone()` / `removeDeviceFromZone()` - Manage area devices
 - `getDevices()` - Fetch available Zigbee2MQTT devices
 - `getLearningStats()` - Get adaptive learning statistics for an area
-- Plus schedule, history, and service endpoints
+- `getHistoryConfig()` - Fetch history retention settings
+- `setHistoryRetention(days)` - Update retention period (1-365 days)
+- `getHistory(areaId, options)` - Flexible history queries with hours, startTime, endTime
+- Plus schedule, preset modes, boost mode, window/presence sensors, and HVAC mode endpoints
 
 ### TypeScript Types
 
@@ -122,10 +129,27 @@ See `src/types.ts` for all interface definitions:
   - API endpoint information
 
 ### Temperature History
-- Records every 5 minutes
-- 7-day retention
-- Interactive charts with multiple time ranges
-- Color-coded: current (blue), target (yellow), heating (red dots)
+- **Configurable Retention**: 1-365 days (default: 30 days)
+- **Recording Interval**: Every 5 minutes (fixed)
+- **No Aggregation**: Raw data points preserved at full resolution
+- **Preset Time Ranges**: 6h, 12h, 24h, 3d, 7d, 30d
+- **Custom Date/Time Picker**: Select specific analysis periods
+- **Automatic Cleanup**: Hourly background task removes expired data
+- **Interactive Charts**: Color-coded visualization
+  - Current temperature (blue line)
+  - Target temperature (yellow dashed line)
+  - Heating active (red dots)
+  - Average target (green dashed line)
+- **History Management UI**:
+  - Settings tab panel for retention configuration
+  - Slider with visual markers (1d, 7d, 30d, 90d, 180d, 365d)
+  - Save button with immediate cleanup
+  - Display of recording interval and current settings
+- **Flexible Querying**:
+  - Toggle buttons for preset ranges
+  - Custom mode with start/end datetime inputs
+  - Apply button for custom queries
+  - Auto-refresh every 5 minutes
 
 ### Advanced Settings
 - Global hysteresis control (0.1-2.0°C)

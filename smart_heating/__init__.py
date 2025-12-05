@@ -36,6 +36,7 @@ from .const import (
     ATTR_FROST_PROTECTION_ENABLED,
     ATTR_FROST_PROTECTION_TEMP,
     ATTR_HVAC_MODE,
+    ATTR_HISTORY_RETENTION_DAYS,
     DEVICE_TYPE_OPENTHERM_GATEWAY,
     DEVICE_TYPE_TEMPERATURE_SENSOR,
     DEVICE_TYPE_THERMOSTAT,
@@ -69,6 +70,7 @@ from .const import (
     SERVICE_REMOVE_PRESENCE_SENSOR,
     SERVICE_SET_HVAC_MODE,
     SERVICE_COPY_SCHEDULE,
+    SERVICE_SET_HISTORY_RETENTION,
 )
 from .coordinator import SmartHeatingCoordinator
 from .area_manager import AreaManager
@@ -724,6 +726,26 @@ async def async_setup_services(hass: HomeAssistant, coordinator: SmartHeatingCoo
         except Exception as err:
             _LOGGER.error("Failed to copy schedule: %s", err)
     
+    async def async_handle_set_history_retention(call: ServiceCall) -> None:
+        """Handle set_history_retention service."""
+        days = call.data.get(ATTR_HISTORY_RETENTION_DAYS)
+        
+        try:
+            history_tracker = hass.data.get(DOMAIN, {}).get("history")
+            if not history_tracker:
+                _LOGGER.error("History tracker not available")
+                return
+            
+            history_tracker.set_retention_days(days)
+            await history_tracker.async_save()
+            
+            # Trigger immediate cleanup to remove old data if retention was reduced
+            await history_tracker._async_cleanup_old_entries()
+            
+            _LOGGER.info("History retention set to %d days", days)
+        except Exception as err:
+            _LOGGER.error("Failed to set history retention: %s", err)
+    
     # Service schemas
     ADD_DEVICE_SCHEMA = vol.Schema({
         vol.Required(ATTR_AREA_ID): cv.string,
@@ -837,6 +859,10 @@ async def async_setup_services(hass: HomeAssistant, coordinator: SmartHeatingCoo
         vol.Optional("target_days"): vol.All(cv.ensure_list, [cv.string]),
     })
     
+    HISTORY_RETENTION_SCHEMA = vol.Schema({
+        vol.Required(ATTR_HISTORY_RETENTION_DAYS): vol.All(vol.Coerce(int), vol.Range(min=1, max=365)),
+    })
+    
     # Register all services
     hass.services.async_register(DOMAIN, SERVICE_REFRESH, async_handle_refresh)
     hass.services.async_register(DOMAIN, SERVICE_ADD_DEVICE_TO_AREA, async_handle_add_device, schema=ADD_DEVICE_SCHEMA)
@@ -863,6 +889,7 @@ async def async_setup_services(hass: HomeAssistant, coordinator: SmartHeatingCoo
     hass.services.async_register(DOMAIN, SERVICE_REMOVE_PRESENCE_SENSOR, async_handle_remove_presence_sensor, schema=PRESENCE_SENSOR_SCHEMA)
     hass.services.async_register(DOMAIN, SERVICE_SET_HVAC_MODE, async_handle_set_hvac_mode, schema=HVAC_MODE_SCHEMA)
     hass.services.async_register(DOMAIN, SERVICE_COPY_SCHEDULE, async_handle_copy_schedule, schema=COPY_SCHEDULE_SCHEMA)
+    hass.services.async_register(DOMAIN, SERVICE_SET_HISTORY_RETENTION, async_handle_set_history_retention, schema=HISTORY_RETENTION_SCHEMA)
     
     _LOGGER.debug("All services registered")
 
@@ -892,6 +919,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if "schedule_executor" in hass.data[DOMAIN]:
             await hass.data[DOMAIN]["schedule_executor"].async_stop()
             _LOGGER.debug("Schedule executor stopped")
+        
+        # Unload history tracker
+        if "history" in hass.data[DOMAIN]:
+            await hass.data[DOMAIN]["history"].async_unload()
+            _LOGGER.debug("History tracker unloaded")
         
         # Remove coordinator from hass.data
         hass.data[DOMAIN].pop(entry.entry_id)
@@ -931,6 +963,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             hass.services.async_remove(DOMAIN, SERVICE_ADD_PRESENCE_SENSOR)
             hass.services.async_remove(DOMAIN, SERVICE_REMOVE_PRESENCE_SENSOR)
             hass.services.async_remove(DOMAIN, SERVICE_SET_HVAC_MODE)
+            hass.services.async_remove(DOMAIN, SERVICE_COPY_SCHEDULE)
+            hass.services.async_remove(DOMAIN, SERVICE_SET_HISTORY_RETENTION)
             hass.services.async_remove(DOMAIN, SERVICE_COPY_SCHEDULE)
             _LOGGER.debug("Smart Heating services removed")
     

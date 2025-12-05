@@ -51,6 +51,8 @@ class SmartHeatingAPIView(HomeAssistantView):
                 return await self.get_status(request)
             elif endpoint == "config":
                 return await self.get_config(request)
+            elif endpoint == "history/config":
+                return await self.get_history_config(request)
             elif endpoint.startswith("entity_state/"):
                 entity_id = endpoint.replace("entity_state/", "")
                 return await self.get_entity_state(request, entity_id)
@@ -130,6 +132,8 @@ class SmartHeatingAPIView(HomeAssistantView):
                 return await self.set_hvac_mode(request, area_id, data)
             elif endpoint == "frost_protection":
                 return await self.set_frost_protection(request, data)
+            elif endpoint == "history/config":
+                return await self.set_history_config(request, data)
             elif endpoint == "call_service":
                 return await self.call_service(request, data)
             else:
@@ -685,9 +689,12 @@ class SmartHeatingAPIView(HomeAssistantView):
             JSON response with history
         """
         from .const import DOMAIN
+        from datetime import datetime
         
-        # Get hours parameter (default 24)
-        hours = int(request.query.get("hours", "24"))
+        # Get query parameters
+        hours = request.query.get("hours")
+        start_time = request.query.get("start_time")
+        end_time = request.query.get("end_time")
         
         history_tracker = self.hass.data.get(DOMAIN, {}).get("history")
         if not history_tracker:
@@ -695,13 +702,38 @@ class SmartHeatingAPIView(HomeAssistantView):
                 {"error": "History not available"}, status=503
             )
         
-        history = history_tracker.get_history(area_id, hours)
-        
-        return web.json_response({
-            "area_id": area_id,
-            "hours": hours,
-            "entries": history
-        })
+        try:
+            # Parse time parameters
+            start_dt = None
+            end_dt = None
+            hours_int = None
+            
+            if start_time and end_time:
+                # Custom time range
+                start_dt = datetime.fromisoformat(start_time)
+                end_dt = datetime.fromisoformat(end_time)
+                history = history_tracker.get_history(area_id, start_time=start_dt, end_time=end_dt)
+            elif hours:
+                # Hours-based query
+                hours_int = int(hours)
+                history = history_tracker.get_history(area_id, hours=hours_int)
+            else:
+                # Default: last 24 hours
+                hours_int = 24
+                history = history_tracker.get_history(area_id, hours=hours_int)
+            
+            return web.json_response({
+                "area_id": area_id,
+                "hours": hours_int,
+                "start_time": start_time,
+                "end_time": end_time,
+                "entries": history,
+                "count": len(history)
+            })
+        except ValueError as err:
+            return web.json_response(
+                {"error": f"Invalid time parameter: {err}"}, status=400
+            )
 
     async def get_learning_stats(self, request: web.Request, area_id: str) -> web.Response:
         """Get learning statistics for an area.
@@ -1123,6 +1155,69 @@ class SmartHeatingAPIView(HomeAssistantView):
         except ValueError as err:
             return web.json_response(
                 {"error": str(err)}, status=404
+            )
+
+    async def get_history_config(self, request: web.Request) -> web.Response:
+        """Get history configuration.
+        
+        Args:
+            request: Request object
+            
+        Returns:
+            JSON response with history settings
+        """
+        from .const import DOMAIN, HISTORY_RECORD_INTERVAL_SECONDS
+        
+        history_tracker = self.hass.data.get(DOMAIN, {}).get("history")
+        if not history_tracker:
+            return web.json_response(
+                {"error": "History not available"}, status=503
+            )
+        
+        return web.json_response({
+            "retention_days": history_tracker.get_retention_days(),
+            "record_interval_seconds": HISTORY_RECORD_INTERVAL_SECONDS,
+            "record_interval_minutes": HISTORY_RECORD_INTERVAL_SECONDS / 60
+        })
+    
+    async def set_history_config(self, request: web.Request, data: dict) -> web.Response:
+        """Set history configuration.
+        
+        Args:
+            request: Request object
+            data: Configuration data
+            
+        Returns:
+            JSON response
+        """
+        from .const import DOMAIN
+        
+        retention_days = data.get("retention_days")
+        if not retention_days:
+            return web.json_response(
+                {"error": "retention_days required"}, status=400
+            )
+        
+        try:
+            history_tracker = self.hass.data.get(DOMAIN, {}).get("history")
+            if not history_tracker:
+                return web.json_response(
+                    {"error": "History not available"}, status=503
+                )
+            
+            history_tracker.set_retention_days(int(retention_days))
+            await history_tracker.async_save()
+            
+            # Trigger cleanup if retention was reduced
+            await history_tracker._async_cleanup_old_entries()
+            
+            return web.json_response({
+                "success": True,
+                "retention_days": history_tracker.get_retention_days()
+            })
+        except ValueError as err:
+            return web.json_response(
+                {"error": str(err)}, status=400
             )
 
     async def set_hvac_mode(

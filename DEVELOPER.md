@@ -223,6 +223,57 @@ class ZoneManager:
     async def async_disable_area(area_id: str) -> bool
 ```
 
+### HistoryTracker Class (`history.py`)
+
+```python
+class HistoryTracker:
+    """Track temperature history for areas."""
+    
+    async def async_load() -> None  # Load from storage
+    async def async_save() -> None  # Save to storage
+    async def async_unload() -> None  # Cleanup on shutdown
+    
+    async def async_record_temperature(
+        area_id: str,
+        current_temp: float,
+        target_temp: float,
+        state: str
+    ) -> None
+    
+    def get_history(
+        area_id: str,
+        hours: int | None = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None
+    ) -> list[dict[str, Any]]
+    
+    def get_all_history() -> dict[str, list[dict[str, Any]]]
+    
+    def set_retention_days(days: int) -> None
+    def get_retention_days() -> int
+    
+    # Internal methods
+    async def _async_cleanup_old_entries() -> None
+    async def _async_periodic_cleanup(now=None) -> None
+```
+
+**Recording:**
+- Interval: Every 5 minutes (10 cycles × 30 seconds)
+- Counter tracked in `ClimateController._record_counter`
+- Data points: timestamp (ISO8601), current_temperature, target_temperature, state
+- Storage: `.storage/smart_heating_history`
+
+**Retention:**
+- Configurable: 1-365 days (default: 30 days)
+- Cleanup: Hourly background task via `async_track_time_interval`
+- Immediate cleanup when retention is reduced
+- Persistent across restarts
+
+**Querying:**
+- By hours: `get_history(area_id, hours=24)`
+- By date range: `get_history(area_id, start_time=dt1, end_time=dt2)`
+- All data: `get_history(area_id)` (within retention period)
+
 ### Coordinator (`coordinator.py`)
 
 ```python
@@ -418,6 +469,55 @@ const MyComponent = ({ data, optional = 0 }: MyProps) => {
 6. **Create GitHub release**
 
 ## Common Patterns
+
+### History Data Management
+
+**Adding history recording to a new feature:**
+
+1. **Record data** in climate controller:
+   ```python
+   if should_record_history and history_tracker:
+       await history_tracker.async_record_temperature(
+           area_id, current_temp, target_temp, area.state
+       )
+   ```
+
+2. **Query history** from API or service:
+   ```python
+   # Get last 24 hours
+   history = history_tracker.get_history(area_id, hours=24)
+   
+   # Get custom range
+   from datetime import datetime
+   start = datetime.fromisoformat("2025-12-01T00:00:00")
+   end = datetime.fromisoformat("2025-12-05T23:59:59")
+   history = history_tracker.get_history(area_id, start_time=start, end_time=end)
+   ```
+
+3. **Update retention** via service:
+   ```python
+   history_tracker.set_retention_days(90)
+   await history_tracker.async_save()
+   await history_tracker._async_cleanup_old_entries()  # Immediate cleanup
+   ```
+
+**Frontend integration:**
+
+```typescript
+// Get history config
+const config = await getHistoryConfig()
+// {retention_days: 30, record_interval_seconds: 300, record_interval_minutes: 5}
+
+// Update retention
+await setHistoryRetention(90)
+
+// Query history
+const history = await getHistory(areaId, { hours: 24 })
+const custom = await getHistory(areaId, {
+  startTime: "2025-12-01T00:00:00",
+  endTime: "2025-12-05T23:59:59"
+})
+```
 
 ### Async Operations in Python
 

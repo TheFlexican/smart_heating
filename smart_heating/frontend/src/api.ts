@@ -182,3 +182,54 @@ export const copySchedule = async (
   }
   await axios.post(`${API_BASE}/copy_schedule`, data)
 }
+
+// History Management
+export const getHistoryConfig = async (): Promise<{
+  retention_days: number
+  record_interval_seconds: number
+  record_interval_minutes: number
+}> => {
+  const response = await axios.get(`${API_BASE}/history/config`)
+  return response.data
+}
+
+export const setHistoryRetention = async (days: number): Promise<void> => {
+  await axios.post(`${API_BASE}/history/config`, {
+    retention_days: days
+  })
+}
+
+export const getHistory = async (
+  areaId: string,
+  options?: {
+    hours?: number
+    startTime?: string
+    endTime?: string
+  }
+): Promise<{
+  area_id: string
+  hours?: number
+  start_time?: string
+  end_time?: string
+  entries: Array<{
+    timestamp: string
+    current_temperature: number
+    target_temperature: number
+    state: string
+  }>
+  count: number
+}> => {
+  const params = new URLSearchParams()
+  if (options?.hours) {
+    params.append('hours', options.hours.toString())
+  }
+  if (options?.startTime) {
+    params.append('start_time', options.startTime)
+  }
+  if (options?.endTime) {
+    params.append('end_time', options.endTime)
+  }
+  
+  const response = await axios.get(`${API_BASE}/areas/${areaId}/history?${params.toString()}`)
+  return response.data
+}

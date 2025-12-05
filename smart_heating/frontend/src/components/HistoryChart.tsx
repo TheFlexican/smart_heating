@@ -1,5 +1,14 @@
 import { useState, useEffect } from 'react'
-import { Box, CircularProgress, Alert, ToggleButtonGroup, ToggleButton } from '@mui/material'
+import { 
+  Box, 
+  CircularProgress, 
+  Alert, 
+  ToggleButtonGroup, 
+  ToggleButton, 
+  TextField,
+  Button,
+  Stack
+} from '@mui/material'
 import {
   Line,
   XAxis,
@@ -12,6 +21,7 @@ import {
   Scatter,
   ComposedChart
 } from 'recharts'
+import { getHistory } from '../api'
 
 interface HistoryEntry {
   timestamp: string
@@ -29,34 +39,43 @@ const HistoryChart = ({ areaId }: HistoryChartProps) => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [timeRange, setTimeRange] = useState<number>(24)
+  const [customRange, setCustomRange] = useState(false)
+  const [startTime, setStartTime] = useState('')
+  const [endTime, setEndTime] = useState('')
+
+  const loadHistory = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      let result
+      if (customRange && startTime && endTime) {
+        // Custom time range
+        result = await getHistory(areaId, {
+          startTime: new Date(startTime).toISOString(),
+          endTime: new Date(endTime).toISOString()
+        })
+      } else {
+        // Preset time range
+        result = await getHistory(areaId, { hours: timeRange })
+      }
+      
+      setData(result.entries || [])
+    } catch (err) {
+      console.error('Failed to load history:', err)
+      setError(err instanceof Error ? err.message : 'Unknown error')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const loadHistory = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        
-        const response = await fetch(`/api/smart_heating/areas/${areaId}/history?hours=${timeRange}`)
-        if (!response.ok) {
-          throw new Error('Failed to load history')
-        }
-        
-        const result = await response.json()
-        setData(result.entries || [])
-      } catch (err) {
-        console.error('Failed to load history:', err)
-        setError(err instanceof Error ? err.message : 'Unknown error')
-      } finally {
-        setLoading(false)
-      }
-    }
-
     loadHistory()
     
     // Refresh every 5 minutes
     const interval = setInterval(loadHistory, 5 * 60 * 1000)
     return () => clearInterval(interval)
-  }, [areaId, timeRange])
+  }, [areaId, timeRange, customRange, startTime, endTime])
 
   if (loading) {
     return (
@@ -130,20 +149,61 @@ const HistoryChart = ({ areaId }: HistoryChartProps) => {
 
   return (
     <Box>
-      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
-        <ToggleButtonGroup
-          value={timeRange}
-          exclusive
-          onChange={(_e, value) => value && setTimeRange(value)}
-          size="small"
-        >
-          <ToggleButton value={6}>6h</ToggleButton>
-          <ToggleButton value={12}>12h</ToggleButton>
-          <ToggleButton value={24}>24h</ToggleButton>
-          <ToggleButton value={72}>3d</ToggleButton>
-          <ToggleButton value={168}>7d</ToggleButton>
-        </ToggleButtonGroup>
-      </Box>
+      <Stack spacing={2} sx={{ mb: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <ToggleButtonGroup
+            value={customRange ? 'custom' : timeRange}
+            exclusive
+            onChange={(_e, value) => {
+              if (value === 'custom') {
+                setCustomRange(true)
+              } else if (value) {
+                setCustomRange(false)
+                setTimeRange(value)
+              }
+            }}
+            size="small"
+          >
+            <ToggleButton value={6}>6h</ToggleButton>
+            <ToggleButton value={12}>12h</ToggleButton>
+            <ToggleButton value={24}>24h</ToggleButton>
+            <ToggleButton value={72}>3d</ToggleButton>
+            <ToggleButton value={168}>7d</ToggleButton>
+            <ToggleButton value={720}>30d</ToggleButton>
+            <ToggleButton value="custom">Custom</ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
+        
+        {customRange && (
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-end' }}>
+            <TextField
+              label="Start Date & Time"
+              type="datetime-local"
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              size="small"
+              sx={{ flex: 1 }}
+            />
+            <TextField
+              label="End Date & Time"
+              type="datetime-local"
+              value={endTime}
+              onChange={(e) => setEndTime(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              size="small"
+              sx={{ flex: 1 }}
+            />
+            <Button 
+              variant="contained" 
+              onClick={loadHistory}
+              disabled={!startTime || !endTime}
+            >
+              Apply
+            </Button>
+          </Box>
+        )}
+      </Stack>
 
       <ResponsiveContainer width="100%" height={400}>
         <ComposedChart data={chartData}>

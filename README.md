@@ -22,6 +22,11 @@ A Home Assistant custom integration for managing multi-area heating systems with
 - 🌡️ **HVAC Modes** - Support for heating, cooling, auto, and off modes
 - 📋 **Schedule Copying** - Duplicate schedules between areas and days
 - 📊 **Temperature History** - Track and visualize temperature trends with interactive charts
+  - Configurable retention period (1-365 days, default 30 days)
+  - Custom time range selection with date/time picker
+  - Preset ranges: 6h, 12h, 24h, 3d, 7d, 30d
+  - 5-minute data resolution (never aggregated)
+  - Automatic cleanup every hour
 - ⚙️ **Advanced Settings** - Hysteresis control, temperature limits, and fine-tuning
 - 🌐 **REST API** - Full API for programmatic control
 - 📡 **WebSocket support** - Real-time updates
@@ -298,6 +303,77 @@ POST /api/smart_heating/areas/living_room/window_sensors
 # Remove sensor
 DELETE /api/smart_heating/areas/living_room/window_sensors/binary_sensor.living_room_window
 ```
+
+### History Data Management
+
+Full control over temperature history storage and retention with automatic cleanup.
+
+**Features:**
+- **Configurable Retention**: Store history from 1 day to 1 year (default: 30 days)
+- **5-Minute Resolution**: Data recorded every 5 minutes, never aggregated
+- **Automatic Cleanup**: Hourly background task removes expired data
+- **Flexible Querying**: View preset ranges or custom date/time periods
+- **No Data Loss**: Raw data points preserved at full resolution
+
+**Recording:**
+- Interval: Every 5 minutes (300 seconds)
+- Data points: Current temperature, target temperature, heating state, timestamp
+- Storage: Home Assistant's internal storage (`.storage/smart_heating_history`)
+
+**Configuration:**
+```yaml
+# Set retention period (1-365 days)
+service: smart_heating.set_history_retention
+data:
+  history_retention_days: 90  # Keep 90 days of history
+```
+
+**Frontend UI:**
+- Settings tab → History Data Management section
+- Slider to adjust retention period (1-365 days)
+- Visual markers for common periods (1d, 7d, 30d, 90d, 180d, 365d)
+- Save button to apply changes
+- Automatic cleanup triggered when reducing retention
+
+**History Tab:**
+- Preset time ranges: 6h, 12h, 24h, 3d, 7d, 30d
+- Custom date/time range picker for specific analysis
+- Auto-refresh every 5 minutes
+- Interactive charts with heating indicators
+
+**REST API:**
+```bash
+# Get history configuration
+GET /api/smart_heating/history/config
+# Returns: {"retention_days": 30, "record_interval_seconds": 300, "record_interval_minutes": 5}
+
+# Update retention period
+POST /api/smart_heating/history/config
+{"retention_days": 90}
+
+# Query history with preset range
+GET /api/smart_heating/areas/living_room/history?hours=24
+
+# Query history with custom range
+GET /api/smart_heating/areas/living_room/history?start_time=2025-12-01T00:00:00&end_time=2025-12-05T23:59:59
+
+# Get all available history (within retention)
+GET /api/smart_heating/areas/living_room/history
+```
+
+**Storage Management:**
+- Old data automatically deleted after retention period expires
+- Cleanup runs every hour in the background
+- Immediate cleanup when retention period is reduced
+- No manual intervention required
+- Storage space scales with retention period and number of areas
+
+**Best Practices:**
+- **Short-term analysis (1-7 days)**: Quick troubleshooting and pattern identification
+- **Medium-term (30-90 days)**: Seasonal adjustments and efficiency monitoring
+- **Long-term (180-365 days)**: Year-over-year comparisons and annual optimization
+- Balance storage space vs historical data needs
+- Longer retention enables better machine learning predictions
 
 ### Presence Detection
 
@@ -997,7 +1073,12 @@ entities:
 - **Climate Controller** - Controls thermostats based on temperature and schedules (updates every 30 seconds)
 - **Schedule Executor** - Applies time-based temperature schedules (checks every minute)
 - **Coordinator** - Fetches device states from Home Assistant (30-second interval)
-- **History Tracker** - Records temperature data for visualization (5-minute intervals)
+- **History Tracker** - Records temperature data for visualization
+  - 5-minute recording interval (300 seconds)
+  - Configurable retention period (1-365 days, default: 30 days)
+  - Automatic hourly cleanup of expired data
+  - No data aggregation - raw data points preserved
+  - Flexible querying: preset ranges, custom dates, or all available data
 - **REST API** - HTTP endpoints for frontend and external integrations
   - `/api/smart_heating/areas` - Area management
   - `/api/smart_heating/devices` - Device listing
@@ -1080,9 +1161,40 @@ custom_components/smart_heating/
 
 ## 📝 Version
 
-Current version: **0.3.1**
+Current version: **0.3.3**
 
 ### Changelog
+
+#### v0.3.3 (2025-12-05)
+**User-Controlled History Data Management**
+
+- 📊 **Configurable History Retention**
+  - User-configurable retention period (1-365 days, default: 30 days)
+  - Service: `smart_heating.set_history_retention` with days parameter
+  - Automatic hourly cleanup of expired data
+  - Immediate cleanup when retention is reduced
+  - Settings UI in area detail Settings tab with slider and save button
+
+- 📈 **Enhanced History Querying**
+  - Preset time ranges: 6h, 12h, 24h, 3d, 7d, 30d
+  - Custom date/time range picker for specific analysis periods
+  - Query all available history within retention period
+  - REST API endpoints for config and flexible queries
+  - No data aggregation - maintains 5-minute resolution
+
+- 🔧 **Backend Improvements**
+  - `HistoryTracker` class with configurable retention and scheduled cleanup
+  - New API endpoints: `GET/POST /api/smart_heating/history/config`
+  - Enhanced history query with hours, start_time, end_time parameters
+  - Proper cleanup on integration unload
+  - Persistent storage of retention settings
+
+- 🎨 **Frontend Features**
+  - History Data Management panel in Settings tab
+  - Retention slider with visual markers (1d, 7d, 30d, 90d, 180d, 365d)
+  - Custom date/time range picker in History Chart
+  - Display of recording interval and current retention
+  - API functions: `getHistoryConfig()`, `setHistoryRetention()`, `getHistory()`
 
 #### v0.3.2 (2025-12-05)
 **Frontend UI for v0.3.0 Features**

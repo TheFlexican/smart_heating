@@ -42,6 +42,8 @@ SERVICE_ADD_PRESENCE_SENSOR: Final = "add_presence_sensor"
 SERVICE_REMOVE_PRESENCE_SENSOR: Final = "remove_presence_sensor"
 SERVICE_SET_HVAC_MODE: Final = "set_hvac_mode"
 SERVICE_COPY_SCHEDULE: Final = "copy_schedule"
+SERVICE_SET_HISTORY_RETENTION: Final = "set_history_retention"
+SERVICE_SET_HISTORY_RETENTION: Final = "set_history_retention"
 
 # Sensor states
 STATE_INITIALIZED: Final = "initialized"
@@ -76,6 +78,10 @@ HVAC_MODE_HEAT: Final = "heat"
 HVAC_MODE_COOL: Final = "cool"
 HVAC_MODE_HEAT_COOL: Final = "heat_cool"
 HVAC_MODE_AUTO: Final = "auto"
+
+# History settings
+DEFAULT_HISTORY_RETENTION_DAYS: Final = 30  # Keep 30 days by default
+HISTORY_RECORD_INTERVAL_SECONDS: Final = 300  # Record every 5 minutes
 
 HVAC_MODES: Final = [
     HVAC_MODE_OFF,
@@ -166,6 +172,14 @@ DEFAULT_PRESENCE_TEMP_BOOST: Final = 2.0
 # HVAC mode
 ATTR_HVAC_MODE: Final = "hvac_mode"
 ATTR_AC_MODE: Final = "ac_mode"
+
+# History settings
+ATTR_HISTORY_RETENTION_DAYS: Final = "history_retention_days"
+ATTR_HOURS: Final = "hours"
+ATTR_START_TIME_PARAM: Final = "start_time"
+ATTR_END_TIME_PARAM: Final = "end_time"
+DEFAULT_HISTORY_RETENTION_DAYS: Final = 30  # Keep 30 days by default
+HISTORY_RECORD_INTERVAL_SECONDS: Final = 300  # Record every 5 minutes
 
 # Default preset temperatures
 DEFAULT_AWAY_TEMP: Final = 16.0
