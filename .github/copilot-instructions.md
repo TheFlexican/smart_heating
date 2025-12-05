@@ -68,14 +68,14 @@ smart_heating/
 4. Test at http://localhost:8123
 5. Repeat
 
-# If something is broken/stuck:
+# If something is broken/stuck or added new mock devices to MQTT:
 1. Run: ./setup.sh (full container restart)
 ```
 
 ## Version Management
 
-**Current Version:** v0.3.2 (committed)
-**Next Version:** v0.3.3 (future development)
+**Current Version:** v0.3.4
+**Next Version:** v0.3.5 (future development)
 
 ### Version Update Checklist
 When bumping version:
@@ -297,5 +297,5 @@ Keep changelog in reverse chronological order (newest first).
 ---
 
 **Last Updated:** December 5, 2025
-**Current Version:** v0.3.2
-**Next Version:** v0.3.3 (future development)
+**Current Version:** v0.3.4
+**Next Version:** v0.3.5 (future development)

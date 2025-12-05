@@ -16,8 +16,8 @@ A Home Assistant custom integration for managing multi-area heating systems with
   - Tracks heating rates, cooldown rates, and outdoor temperature correlations
 - 🎯 **Preset Modes** - Quick temperature presets (AWAY, ECO, COMFORT, HOME, SLEEP, ACTIVITY, BOOST)
 - ⚡ **Boost Mode** - Temporary high-temperature boost with configurable duration
-- 🪟 **Window Sensor Integration** - Automatic heating adjustment when windows open
-- 👤 **Presence Detection** - Temperature boost when presence/motion detected
+- 🪟 **Window Sensor Integration** - Configurable actions (turn off, reduce temp, or none) when windows/doors open with custom temperature drops
+- 👤 **Presence Detection** - Advanced presence-based heating with separate away/home actions, supports motion sensors, Person entities, and Device Trackers
 - ❄️ **Frost Protection** - Global minimum temperature to prevent freezing
 - 🌡️ **HVAC Modes** - Support for heating, cooling, auto, and off modes
 - 📋 **Schedule Copying** - Duplicate schedules between areas and days

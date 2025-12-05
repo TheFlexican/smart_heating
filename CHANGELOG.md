@@ -16,6 +16,62 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - 📱 Mobile app notifications
 - 🏡 Multi-home support
 
+## [0.3.4] - 2025-12-05
+
+### ✨ Added - Enhanced Sensor Configuration
+
+**Entity Selector UI**
+- New `SensorConfigDialog` modal component for sensor configuration
+- Dropdown populated from Home Assistant entities (auto-discovery)
+- Filter entities by device_class for better UX
+- Manual entity ID input fallback when no entities found
+- Real-time entity state loading from HA
+
+**Window Sensor Actions**
+- Action configuration: Turn Off / Reduce Temperature / No Action
+- Configurable temperature drop (1-10°C, 0.5°C steps)
+- Action descriptions displayed in sensor list
+- Dict-based storage with backward compatibility from string format
+
+**Presence Sensor Actions**
+- Separate away/home action configuration:
+  - Away: Turn Off / Reduce Temperature / Set Eco Mode / No Action
+  - Home: Increase Temperature / Set Comfort Mode / No Action
+- Configurable temperature adjustments (away drop, home boost)
+- Support for motion, occupancy sensors
+- **Person/Device Tracker support** for HA presence detection
+
+**Backend Enhancements**
+- `area_manager.py`: Sensor storage migrated from `list[str]` to `list[dict]`
+- Enhanced temperature calculation logic processing different sensor actions
+- New API endpoint: `GET /api/smart_heating/entities/binary_sensor`
+- Returns binary_sensor + person + device_tracker entities
+- Person/device_tracker marked with virtual `device_class: presence`
+- Action constants in `const.py`:
+  - `WINDOW_ACTION_*`: TURN_OFF, REDUCE_TEMP, NONE
+  - `PRESENCE_ACTION_*`: TURN_OFF, REDUCE_TEMP, SET_ECO, INCREASE_TEMP, SET_COMFORT, NONE
+
+**Development Environment**
+- Updated `setup.sh`: Added 7 new mock devices (24 total)
+  - 3x TS0203 window/door sensors (Living Room, Kitchen, Bedroom)
+  - 2x motion sensors (Living Room, Bedroom)
+- Optimized setup flow: MQTT devices published before user action prompt
+- Improved UX: All devices auto-discovered during MQTT integration setup
+
+**Frontend Improvements**
+- `AreaDetail.tsx`: Integrated sensor configuration dialog
+- Enhanced sensor display with human-readable action descriptions
+- TypeScript types: `WindowSensorConfig`, `PresenceSensorConfig`, `HassEntity`
+- Material-UI v6 components for consistent UI
+
+### 🐛 Fixed
+- Backward compatibility: Old string-based sensor configs auto-migrated to dict format
+- TypeScript unused imports removed for clean builds
+
+### 📝 Changed
+- `ha-config/configuration.yaml`: Removed debug logging (cleaner default config)
+- `.github/copilot-instructions.md`: Updated development workflow notes
+
 ## [0.3.3] - 2025-12-05
 
 ### ✨ Added - User-Controlled History Data Management

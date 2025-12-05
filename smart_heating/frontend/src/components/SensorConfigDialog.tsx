@@ -49,6 +49,7 @@ const SensorConfigDialog = ({ open, onClose, onAdd, sensorType }: SensorConfigDi
   const loadEntities = async () => {
     setLoading(true)
     try {
+      // API now returns binary sensors, person, and device_tracker entities
       const data = await getBinarySensorEntities()
       setEntities(data)
     } catch (error) {
@@ -112,6 +113,8 @@ const SensorConfigDialog = ({ open, onClose, onAdd, sensorType }: SensorConfigDi
              e.attributes.device_class === 'door' || 
              e.attributes.device_class === 'opening'
     } else {
+      // For presence sensors: include motion, occupancy, presence sensors
+      // Also include person and device_tracker entities (marked with device_class: presence by backend)
       return e.attributes.device_class === 'motion' || 
              e.attributes.device_class === 'occupancy' || 
              e.attributes.device_class === 'presence'
@@ -158,7 +161,9 @@ const SensorConfigDialog = ({ open, onClose, onAdd, sensorType }: SensorConfigDi
                   <TextField
                     size="small"
                     fullWidth
-                    placeholder={sensorType === 'window' ? 'binary_sensor.window_living_room' : 'binary_sensor.motion_living_room'}
+                    placeholder={sensorType === 'window' 
+                      ? 'binary_sensor.window_living_room' 
+                      : 'binary_sensor.motion_living_room or person.john or device_tracker.iphone'}
                     value={selectedEntity}
                     onChange={(e) => setSelectedEntity(e.target.value)}
                     sx={{ mt: 1 }}

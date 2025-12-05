@@ -459,6 +459,8 @@ class SmartHeatingAPIView(HomeAssistantView):
     async def get_binary_sensor_entities(self, request: web.Request) -> web.Response:
         """Get all binary sensor entities from Home Assistant.
         
+        Also includes person and device_tracker entities for presence detection.
+        
         Args:
             request: Request object
             
@@ -467,6 +469,7 @@ class SmartHeatingAPIView(HomeAssistantView):
         """
         entities = []
         
+        # Get binary sensors
         for entity_id in self.hass.states.async_entity_ids("binary_sensor"):
             state = self.hass.states.get(entity_id)
             if state:
@@ -476,6 +479,32 @@ class SmartHeatingAPIView(HomeAssistantView):
                     "attributes": {
                         "friendly_name": state.attributes.get("friendly_name", entity_id),
                         "device_class": state.attributes.get("device_class"),
+                    }
+                })
+        
+        # Get person entities (for presence detection)
+        for entity_id in self.hass.states.async_entity_ids("person"):
+            state = self.hass.states.get(entity_id)
+            if state:
+                entities.append({
+                    "entity_id": entity_id,
+                    "state": state.state,
+                    "attributes": {
+                        "friendly_name": state.attributes.get("friendly_name", entity_id),
+                        "device_class": "presence",  # Virtual device class for filtering
+                    }
+                })
+        
+        # Get device_tracker entities (for presence detection)
+        for entity_id in self.hass.states.async_entity_ids("device_tracker"):
+            state = self.hass.states.get(entity_id)
+            if state:
+                entities.append({
+                    "entity_id": entity_id,
+                    "state": state.state,
+                    "attributes": {
+                        "friendly_name": state.attributes.get("friendly_name", entity_id),
+                        "device_class": "presence",  # Virtual device class for filtering
                     }
                 })
         

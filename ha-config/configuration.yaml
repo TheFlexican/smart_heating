@@ -8,9 +8,3 @@ frontend:
 automation: !include automations.yaml
 script: !include scripts.yaml
 scene: !include scenes.yaml
-
-logger:
-  default: warning
-  logs:
-    custom_components.smart_heating: debug
-

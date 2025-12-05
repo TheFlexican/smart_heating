@@ -158,36 +158,11 @@ else
 fi
 echo ""
 
-# Step 8: User action required
-echo -e "${BLUE}╔════════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║                    ACTION REQUIRED                             ║${NC}"
-echo -e "${BLUE}╠════════════════════════════════════════════════════════════════╣${NC}"
-echo -e "${BLUE}║${NC} Please complete the following steps manually:                ${BLUE}║${NC}"
-echo -e "${BLUE}║${NC}                                                                ${BLUE}║${NC}"
-echo -e "${BLUE}║${NC} 1. Open http://localhost:8123 in your browser                 ${BLUE}║${NC}"
-echo -e "${BLUE}║${NC} 2. Complete Home Assistant onboarding:                        ${BLUE}║${NC}"
-echo -e "${BLUE}║${NC}    - Create user account                                      ${BLUE}║${NC}"
-echo -e "${BLUE}║${NC}    - Set location and timezone                                ${BLUE}║${NC}"
-echo -e "${BLUE}║${NC}    - Create areas: Living Room, Kitchen, Bedroom              ${BLUE}║${NC}"
-echo -e "${BLUE}║${NC} 3. Add MQTT integration:                                      ${BLUE}║${NC}"
-echo -e "${BLUE}║${NC}    - Settings → Devices & Services → Add Integration          ${BLUE}║${NC}"
-echo -e "${BLUE}║${NC}    - Search for 'MQTT'                                        ${BLUE}║${NC}"
-echo -e "${BLUE}║${NC}    - Broker: mosquitto-test                                   ${BLUE}║${NC}"
-echo -e "${BLUE}║${NC}    - Port: 1883                                               ${BLUE}║${NC}"
-echo -e "${BLUE}║${NC}    - Leave username/password empty                            ${BLUE}║${NC}"
-echo -e "${BLUE}║${NC} 4. Add Smart Heating integration:                             ${BLUE}║${NC}"
-echo -e "${BLUE}║${NC}    - Settings → Devices & Services → Add Integration          ${BLUE}║${NC}"
-echo -e "${BLUE}║${NC}    - Search for 'Smart Heating'                               ${BLUE}║${NC}"
-echo -e "${BLUE}║${NC}    - Complete setup                                           ${BLUE}║${NC}"
-echo -e "${BLUE}║${NC}                                                                ${BLUE}║${NC}"
-echo -e "${BLUE}╚════════════════════════════════════════════════════════════════╝${NC}"
-echo ""
-read -p "Press ENTER when you have completed the above steps..."
-echo ""
-
-# Step 9: Populate MQTT devices
+# Step 8: Populate MQTT devices BEFORE user adds integrations
 echo -e "${YELLOW}[8/9]${NC} Creating MQTT test devices..."
-echo "  Publishing device discovery messages..."
+echo "  Publishing device discovery messages to MQTT..."
+echo "  (These will be auto-discovered when you add MQTT integration)"
+echo ""
 
 # Function to publish MQTT message
 mqtt_pub() {
@@ -360,6 +335,90 @@ mqtt_pub "homeassistant/sensor/ts0201_humidity/config" '{
 }'
 mqtt_pub "zigbee2mqtt/ts0201/humidity" "55"
 
+# TS0203 Window/Door Sensors (_TZ3000_zutizvyk)
+echo "  → TS0203 Window/Door Sensors..."
+mqtt_pub "homeassistant/binary_sensor/living_room_window/config" '{
+  "name": "Living Room Window",
+  "unique_id": "living_room_window_sensor",
+  "state_topic": "zigbee2mqtt/living_room_window/contact",
+  "device_class": "window",
+  "payload_on": "false",
+  "payload_off": "true",
+  "device": {
+    "identifiers": ["ts0203_window_lr"],
+    "name": "Living Room Window Sensor",
+    "model": "TS0203 (_TZ3000_zutizvyk)",
+    "manufacturer": "TuYa"
+  }
+}'
+mqtt_pub "zigbee2mqtt/living_room_window/contact" "true"
+
+mqtt_pub "homeassistant/binary_sensor/kitchen_door/config" '{
+  "name": "Kitchen Door",
+  "unique_id": "kitchen_door_sensor",
+  "state_topic": "zigbee2mqtt/kitchen_door/contact",
+  "device_class": "door",
+  "payload_on": "false",
+  "payload_off": "true",
+  "device": {
+    "identifiers": ["ts0203_door_kitchen"],
+    "name": "Kitchen Door Sensor",
+    "model": "TS0203 (_TZ3000_zutizvyk)",
+    "manufacturer": "TuYa"
+  }
+}'
+mqtt_pub "zigbee2mqtt/kitchen_door/contact" "true"
+
+mqtt_pub "homeassistant/binary_sensor/bedroom_window/config" '{
+  "name": "Bedroom Window",
+  "unique_id": "bedroom_window_sensor",
+  "state_topic": "zigbee2mqtt/bedroom_window/contact",
+  "device_class": "window",
+  "payload_on": "false",
+  "payload_off": "true",
+  "device": {
+    "identifiers": ["ts0203_window_bedroom"],
+    "name": "Bedroom Window Sensor",
+    "model": "TS0203 (_TZ3000_zutizvyk)",
+    "manufacturer": "TuYa"
+  }
+}'
+mqtt_pub "zigbee2mqtt/bedroom_window/contact" "true"
+
+# Motion/Presence Sensors
+echo "  → Motion/Presence Sensors..."
+mqtt_pub "homeassistant/binary_sensor/living_room_motion/config" '{
+  "name": "Living Room Motion",
+  "unique_id": "living_room_motion_sensor",
+  "state_topic": "zigbee2mqtt/living_room_motion/occupancy",
+  "device_class": "motion",
+  "payload_on": "true",
+  "payload_off": "false",
+  "device": {
+    "identifiers": ["motion_sensor_lr"],
+    "name": "Living Room Motion Sensor",
+    "model": "SNZB-03 (Sonoff)",
+    "manufacturer": "SONOFF"
+  }
+}'
+mqtt_pub "zigbee2mqtt/living_room_motion/occupancy" "false"
+
+mqtt_pub "homeassistant/binary_sensor/bedroom_motion/config" '{
+  "name": "Bedroom Motion",
+  "unique_id": "bedroom_motion_sensor",
+  "state_topic": "zigbee2mqtt/bedroom_motion/occupancy",
+  "device_class": "motion",
+  "payload_on": "true",
+  "payload_off": "false",
+  "device": {
+    "identifiers": ["motion_sensor_bedroom"],
+    "name": "Bedroom Motion Sensor",
+    "model": "SNZB-03 (Sonoff)",
+    "manufacturer": "SONOFF"
+  }
+}'
+mqtt_pub "zigbee2mqtt/bedroom_motion/occupancy" "false"
+
 # TS0601 TRV (_TZE200_b6wax7g0) - Temperature control only (no position)
 echo "  → TS0601 TRV (temp control only)..."
 mqtt_pub "homeassistant/climate/ts0601_trv/config" '{
@@ -429,11 +488,48 @@ mqtt_pub "homeassistant/switch/bedroom_pump/config" '{
 }'
 mqtt_pub "switches/bedroom_pump/state" "OFF"
 
-echo -e "${GREEN}✓${NC} Created 17 MQTT devices (including OpenTherm, TS0201, TS0601, pumps)"
+echo -e "${GREEN}✓${NC} Created 24 MQTT devices:\n"
+echo "  - 3x Thermostats (Living Room, Kitchen, Bedroom)"
+echo "  - 3x Temperature Sensors"
+echo "  - 3x Window/Door Sensors (TS0203)"
+echo "  - 2x Motion Sensors"
+echo "  - 2x Valves (TRVs)"
+echo "  - 2x Circulation Pumps"
+echo "  - 1x OpenTherm Gateway"
+echo "  - 1x TS0201 Temperature/Humidity Sensor"
+echo "  - 1x TS0601 TRV"
+echo ""
+
+# Step 9: User action required
+echo -e "${BLUE}╔════════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║                    ACTION REQUIRED                             ║${NC}"
+echo -e "${BLUE}╠════════════════════════════════════════════════════════════════╣${NC}"
+echo -e "${BLUE}║${NC} MQTT devices are ready! Now complete Home Assistant setup:    ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}                                                                ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC} 1. Open http://localhost:8123 in your browser                 ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC} 2. Complete Home Assistant onboarding:                        ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}    - Create user account                                      ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}    - Set location and timezone                                ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}    - Create areas: Living Room, Kitchen, Bedroom              ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC} 3. Add MQTT integration:                                      ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}    - Settings → Devices & Services → Add Integration          ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}    - Search for 'MQTT'                                        ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}    - Broker: mosquitto-test                                   ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}    - Port: 1883                                               ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}    - Leave username/password empty                            ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}    → All 24 devices will be auto-discovered!                  ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC} 4. Add Smart Heating integration:                             ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}    - Settings → Devices & Services → Add Integration          ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}    - Search for 'Smart Heating'                               ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}    - You can now select OpenTherm Gateway during setup!       ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}                                                                ${BLUE}║${NC}"
+echo -e "${BLUE}╚════════════════════════════════════════════════════════════════╝${NC}"
+echo ""
+read -p "Press ENTER when you have completed the above steps..."
 echo ""
 
 # Step 10: Restart Home Assistant to discover devices
-echo -e "${YELLOW}[9/9]${NC} Restarting Home Assistant to discover devices..."
+echo -e "${YELLOW}[9/9]${NC} Restarting Home Assistant to finalize setup..."
 
 docker restart "$HA_CONTAINER" > /dev/null
 echo "  Waiting for restart (20 seconds)..."
@@ -449,12 +545,14 @@ echo -e "${GREEN}║${NC} Home Assistant: http://localhost:8123                 
 echo -e "${GREEN}║${NC} Mosquitto MQTT: mosquitto-test:1883                           ${GREEN}║${NC}"
 echo -e "${GREEN}║${NC}                                                                ${GREEN}║${NC}"
 echo -e "${GREEN}║${NC} Created devices:                                               ${GREEN}║${NC}"
-echo -e "${GREEN}║${NC}   Living Room: Thermostat, Temp Sensor, Valve                 ${GREEN}║${NC}"
-echo -e "${GREEN}║${NC}   Kitchen: Thermostat, Temp Sensor                             ${GREEN}║${NC}"
-echo -e "${GREEN}║${NC}   Bedroom: Thermostat, Temp Sensor, Valve                     ${GREEN}║${NC}"
+echo -e "${GREEN}║${NC}   Living Room: Thermostat, Temp, Valve, Window, Motion        ${GREEN}║${NC}"
+echo -e "${GREEN}║${NC}   Kitchen: Thermostat, Temp Sensor, Door Sensor                ${GREEN}║${NC}"
+echo -e "${GREEN}║${NC}   Bedroom: Thermostat, Temp, Valve, Window, Motion            ${GREEN}║${NC}"
 echo -e "${GREEN}║${NC}   OpenTherm: Gateway for boiler control                        ${GREEN}║${NC}"
 echo -e "${GREEN}║${NC}   TS0201: Temperature/Humidity sensor (TuYa)                   ${GREEN}║${NC}"
 echo -e "${GREEN}║${NC}   TS0601: TRV with temp control (TuYa)                         ${GREEN}║${NC}"
+echo -e "${GREEN}║${NC}   TS0203: 3x Window/Door sensors for automation testing        ${GREEN}║${NC}"
+echo -e "${GREEN}║${NC}   Motion: 2x sensors for presence detection                    ${GREEN}║${NC}"
 echo -e "${GREEN}║${NC}   Switches: 2x circulation pumps                               ${GREEN}║${NC}"
 echo -e "${GREEN}║${NC}                                                                ${GREEN}║${NC}"
 echo -e "${GREEN}║${NC} Next Steps:                                                    ${GREEN}║${NC}"
