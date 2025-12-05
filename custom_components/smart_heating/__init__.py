@@ -30,6 +30,12 @@ from .const import (
     ATTR_TRV_HEATING_TEMP,
     ATTR_TRV_IDLE_TEMP,
     ATTR_TRV_TEMP_OFFSET,
+    ATTR_PRESET_MODE,
+    ATTR_BOOST_DURATION,
+    ATTR_BOOST_TEMP,
+    ATTR_FROST_PROTECTION_ENABLED,
+    ATTR_FROST_PROTECTION_TEMP,
+    ATTR_HVAC_MODE,
     DEVICE_TYPE_OPENTHERM_GATEWAY,
     DEVICE_TYPE_TEMPERATURE_SENSOR,
     DEVICE_TYPE_THERMOSTAT,
@@ -37,6 +43,8 @@ from .const import (
     DEVICE_TYPE_SWITCH,
     DOMAIN,
     PLATFORMS,
+    PRESET_MODES,
+    HVAC_MODES,
     SERVICE_ADD_DEVICE_TO_AREA,
     SERVICE_DISABLE_AREA,
     SERVICE_ENABLE_AREA,
@@ -51,6 +59,16 @@ from .const import (
     SERVICE_SET_HYSTERESIS,
     SERVICE_SET_OPENTHERM_GATEWAY,
     SERVICE_SET_TRV_TEMPERATURES,
+    SERVICE_SET_PRESET_MODE,
+    SERVICE_SET_BOOST_MODE,
+    SERVICE_CANCEL_BOOST,
+    SERVICE_SET_FROST_PROTECTION,
+    SERVICE_ADD_WINDOW_SENSOR,
+    SERVICE_REMOVE_WINDOW_SENSOR,
+    SERVICE_ADD_PRESENCE_SENSOR,
+    SERVICE_REMOVE_PRESENCE_SENSOR,
+    SERVICE_SET_HVAC_MODE,
+    SERVICE_COPY_SCHEDULE,
 )
 from .coordinator import SmartHeatingCoordinator
 from .area_manager import AreaManager
@@ -463,6 +481,249 @@ async def async_setup_services(hass: HomeAssistant, coordinator: SmartHeatingCoo
         except ValueError as err:
             _LOGGER.error("Failed to set TRV temperatures: %s", err)
     
+    async def async_handle_set_preset_mode(call: ServiceCall) -> None:
+        """Handle the set_preset_mode service call."""
+        area_id = call.data[ATTR_AREA_ID]
+        preset_mode = call.data[ATTR_PRESET_MODE]
+        
+        _LOGGER.debug("Setting preset mode for area %s to %s", area_id, preset_mode)
+        
+        area = area_manager.get_area(area_id)
+        if not area:
+            _LOGGER.error("Area %s not found", area_id)
+            return
+        
+        try:
+            area.set_preset_mode(preset_mode)
+            await area_manager.async_save()
+            await coordinator.async_request_refresh()
+            _LOGGER.info("Set preset mode for area %s to %s", area_id, preset_mode)
+        except ValueError as err:
+            _LOGGER.error("Failed to set preset mode: %s", err)
+    
+    async def async_handle_set_boost_mode(call: ServiceCall) -> None:
+        """Handle the set_boost_mode service call."""
+        area_id = call.data[ATTR_AREA_ID]
+        duration = call.data.get(ATTR_BOOST_DURATION, 60)
+        temp = call.data.get(ATTR_BOOST_TEMP)
+        
+        _LOGGER.debug("Setting boost mode for area %s: %d minutes", area_id, duration)
+        
+        area = area_manager.get_area(area_id)
+        if not area:
+            _LOGGER.error("Area %s not found", area_id)
+            return
+        
+        try:
+            area.set_boost_mode(duration, temp)
+            await area_manager.async_save()
+            await coordinator.async_request_refresh()
+            _LOGGER.info("Activated boost mode for area %s: %d minutes at %.1f°C", 
+                        area_id, duration, area.boost_temp)
+        except ValueError as err:
+            _LOGGER.error("Failed to set boost mode: %s", err)
+    
+    async def async_handle_cancel_boost(call: ServiceCall) -> None:
+        """Handle the cancel_boost service call."""
+        area_id = call.data[ATTR_AREA_ID]
+        
+        _LOGGER.debug("Cancelling boost mode for area %s", area_id)
+        
+        area = area_manager.get_area(area_id)
+        if not area:
+            _LOGGER.error("Area %s not found", area_id)
+            return
+        
+        try:
+            area.cancel_boost_mode()
+            await area_manager.async_save()
+            await coordinator.async_request_refresh()
+            _LOGGER.info("Cancelled boost mode for area %s", area_id)
+        except ValueError as err:
+            _LOGGER.error("Failed to cancel boost mode: %s", err)
+    
+    async def async_handle_set_frost_protection(call: ServiceCall) -> None:
+        """Handle the set_frost_protection service call."""
+        enabled = call.data.get(ATTR_FROST_PROTECTION_ENABLED)
+        temp = call.data.get(ATTR_FROST_PROTECTION_TEMP)
+        
+        _LOGGER.debug("Setting frost protection: enabled=%s, temp=%.1f°C", enabled, temp if temp else 7.0)
+        
+        try:
+            if enabled is not None:
+                area_manager.frost_protection_enabled = enabled
+            if temp is not None:
+                area_manager.frost_protection_temp = temp
+            
+            await area_manager.async_save()
+            await coordinator.async_request_refresh()
+            _LOGGER.info("Set frost protection: enabled=%s, temp=%.1f°C", 
+                        area_manager.frost_protection_enabled,
+                        area_manager.frost_protection_temp)
+        except ValueError as err:
+            _LOGGER.error("Failed to set frost protection: %s", err)
+    
+    async def async_handle_add_window_sensor(call: ServiceCall) -> None:
+        """Handle the add_window_sensor service call."""
+        area_id = call.data[ATTR_AREA_ID]
+        entity_id = call.data["entity_id"]
+        
+        _LOGGER.debug("Adding window sensor %s to area %s", entity_id, area_id)
+        
+        area = area_manager.get_area(area_id)
+        if not area:
+            _LOGGER.error("Area %s not found", area_id)
+            return
+        
+        try:
+            area.add_window_sensor(entity_id)
+            await area_manager.async_save()
+            await coordinator.async_request_refresh()
+            _LOGGER.info("Added window sensor %s to area %s", entity_id, area_id)
+        except ValueError as err:
+            _LOGGER.error("Failed to add window sensor: %s", err)
+    
+    async def async_handle_remove_window_sensor(call: ServiceCall) -> None:
+        """Handle the remove_window_sensor service call."""
+        area_id = call.data[ATTR_AREA_ID]
+        entity_id = call.data["entity_id"]
+        
+        _LOGGER.debug("Removing window sensor %s from area %s", entity_id, area_id)
+        
+        area = area_manager.get_area(area_id)
+        if not area:
+            _LOGGER.error("Area %s not found", area_id)
+            return
+        
+        try:
+            area.remove_window_sensor(entity_id)
+            await area_manager.async_save()
+            await coordinator.async_request_refresh()
+            _LOGGER.info("Removed window sensor %s from area %s", entity_id, area_id)
+        except ValueError as err:
+            _LOGGER.error("Failed to remove window sensor: %s", err)
+    
+    async def async_handle_add_presence_sensor(call: ServiceCall) -> None:
+        """Handle the add_presence_sensor service call."""
+        area_id = call.data[ATTR_AREA_ID]
+        entity_id = call.data["entity_id"]
+        
+        _LOGGER.debug("Adding presence sensor %s to area %s", entity_id, area_id)
+        
+        area = area_manager.get_area(area_id)
+        if not area:
+            _LOGGER.error("Area %s not found", area_id)
+            return
+        
+        try:
+            area.add_presence_sensor(entity_id)
+            await area_manager.async_save()
+            await coordinator.async_request_refresh()
+            _LOGGER.info("Added presence sensor %s to area %s", entity_id, area_id)
+        except ValueError as err:
+            _LOGGER.error("Failed to add presence sensor: %s", err)
+    
+    async def async_handle_remove_presence_sensor(call: ServiceCall) -> None:
+        """Handle the remove_presence_sensor service call."""
+        area_id = call.data[ATTR_AREA_ID]
+        entity_id = call.data["entity_id"]
+        
+        _LOGGER.debug("Removing presence sensor %s from area %s", entity_id, area_id)
+        
+        area = area_manager.get_area(area_id)
+        if not area:
+            _LOGGER.error("Area %s not found", area_id)
+            return
+        
+        try:
+            area.remove_presence_sensor(entity_id)
+            await area_manager.async_save()
+            await coordinator.async_request_refresh()
+            _LOGGER.info("Removed presence sensor %s from area %s", entity_id, area_id)
+        except ValueError as err:
+            _LOGGER.error("Failed to remove presence sensor: %s", err)
+    
+    async def async_handle_set_hvac_mode(call: ServiceCall) -> None:
+        """Handle the set_hvac_mode service call."""
+        area_id = call.data[ATTR_AREA_ID]
+        hvac_mode = call.data[ATTR_HVAC_MODE]
+        
+        _LOGGER.debug("Setting HVAC mode for area %s to %s", area_id, hvac_mode)
+        
+        area = area_manager.get_area(area_id)
+        if not area:
+            _LOGGER.error("Area %s not found", area_id)
+            return
+        
+        try:
+            area.hvac_mode = hvac_mode
+            await area_manager.async_save()
+            await coordinator.async_request_refresh()
+            _LOGGER.info("Set HVAC mode for area %s to %s", area_id, hvac_mode)
+        except ValueError as err:
+            _LOGGER.error("Failed to set HVAC mode: %s", err)
+    
+    async def async_handle_copy_schedule(call: ServiceCall) -> None:
+        """Handle the copy_schedule service call."""
+        source_area_id = call.data["source_area_id"]
+        source_schedule_id = call.data["source_schedule_id"]
+        target_area_id = call.data["target_area_id"]
+        target_days = call.data.get("target_days", [])
+        
+        _LOGGER.debug("Copying schedule %s from area %s to area %s", 
+                     source_schedule_id, source_area_id, target_area_id)
+        
+        source_area = area_manager.get_area(source_area_id)
+        target_area = area_manager.get_area(target_area_id)
+        
+        if not source_area:
+            _LOGGER.error("Source area %s not found", source_area_id)
+            return
+        if not target_area:
+            _LOGGER.error("Target area %s not found", target_area_id)
+            return
+        
+        try:
+            from .area_manager import Schedule
+            import uuid
+            
+            source_schedule = source_area.schedules.get(source_schedule_id)
+            if not source_schedule:
+                _LOGGER.error("Schedule %s not found in area %s", source_schedule_id, source_area_id)
+                return
+            
+            # Create new schedule(s) for target days
+            if target_days:
+                for day in target_days:
+                    new_schedule = Schedule(
+                        schedule_id=f"{day.lower()}_{uuid.uuid4().hex[:8]}",
+                        time=source_schedule.start_time,
+                        temperature=source_schedule.temperature,
+                        day=day,
+                        start_time=source_schedule.start_time,
+                        end_time=source_schedule.end_time,
+                        enabled=source_schedule.enabled
+                    )
+                    target_area.add_schedule(new_schedule)
+            else:
+                # Copy with same days
+                new_schedule = Schedule(
+                    schedule_id=f"copied_{uuid.uuid4().hex[:8]}",
+                    time=source_schedule.start_time,
+                    temperature=source_schedule.temperature,
+                    day=source_schedule.day,
+                    start_time=source_schedule.start_time,
+                    end_time=source_schedule.end_time,
+                    enabled=source_schedule.enabled
+                )
+                target_area.add_schedule(new_schedule)
+            
+            await area_manager.async_save()
+            await coordinator.async_request_refresh()
+            _LOGGER.info("Copied schedule from area %s to area %s", source_area_id, target_area_id)
+        except Exception as err:
+            _LOGGER.error("Failed to copy schedule: %s", err)
+    
     # Service schemas
     ADD_DEVICE_SCHEMA = vol.Schema({
         vol.Required(ATTR_AREA_ID): cv.string,
@@ -534,6 +795,48 @@ async def async_setup_services(hass: HomeAssistant, coordinator: SmartHeatingCoo
         vol.Optional("temp_offset"): vol.Coerce(float),
     })
     
+    PRESET_MODE_SCHEMA = vol.Schema({
+        vol.Required(ATTR_AREA_ID): cv.string,
+        vol.Required(ATTR_PRESET_MODE): vol.In(PRESET_MODES),
+    })
+    
+    BOOST_MODE_SCHEMA = vol.Schema({
+        vol.Required(ATTR_AREA_ID): cv.string,
+        vol.Optional(ATTR_BOOST_DURATION, default=60): vol.Coerce(int),
+        vol.Optional(ATTR_BOOST_TEMP): vol.Coerce(float),
+    })
+    
+    CANCEL_BOOST_SCHEMA = vol.Schema({
+        vol.Required(ATTR_AREA_ID): cv.string,
+    })
+    
+    FROST_PROTECTION_SCHEMA = vol.Schema({
+        vol.Optional(ATTR_FROST_PROTECTION_ENABLED): cv.boolean,
+        vol.Optional(ATTR_FROST_PROTECTION_TEMP): vol.Coerce(float),
+    })
+    
+    WINDOW_SENSOR_SCHEMA = vol.Schema({
+        vol.Required(ATTR_AREA_ID): cv.string,
+        vol.Required("entity_id"): cv.entity_id,
+    })
+    
+    PRESENCE_SENSOR_SCHEMA = vol.Schema({
+        vol.Required(ATTR_AREA_ID): cv.string,
+        vol.Required("entity_id"): cv.entity_id,
+    })
+    
+    HVAC_MODE_SCHEMA = vol.Schema({
+        vol.Required(ATTR_AREA_ID): cv.string,
+        vol.Required(ATTR_HVAC_MODE): vol.In(HVAC_MODES),
+    })
+    
+    COPY_SCHEDULE_SCHEMA = vol.Schema({
+        vol.Required("source_area_id"): cv.string,
+        vol.Required("source_schedule_id"): cv.string,
+        vol.Required("target_area_id"): cv.string,
+        vol.Optional("target_days"): vol.All(cv.ensure_list, [cv.string]),
+    })
+    
     # Register all services
     hass.services.async_register(DOMAIN, SERVICE_REFRESH, async_handle_refresh)
     hass.services.async_register(DOMAIN, SERVICE_ADD_DEVICE_TO_AREA, async_handle_add_device, schema=ADD_DEVICE_SCHEMA)
@@ -549,6 +852,17 @@ async def async_setup_services(hass: HomeAssistant, coordinator: SmartHeatingCoo
     hass.services.async_register(DOMAIN, SERVICE_SET_HYSTERESIS, async_handle_set_hysteresis, schema=HYSTERESIS_SCHEMA)
     hass.services.async_register(DOMAIN, SERVICE_SET_OPENTHERM_GATEWAY, async_handle_set_opentherm_gateway, schema=OPENTHERM_GATEWAY_SCHEMA)
     hass.services.async_register(DOMAIN, SERVICE_SET_TRV_TEMPERATURES, async_handle_set_trv_temperatures, schema=TRV_TEMPERATURES_SCHEMA)
+    # New services
+    hass.services.async_register(DOMAIN, SERVICE_SET_PRESET_MODE, async_handle_set_preset_mode, schema=PRESET_MODE_SCHEMA)
+    hass.services.async_register(DOMAIN, SERVICE_SET_BOOST_MODE, async_handle_set_boost_mode, schema=BOOST_MODE_SCHEMA)
+    hass.services.async_register(DOMAIN, SERVICE_CANCEL_BOOST, async_handle_cancel_boost, schema=CANCEL_BOOST_SCHEMA)
+    hass.services.async_register(DOMAIN, SERVICE_SET_FROST_PROTECTION, async_handle_set_frost_protection, schema=FROST_PROTECTION_SCHEMA)
+    hass.services.async_register(DOMAIN, SERVICE_ADD_WINDOW_SENSOR, async_handle_add_window_sensor, schema=WINDOW_SENSOR_SCHEMA)
+    hass.services.async_register(DOMAIN, SERVICE_REMOVE_WINDOW_SENSOR, async_handle_remove_window_sensor, schema=WINDOW_SENSOR_SCHEMA)
+    hass.services.async_register(DOMAIN, SERVICE_ADD_PRESENCE_SENSOR, async_handle_add_presence_sensor, schema=PRESENCE_SENSOR_SCHEMA)
+    hass.services.async_register(DOMAIN, SERVICE_REMOVE_PRESENCE_SENSOR, async_handle_remove_presence_sensor, schema=PRESENCE_SENSOR_SCHEMA)
+    hass.services.async_register(DOMAIN, SERVICE_SET_HVAC_MODE, async_handle_set_hvac_mode, schema=HVAC_MODE_SCHEMA)
+    hass.services.async_register(DOMAIN, SERVICE_COPY_SCHEDULE, async_handle_copy_schedule, schema=COPY_SCHEDULE_SCHEMA)
     
     _LOGGER.debug("All services registered")
 
@@ -607,6 +921,17 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             hass.services.async_remove(DOMAIN, SERVICE_SET_HYSTERESIS)
             hass.services.async_remove(DOMAIN, SERVICE_SET_OPENTHERM_GATEWAY)
             hass.services.async_remove(DOMAIN, SERVICE_SET_TRV_TEMPERATURES)
+            # Remove new services
+            hass.services.async_remove(DOMAIN, SERVICE_SET_PRESET_MODE)
+            hass.services.async_remove(DOMAIN, SERVICE_SET_BOOST_MODE)
+            hass.services.async_remove(DOMAIN, SERVICE_CANCEL_BOOST)
+            hass.services.async_remove(DOMAIN, SERVICE_SET_FROST_PROTECTION)
+            hass.services.async_remove(DOMAIN, SERVICE_ADD_WINDOW_SENSOR)
+            hass.services.async_remove(DOMAIN, SERVICE_REMOVE_WINDOW_SENSOR)
+            hass.services.async_remove(DOMAIN, SERVICE_ADD_PRESENCE_SENSOR)
+            hass.services.async_remove(DOMAIN, SERVICE_REMOVE_PRESENCE_SENSOR)
+            hass.services.async_remove(DOMAIN, SERVICE_SET_HVAC_MODE)
+            hass.services.async_remove(DOMAIN, SERVICE_COPY_SCHEDULE)
             _LOGGER.debug("Smart Heating services removed")
     
     _LOGGER.info("Smart Heating integration unloaded")
