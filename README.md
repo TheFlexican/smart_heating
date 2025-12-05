@@ -1165,6 +1165,16 @@ Current version: **0.3.3**
 
 ### Changelog
 
+#### v0.3.12 (2025-12-05)
+**Filter Hidden Area Devices**
+
+- 🔍 **Smart Device Filtering**
+  - Available Devices panel no longer shows devices assigned to hidden areas
+  - Keeps device list clean and focused on active areas only
+  - When area is hidden, its devices are automatically hidden from overview
+  - When area is unhidden, its devices reappear in available devices list
+  - Prevents clutter in device management interface
+
 #### v0.3.11 (2025-12-05)
 **Device Refresh & Sync Feature**
 

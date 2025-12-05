@@ -447,9 +447,17 @@ class SmartHeatingAPIView(HomeAssistantView):
                 
                 # Check if device is already assigned to a area
                 assigned_areas = []
+                assigned_to_hidden_area = False
                 for area_id, area in self.area_manager.get_all_areas().items():
                     if entity.entity_id in area.devices:
                         assigned_areas.append(area_id)
+                        # Check if any assigned area is hidden
+                        if area.hidden:
+                            assigned_to_hidden_area = True
+                
+                # Skip devices assigned to hidden areas
+                if assigned_to_hidden_area:
+                    continue
                 
                 # Get Home Assistant area for this entity
                 ha_area_id = None
