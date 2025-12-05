@@ -103,6 +103,26 @@ class SmartHeatingAPIView(HomeAssistantView):
             elif endpoint.startswith("areas/") and endpoint.endswith("/disable"):
                 area_id = endpoint.split("/")[1]
                 return await self.disable_area(request, area_id)
+            elif endpoint.startswith("areas/") and endpoint.endswith("/preset_mode"):
+                area_id = endpoint.split("/")[1]
+                return await self.set_preset_mode(request, area_id, data)
+            elif endpoint.startswith("areas/") and endpoint.endswith("/boost"):
+                area_id = endpoint.split("/")[1]
+                return await self.set_boost_mode(request, area_id, data)
+            elif endpoint.startswith("areas/") and endpoint.endswith("/cancel_boost"):
+                area_id = endpoint.split("/")[1]
+                return await self.cancel_boost(request, area_id)
+            elif endpoint.startswith("areas/") and endpoint.endswith("/window_sensors"):
+                area_id = endpoint.split("/")[1]
+                return await self.add_window_sensor(request, area_id, data)
+            elif endpoint.startswith("areas/") and endpoint.endswith("/presence_sensors"):
+                area_id = endpoint.split("/")[1]
+                return await self.add_presence_sensor(request, area_id, data)
+            elif endpoint.startswith("areas/") and endpoint.endswith("/hvac_mode"):
+                area_id = endpoint.split("/")[1]
+                return await self.set_hvac_mode(request, area_id, data)
+            elif endpoint == "frost_protection":
+                return await self.set_frost_protection(request, data)
             elif endpoint == "call_service":
                 return await self.call_service(request, data)
             else:
@@ -136,6 +156,16 @@ class SmartHeatingAPIView(HomeAssistantView):
                 area_id = parts[1]
                 schedule_id = parts[3]
                 return await self.remove_schedule(request, area_id, schedule_id)
+            elif endpoint.startswith("areas/") and "/window_sensors/" in endpoint:
+                parts = endpoint.split("/")
+                area_id = parts[1]
+                entity_id = "/".join(parts[3:])  # Reconstruct entity_id
+                return await self.remove_window_sensor(request, area_id, entity_id)
+            elif endpoint.startswith("areas/") and "/presence_sensors/" in endpoint:
+                parts = endpoint.split("/")
+                area_id = parts[1]
+                entity_id = "/".join(parts[3:])  # Reconstruct entity_id
+                return await self.remove_presence_sensor(request, area_id, entity_id)
             else:
                 return web.json_response(
                     {"error": "Unknown endpoint"}, status=404
@@ -776,6 +806,358 @@ class SmartHeatingAPIView(HomeAssistantView):
         except ValueError as err:
             return web.json_response(
                 {"error": str(err)}, status=404
+            )
+
+    async def set_preset_mode(
+        self, request: web.Request, area_id: str, data: dict
+    ) -> web.Response:
+        """Set preset mode for an area.
+        
+        Args:
+            request: Request object
+            area_id: Area identifier
+            data: Request data with preset_mode
+            
+        Returns:
+            JSON response
+        """
+        preset_mode = data.get("preset_mode")
+        if not preset_mode:
+            return web.json_response(
+                {"error": "preset_mode required"}, status=400
+            )
+        
+        try:
+            area = self.area_manager.get_area(area_id)
+            if not area:
+                raise ValueError(f"Area {area_id} not found")
+            
+            area.set_preset_mode(preset_mode)
+            await self.area_manager.async_save()
+            
+            # Refresh coordinator
+            entry_ids = [
+                key for key in self.hass.data[DOMAIN].keys()
+                if key not in ["history", "climate_controller", "schedule_executor", "climate_unsub", "learning_engine"]
+            ]
+            if entry_ids:
+                coordinator = self.hass.data[DOMAIN][entry_ids[0]]
+                await coordinator.async_request_refresh()
+            
+            return web.json_response({"success": True, "preset_mode": preset_mode})
+        except ValueError as err:
+            return web.json_response(
+                {"error": str(err)}, status=400
+            )
+
+    async def set_boost_mode(
+        self, request: web.Request, area_id: str, data: dict
+    ) -> web.Response:
+        """Set boost mode for an area.
+        
+        Args:
+            request: Request object
+            area_id: Area identifier
+            data: Request data with duration and optional temperature
+            
+        Returns:
+            JSON response
+        """
+        duration = data.get("duration", 60)
+        temp = data.get("temperature")
+        
+        try:
+            area = self.area_manager.get_area(area_id)
+            if not area:
+                raise ValueError(f"Area {area_id} not found")
+            
+            area.set_boost_mode(duration, temp)
+            await self.area_manager.async_save()
+            
+            # Refresh coordinator
+            entry_ids = [
+                key for key in self.hass.data[DOMAIN].keys()
+                if key not in ["history", "climate_controller", "schedule_executor", "climate_unsub", "learning_engine"]
+            ]
+            if entry_ids:
+                coordinator = self.hass.data[DOMAIN][entry_ids[0]]
+                await coordinator.async_request_refresh()
+            
+            return web.json_response({
+                "success": True,
+                "boost_active": True,
+                "duration": duration,
+                "temperature": area.boost_temp
+            })
+        except ValueError as err:
+            return web.json_response(
+                {"error": str(err)}, status=400
+            )
+
+    async def cancel_boost(
+        self, request: web.Request, area_id: str
+    ) -> web.Response:
+        """Cancel boost mode for an area.
+        
+        Args:
+            request: Request object
+            area_id: Area identifier
+            
+        Returns:
+            JSON response
+        """
+        try:
+            area = self.area_manager.get_area(area_id)
+            if not area:
+                raise ValueError(f"Area {area_id} not found")
+            
+            area.cancel_boost_mode()
+            await self.area_manager.async_save()
+            
+            # Refresh coordinator
+            entry_ids = [
+                key for key in self.hass.data[DOMAIN].keys()
+                if key not in ["history", "climate_controller", "schedule_executor", "climate_unsub", "learning_engine"]
+            ]
+            if entry_ids:
+                coordinator = self.hass.data[DOMAIN][entry_ids[0]]
+                await coordinator.async_request_refresh()
+            
+            return web.json_response({"success": True, "boost_active": False})
+        except ValueError as err:
+            return web.json_response(
+                {"error": str(err)}, status=400
+            )
+
+    async def set_frost_protection(
+        self, request: web.Request, data: dict
+    ) -> web.Response:
+        """Set global frost protection settings.
+        
+        Args:
+            request: Request object
+            data: Request data with enabled and temperature
+            
+        Returns:
+            JSON response
+        """
+        enabled = data.get("enabled")
+        temp = data.get("temperature")
+        
+        try:
+            if enabled is not None:
+                self.area_manager.frost_protection_enabled = enabled
+            if temp is not None:
+                self.area_manager.frost_protection_temp = temp
+            
+            await self.area_manager.async_save()
+            
+            return web.json_response({
+                "success": True,
+                "enabled": self.area_manager.frost_protection_enabled,
+                "temperature": self.area_manager.frost_protection_temp
+            })
+        except ValueError as err:
+            return web.json_response(
+                {"error": str(err)}, status=400
+            )
+
+    async def add_window_sensor(
+        self, request: web.Request, area_id: str, data: dict
+    ) -> web.Response:
+        """Add window sensor to an area.
+        
+        Args:
+            request: Request object
+            area_id: Area identifier
+            data: Request data with entity_id
+            
+        Returns:
+            JSON response
+        """
+        entity_id = data.get("entity_id")
+        if not entity_id:
+            return web.json_response(
+                {"error": "entity_id required"}, status=400
+            )
+        
+        try:
+            area = self.area_manager.get_area(area_id)
+            if not area:
+                raise ValueError(f"Area {area_id} not found")
+            
+            area.add_window_sensor(entity_id)
+            await self.area_manager.async_save()
+            
+            # Refresh coordinator
+            entry_ids = [
+                key for key in self.hass.data[DOMAIN].keys()
+                if key not in ["history", "climate_controller", "schedule_executor", "climate_unsub", "learning_engine"]
+            ]
+            if entry_ids:
+                coordinator = self.hass.data[DOMAIN][entry_ids[0]]
+                await coordinator.async_request_refresh()
+            
+            return web.json_response({"success": True, "entity_id": entity_id})
+        except ValueError as err:
+            return web.json_response(
+                {"error": str(err)}, status=400
+            )
+
+    async def remove_window_sensor(
+        self, request: web.Request, area_id: str, entity_id: str
+    ) -> web.Response:
+        """Remove window sensor from an area.
+        
+        Args:
+            request: Request object
+            area_id: Area identifier
+            entity_id: Entity ID to remove
+            
+        Returns:
+            JSON response
+        """
+        try:
+            area = self.area_manager.get_area(area_id)
+            if not area:
+                raise ValueError(f"Area {area_id} not found")
+            
+            area.remove_window_sensor(entity_id)
+            await self.area_manager.async_save()
+            
+            # Refresh coordinator
+            entry_ids = [
+                key for key in self.hass.data[DOMAIN].keys()
+                if key not in ["history", "climate_controller", "schedule_executor", "climate_unsub", "learning_engine"]
+            ]
+            if entry_ids:
+                coordinator = self.hass.data[DOMAIN][entry_ids[0]]
+                await coordinator.async_request_refresh()
+            
+            return web.json_response({"success": True})
+        except ValueError as err:
+            return web.json_response(
+                {"error": str(err)}, status=404
+            )
+
+    async def add_presence_sensor(
+        self, request: web.Request, area_id: str, data: dict
+    ) -> web.Response:
+        """Add presence sensor to an area.
+        
+        Args:
+            request: Request object
+            area_id: Area identifier
+            data: Request data with entity_id
+            
+        Returns:
+            JSON response
+        """
+        entity_id = data.get("entity_id")
+        if not entity_id:
+            return web.json_response(
+                {"error": "entity_id required"}, status=400
+            )
+        
+        try:
+            area = self.area_manager.get_area(area_id)
+            if not area:
+                raise ValueError(f"Area {area_id} not found")
+            
+            area.add_presence_sensor(entity_id)
+            await self.area_manager.async_save()
+            
+            # Refresh coordinator
+            entry_ids = [
+                key for key in self.hass.data[DOMAIN].keys()
+                if key not in ["history", "climate_controller", "schedule_executor", "climate_unsub", "learning_engine"]
+            ]
+            if entry_ids:
+                coordinator = self.hass.data[DOMAIN][entry_ids[0]]
+                await coordinator.async_request_refresh()
+            
+            return web.json_response({"success": True, "entity_id": entity_id})
+        except ValueError as err:
+            return web.json_response(
+                {"error": str(err)}, status=400
+            )
+
+    async def remove_presence_sensor(
+        self, request: web.Request, area_id: str, entity_id: str
+    ) -> web.Response:
+        """Remove presence sensor from an area.
+        
+        Args:
+            request: Request object
+            area_id: Area identifier
+            entity_id: Entity ID to remove
+            
+        Returns:
+            JSON response
+        """
+        try:
+            area = self.area_manager.get_area(area_id)
+            if not area:
+                raise ValueError(f"Area {area_id} not found")
+            
+            area.remove_presence_sensor(entity_id)
+            await self.area_manager.async_save()
+            
+            # Refresh coordinator
+            entry_ids = [
+                key for key in self.hass.data[DOMAIN].keys()
+                if key not in ["history", "climate_controller", "schedule_executor", "climate_unsub", "learning_engine"]
+            ]
+            if entry_ids:
+                coordinator = self.hass.data[DOMAIN][entry_ids[0]]
+                await coordinator.async_request_refresh()
+            
+            return web.json_response({"success": True})
+        except ValueError as err:
+            return web.json_response(
+                {"error": str(err)}, status=404
+            )
+
+    async def set_hvac_mode(
+        self, request: web.Request, area_id: str, data: dict
+    ) -> web.Response:
+        """Set HVAC mode for an area.
+        
+        Args:
+            request: Request object
+            area_id: Area identifier
+            data: Request data with hvac_mode
+            
+        Returns:
+            JSON response
+        """
+        hvac_mode = data.get("hvac_mode")
+        if not hvac_mode:
+            return web.json_response(
+                {"error": "hvac_mode required"}, status=400
+            )
+        
+        try:
+            area = self.area_manager.get_area(area_id)
+            if not area:
+                raise ValueError(f("Area {area_id} not found")
+            
+            area.hvac_mode = hvac_mode
+            await self.area_manager.async_save()
+            
+            # Refresh coordinator
+            entry_ids = [
+                key for key in self.hass.data[DOMAIN].keys()
+                if key not in ["history", "climate_controller", "schedule_executor", "climate_unsub", "learning_engine"]
+            ]
+            if entry_ids:
+                coordinator = self.hass.data[DOMAIN][entry_ids[0]]
+                await coordinator.async_request_refresh()
+            
+            return web.json_response({"success": True, "hvac_mode": hvac_mode})
+        except ValueError as err:
+            return web.json_response(
+                {"error": str(err)}, status=400
             )
 
 
