@@ -424,10 +424,10 @@ class SmartHeatingAPIView(HomeAssistantView):
                         else:
                             continue  # Skip non-temperature sensors
                 elif entity.domain == "switch":
-                    # Only include switches that are heating-related
+                    # Include switches that are heating-related (pumps, relays, heaters)
                     if any(keyword in entity.entity_id.lower() 
-                           for keyword in ["thermostat", "heater", "radiator", "heating"]):
-                        device_type = "thermostat"
+                           for keyword in ["thermostat", "heater", "radiator", "heating", "pump", "floor", "relay"]):
+                        device_type = "switch"  # Use "switch" type, not "thermostat"
                     else:
                         continue  # Skip non-heating switches
                 elif entity.domain == "number":

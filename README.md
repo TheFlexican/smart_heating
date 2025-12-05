@@ -1165,6 +1165,41 @@ Current version: **0.3.3**
 
 ### Changelog
 
+#### v0.3.9 (2025-12-05)
+**Hide/Show Areas, Thermostat History, Switch Support**
+
+- 👁️ **Hide/Show Areas Feature**
+  - Hide non-heating areas from main view to declutter interface
+  - Toggle button appears when hidden areas exist
+  - "X hidden" badge shows count of hidden areas
+  - Menu option on each area card to hide/unhide individual areas
+  - Hidden state persisted across restarts
+  - Areas can be created on-demand when hiding (no need to pre-configure)
+
+- 📊 **Fixed Thermostat Temperature History**
+  - Temperature history now records for areas with thermostats (not just external sensors)
+  - Climate controller reads `current_temperature` attribute from thermostats
+  - Averages temperature from all sources (sensors + thermostats) for accurate monitoring
+  - Fixes "missing data" issue when only thermostats are assigned to an area
+
+- 🔌 **Enhanced Switch Device Support**
+  - Switches now properly categorized as "switch" device type (was incorrectly "thermostat")
+  - Added detection keywords: "pump", "floor", "relay" for automatic discovery
+  - Switches automatically turn ON when area needs heating
+  - Switches automatically turn OFF when area reaches target temperature
+  - Perfect for floor heating pumps, circulation pumps, and zone relays
+
+- 🎨 **UI Improvements**
+  - Removed redundant Devices tab from area detail view
+  - Simplified tab structure: Overview (0), Schedule (1), History (2), Settings (3)
+  - Fixed "Show Hidden Areas" button to appear when areas are hidden
+  - Areas list properly filters hidden areas based on toggle state
+
+- 🐛 **Bug Fixes**
+  - Fixed hidden field not being serialized/deserialized in storage
+  - Fixed Area creation to use correct constructor parameters
+  - Fixed event propagation when clicking hide/unhide menu item
+
 #### v0.3.3 (2025-12-05)
 **User-Controlled History Data Management**
 

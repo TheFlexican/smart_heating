@@ -680,6 +680,7 @@ class Area:
             ATTR_AREA_NAME: self.name,
             ATTR_TARGET_TEMPERATURE: self.target_temperature,
             ATTR_ENABLED: self.enabled,
+            "hidden": self.hidden,
             ATTR_DEVICES: self.devices,
             "schedules": [s.to_dict() for s in self.schedules.values()],
             "night_boost_enabled": self.night_boost_enabled,
@@ -727,6 +728,7 @@ class Area:
             enabled=data.get(ATTR_ENABLED, True),
         )
         area.devices = data.get(ATTR_DEVICES, {})
+        area.hidden = data.get("hidden", False)
         
         # Night boost settings
         area.night_boost_enabled = data.get("night_boost_enabled", True)
