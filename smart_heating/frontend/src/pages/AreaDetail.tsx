@@ -27,8 +27,6 @@ import {
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import ThermostatIcon from '@mui/icons-material/Thermostat'
 import SensorsIcon from '@mui/icons-material/Sensors'
-import WaterIcon from '@mui/icons-material/Water'
-import RouterIcon from '@mui/icons-material/Router'
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline'
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment'
 import AcUnitIcon from '@mui/icons-material/AcUnit'
@@ -41,14 +39,12 @@ import SensorOccupiedIcon from '@mui/icons-material/SensorOccupied'
 import HistoryIcon from '@mui/icons-material/History'
 import SpeedIcon from '@mui/icons-material/Speed'
 import BookmarkIcon from '@mui/icons-material/Bookmark'
-import { Zone, Device, WindowSensorConfig, PresenceSensorConfig } from '../types'
+import { Zone, WindowSensorConfig, PresenceSensorConfig } from '../types'
 import { 
   getZones, 
-  getDevices, 
   setZoneTemperature, 
   enableZone, 
   disableZone, 
-  removeDeviceFromZone,
   setPresetMode,
   setBoostMode,
   cancelBoost,
@@ -92,7 +88,6 @@ const ZoneDetail = () => {
   const { areaId } = useParams<{ areaId: string }>()
   const navigate = useNavigate()
   const [area, setZone] = useState<Zone | null>(null)
-  const [availableDevices, setAvailableDevices] = useState<Device[]>([])
   const [loading, setLoading] = useState(true)
   const [tabValue, setTabValue] = useState(0)
   const [temperature, setTemperature] = useState(21)
@@ -129,10 +124,7 @@ const ZoneDetail = () => {
     
     try {
       setLoading(true)
-      const [areasData, devicesData] = await Promise.all([
-        getZones(),
-        getDevices()
-      ])
+      const areasData = await getZones()
       
       const currentZone = areasData.find(z => z.id === areaId)
       if (!currentZone) {
@@ -142,19 +134,6 @@ const ZoneDetail = () => {
       
       setZone(currentZone)
       setTemperature(currentZone.target_temperature)
-      
-      // Filter available devices:
-      // 1. Match Home Assistant area name with zone name
-      // 2. Not assigned to any zone in our system
-      const assignedDeviceIds = new Set(
-        areasData.flatMap(z => z.devices.map(d => d.id))
-      )
-      setAvailableDevices(
-        devicesData.filter(device => 
-          !assignedDeviceIds.has(device.id) && 
-          device.ha_area_name === currentZone.name
-        )
-      )
     } catch (error) {
       console.error('Failed to load area:', error)
     } finally {
@@ -203,32 +182,6 @@ const ZoneDetail = () => {
       await loadData()
     } catch (error) {
       console.error('Failed to set temperature:', error)
-    }
-  }
-
-  const handleRemoveDevice = async (deviceId: string) => {
-    if (!area) return
-    
-    try {
-      await removeDeviceFromZone(area.id, deviceId)
-      await loadData()
-    } catch (error) {
-      console.error('Failed to remove device:', error)
-    }
-  }
-
-  const getDeviceIcon = (type: string) => {
-    switch (type) {
-      case 'thermostat':
-        return <ThermostatIcon />
-      case 'temperature_sensor':
-        return <SensorsIcon />
-      case 'valve':
-        return <WaterIcon />
-      case 'opentherm_gateway':
-        return <RouterIcon />
-      default:
-        return <SensorsIcon />
     }
   }
 
@@ -1063,7 +1016,6 @@ const ZoneDetail = () => {
       >
         <Tabs value={tabValue} onChange={handleTabChange}>
           <Tab label="Overview" />
-          <Tab label="Devices" />
           <Tab label="Schedule" />
           <Tab label="History" />
           <Tab label="Settings" />
@@ -1208,95 +1160,15 @@ const ZoneDetail = () => {
           </Box>
         </TabPanel>
 
-        {/* Devices Tab */}
-        <TabPanel value={tabValue} index={1}>
-          <Box sx={{ maxWidth: 800, mx: 'auto' }}>
-            <Paper sx={{ p: 3, mb: 3 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6" color="text.primary">
-                  Assigned Devices ({area.devices.length})
-                </Typography>
-              </Box>
-
-              {area.devices.length === 0 ? (
-                <Alert severity="info">
-                  No devices assigned to this area. Go back to the main view to drag and drop devices.
-                </Alert>
-              ) : (
-                <List>
-                  {area.devices.map((device) => (
-                    <ListItem
-                      key={device.id}
-                      secondaryAction={
-                        <IconButton
-                          edge="end"
-                          onClick={() => handleRemoveDevice(device.id)}
-                          color="error"
-                        >
-                          <RemoveCircleOutlineIcon />
-                        </IconButton>
-                      }
-                    >
-                      <ListItemIcon sx={{ color: 'text.secondary' }}>
-                        {getDeviceIcon(device.type)}
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={device.name || device.id}
-                        primaryTypographyProps={{ color: 'text.primary' }}
-                        secondary={`${device.type.replace(/_/g, ' ')}${device.ha_area_name ? ` • ${device.ha_area_name}` : ''}`}
-                        secondaryTypographyProps={{ color: 'text.secondary' }}
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-              )}
-            </Paper>
-
-            {availableDevices.length > 0 && (
-              <Paper sx={{ p: 3 }}>
-                <Typography variant="h6" color="text.primary" gutterBottom>
-                  Available Devices ({availableDevices.length})
-                </Typography>
-                <Alert severity="info" sx={{ mb: 2 }}>
-                  To add devices, use the drag and drop feature on the main areas page.
-                </Alert>
-                <List>
-                  {availableDevices.slice(0, 5).map((device) => (
-                    <ListItem key={device.id}>
-                      <ListItemIcon sx={{ color: 'text.secondary' }}>
-                        {getDeviceIcon(device.type)}
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={device.name || device.id}
-                        primaryTypographyProps={{ color: 'text.primary' }}
-                        secondary={`${device.type.replace(/_/g, ' ')}${device.ha_area_name ? ` • ${device.ha_area_name}` : ''}`}
-                        secondaryTypographyProps={{ color: 'text.secondary' }}
-                      />
-                    </ListItem>
-                  ))}
-                  {availableDevices.length > 5 && (
-                    <ListItem>
-                      <ListItemText
-                        secondary={`+ ${availableDevices.length - 5} more available`}
-                        secondaryTypographyProps={{ color: 'text.secondary' }}
-                      />
-                    </ListItem>
-                  )}
-                </List>
-              </Paper>
-            )}
-          </Box>
-        </TabPanel>
-
         {/* Schedule Tab */}
-        <TabPanel value={tabValue} index={2}>
+        <TabPanel value={tabValue} index={1}>
           <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
             <ScheduleEditor area={area} onUpdate={loadData} />
           </Box>
         </TabPanel>
 
         {/* History Tab */}
-        <TabPanel value={tabValue} index={3}>
+        <TabPanel value={tabValue} index={2}>
           <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" gutterBottom color="text.primary">
@@ -1314,7 +1186,7 @@ const ZoneDetail = () => {
         </TabPanel>
 
         {/* Settings Tab */}
-        <TabPanel value={tabValue} index={4}>
+        <TabPanel value={tabValue} index={3}>
           <Box sx={{ maxWidth: 1600, mx: 'auto', px: 2 }}>
             <DraggableSettings 
               key={`settings-${area.id}-${area.presence_sensors?.length || 0}-${area.window_sensors?.length || 0}`}

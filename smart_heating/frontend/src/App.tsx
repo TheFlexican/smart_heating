@@ -75,6 +75,7 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [wsConnected, setWsConnected] = useState(false)
   const [showConnectionAlert, setShowConnectionAlert] = useState(false)
+  const [showHidden, setShowHidden] = useState(false)
   const [openthermConfig, setOpenthermConfig] = useState<{
     gateway_id?: string
     enabled?: boolean
@@ -214,6 +215,8 @@ function App() {
               areas={areas} 
               loading={loading}
               onUpdate={handleZonesUpdate}
+              showHidden={showHidden}
+              onToggleShowHidden={() => setShowHidden(!showHidden)}
             />
           </Box>
           <DevicePanel 

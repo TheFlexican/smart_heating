@@ -194,6 +194,7 @@ class Area:
         self.devices: dict[str, dict[str, Any]] = {}
         self.schedules: dict[str, Schedule] = {}
         self._current_temperature: float | None = None
+        self.hidden: bool = False  # Whether area is hidden from main view
         
         # Night boost settings
         self.night_boost_enabled: bool = True

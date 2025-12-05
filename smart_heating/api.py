@@ -98,6 +98,12 @@ class SmartHeatingAPIView(HomeAssistantView):
             elif endpoint.startswith("areas/") and endpoint.endswith("/disable"):
                 area_id = endpoint.split("/")[1]
                 return await self.disable_area(request, area_id)
+            elif endpoint.startswith("areas/") and endpoint.endswith("/hide"):
+                area_id = endpoint.split("/")[1]
+                return await self.hide_area(request, area_id)
+            elif endpoint.startswith("areas/") and endpoint.endswith("/unhide"):
+                area_id = endpoint.split("/")[1]
+                return await self.unhide_area(request, area_id)
             elif endpoint.startswith("areas/") and endpoint.endswith("/cancel_boost"):
                 area_id = endpoint.split("/")[1]
                 return await self.cancel_boost(request, area_id)
@@ -255,6 +261,7 @@ class SmartHeatingAPIView(HomeAssistantView):
                     "id": area_id,
                     "name": area_name,
                     "enabled": stored_area.enabled,
+                    "hidden": stored_area.hidden,
                     "state": stored_area.state,
                     "target_temperature": stored_area.target_temperature,
                     "current_temperature": stored_area.current_temperature,
@@ -293,6 +300,7 @@ class SmartHeatingAPIView(HomeAssistantView):
                     "id": area_id,
                     "name": area_name,
                     "enabled": True,
+                    "hidden": False,
                     "state": "idle",
                     "target_temperature": 20.0,
                     "current_temperature": None,
@@ -773,6 +781,110 @@ class SmartHeatingAPIView(HomeAssistantView):
         except ValueError as err:
             return web.json_response(
                 {"error": str(err)}, status=404
+            )
+    
+    async def hide_area(self, request: web.Request, area_id: str) -> web.Response:
+        """Hide an area from main view.
+        
+        Args:
+            request: Request object
+            area_id: Zone identifier
+            
+        Returns:
+            JSON response
+        """
+        try:
+            area = self.area_manager.get_area(area_id)
+            if not area:
+                # Area doesn't exist in storage yet - create it
+                # Get area name from HA registry
+                area_registry = ar.async_get(self.hass)
+                ha_area = area_registry.async_get_area(area_id)
+                if not ha_area:
+                    return web.json_response(
+                        {"error": f"Area {area_id} not found in Home Assistant"}, status=404
+                    )
+                
+                # Import Area class
+                from .area_manager import Area
+                
+                # Create area with default settings
+                area = Area(
+                    area_id=area_id,
+                    name=ha_area.name,
+                    target_temperature=20.0,
+                    enabled=True
+                )
+                self.area_manager.areas[area_id] = area
+            
+            area.hidden = True
+            await self.area_manager.async_save()
+            
+            # Refresh coordinator
+            entry_ids = [
+                key for key in self.hass.data[DOMAIN].keys()
+                if key not in ["history", "climate_controller", "schedule_executor", "climate_unsub", "learning_engine"]
+            ]
+            if entry_ids:
+                coordinator = self.hass.data[DOMAIN][entry_ids[0]]
+                await coordinator.async_request_refresh()
+            
+            return web.json_response({"success": True})
+        except Exception as err:
+            return web.json_response(
+                {"error": str(err)}, status=500
+            )
+    
+    async def unhide_area(self, request: web.Request, area_id: str) -> web.Response:
+        """Unhide an area to show in main view.
+        
+        Args:
+            request: Request object
+            area_id: Zone identifier
+            
+        Returns:
+            JSON response
+        """
+        try:
+            area = self.area_manager.get_area(area_id)
+            if not area:
+                # Area doesn't exist in storage yet - create it
+                # Get area name from HA registry
+                area_registry = ar.async_get(self.hass)
+                ha_area = area_registry.async_get_area(area_id)
+                if not ha_area:
+                    return web.json_response(
+                        {"error": f"Area {area_id} not found in Home Assistant"}, status=404
+                    )
+                
+                # Import Area class
+                from .area_manager import Area
+                
+                # Create area with default settings
+                area = Area(
+                    area_id=area_id,
+                    name=ha_area.name,
+                    target_temperature=20.0,
+                    enabled=True
+                )
+                self.area_manager.areas[area_id] = area
+            
+            area.hidden = False
+            await self.area_manager.async_save()
+            
+            # Refresh coordinator
+            entry_ids = [
+                key for key in self.hass.data[DOMAIN].keys()
+                if key not in ["history", "climate_controller", "schedule_executor", "climate_unsub", "learning_engine"]
+            ]
+            if entry_ids:
+                coordinator = self.hass.data[DOMAIN][entry_ids[0]]
+                await coordinator.async_request_refresh()
+            
+            return web.json_response({"success": True})
+        except Exception as err:
+            return web.json_response(
+                {"error": str(err)}, status=500
             )
     
     async def call_service(self, request: web.Request, data: dict) -> web.Response:

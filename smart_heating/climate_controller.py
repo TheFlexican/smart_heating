@@ -123,12 +123,16 @@ class ClimateController:
         for area_id, area in self.area_manager.get_all_areas().items():
             # Get temperature sensors for this area
             temp_sensors = area.get_temperature_sensors()
+            # Also include thermostats as temperature sources
+            thermostats = area.get_thermostats()
             
-            if not temp_sensors:
+            if not temp_sensors and not thermostats:
                 continue
             
             # Calculate average temperature from all sensors
             temps = []
+            
+            # Read from temperature sensors
             for sensor_id in temp_sensors:
                 state = self.hass.states.get(sensor_id)
                 if state and state.state not in ("unknown", "unavailable"):
@@ -150,6 +154,31 @@ class ClimateController:
                             "Invalid temperature from %s: %s", 
                             sensor_id, state.state
                         )
+            
+            # Read from thermostats (use current_temperature attribute)
+            for thermostat_id in thermostats:
+                state = self.hass.states.get(thermostat_id)
+                if state and state.state not in ("unknown", "unavailable"):
+                    current_temp = state.attributes.get("current_temperature")
+                    if current_temp is not None:
+                        try:
+                            temp_value = float(current_temp)
+                            
+                            # Check if temperature is in Fahrenheit and convert to Celsius
+                            unit = state.attributes.get("unit_of_measurement", "°C")
+                            if unit in ("°F", "F"):
+                                temp_value = (temp_value - 32) * 5/9
+                                _LOGGER.debug(
+                                    "Converted temperature from thermostat %s: %.1f°F -> %.1f°C",
+                                    thermostat_id, current_temp, temp_value
+                                )
+                            
+                            temps.append(temp_value)
+                        except (ValueError, TypeError):
+                            _LOGGER.warning(
+                                "Invalid current_temperature from thermostat %s: %s", 
+                                thermostat_id, current_temp
+                            )
             
             if temps:
                 avg_temp = sum(temps) / len(temps)

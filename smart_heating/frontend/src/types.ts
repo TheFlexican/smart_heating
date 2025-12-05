@@ -28,6 +28,7 @@ export interface Zone {
   id: string
   name: string
   enabled: boolean
+  hidden?: boolean
   state: 'heating' | 'idle' | 'off'
   target_temperature: number
   current_temperature?: number

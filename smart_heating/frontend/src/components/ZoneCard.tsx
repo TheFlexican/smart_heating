@@ -11,7 +11,9 @@ import {
   Menu,
   ListItemText,
   List,
-  ListItem
+  ListItem,
+  ListItemIcon,
+  MenuItem
 } from '@mui/material'
 import { Droppable } from 'react-beautiful-dnd'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
@@ -23,8 +25,10 @@ import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline'
 import PowerSettingsNewIcon from '@mui/icons-material/PowerSettingsNew'
 import TuneIcon from '@mui/icons-material/Tune'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
+import VisibilityIcon from '@mui/icons-material/Visibility'
 import { Zone } from '../types'
-import { setZoneTemperature, removeDeviceFromZone } from '../api'
+import { setZoneTemperature, removeDeviceFromZone, hideZone, unhideZone } from '../api'
 
 interface ZoneCardProps {
   area: Zone
@@ -71,6 +75,21 @@ const ZoneCard = ({ area, onUpdate }: ZoneCardProps) => {
       onUpdate()
     } catch (error) {
       console.error('Failed to remove device:', error)
+    }
+  }
+
+  const handleToggleHidden = async (event: React.MouseEvent) => {
+    event.stopPropagation()
+    try {
+      if (area.hidden) {
+        await unhideZone(area.id)
+      } else {
+        await hideZone(area.id)
+      }
+      handleMenuClose()
+      onUpdate()
+    } catch (error) {
+      console.error('Failed to toggle hidden:', error)
     }
   }
 
@@ -308,6 +327,12 @@ const ZoneCard = ({ area, onUpdate }: ZoneCardProps) => {
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
       >
+        <MenuItem onClick={handleToggleHidden}>
+          <ListItemIcon>
+            {area.hidden ? <VisibilityIcon /> : <VisibilityOffIcon />}
+          </ListItemIcon>
+          <ListItemText primary={area.hidden ? "Unhide Area" : "Hide Area"} />
+        </MenuItem>
       </Menu>
     </Card>
       )}

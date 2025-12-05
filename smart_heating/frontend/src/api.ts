@@ -42,6 +42,14 @@ export const disableZone = async (areaId: string): Promise<void> => {
   await axios.post(`${API_BASE}/areas/${areaId}/disable`)
 }
 
+export const hideZone = async (areaId: string): Promise<void> => {
+  await axios.post(`${API_BASE}/areas/${areaId}/hide`)
+}
+
+export const unhideZone = async (areaId: string): Promise<void> => {
+  await axios.post(`${API_BASE}/areas/${areaId}/unhide`)
+}
+
 export const getDevices = async (): Promise<Device[]> => {
   const response = await axios.get(`${API_BASE}/devices`)
   return response.data.devices
