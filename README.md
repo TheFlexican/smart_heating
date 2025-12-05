@@ -14,6 +14,13 @@ A Home Assistant custom integration for managing multi-area heating systems with
   - Smart night boost: Starts heating at optimal time to reach target by wake-up
   - Uses Home Assistant Statistics API for efficient database storage
   - Tracks heating rates, cooldown rates, and outdoor temperature correlations
+- 🎯 **Preset Modes** - Quick temperature presets (AWAY, ECO, COMFORT, HOME, SLEEP, ACTIVITY, BOOST)
+- ⚡ **Boost Mode** - Temporary high-temperature boost with configurable duration
+- 🪟 **Window Sensor Integration** - Automatic heating adjustment when windows open
+- 👤 **Presence Detection** - Temperature boost when presence/motion detected
+- ❄️ **Frost Protection** - Global minimum temperature to prevent freezing
+- 🌡️ **HVAC Modes** - Support for heating, cooling, auto, and off modes
+- 📋 **Schedule Copying** - Duplicate schedules between areas and days
 - 📊 **Temperature History** - Track and visualize temperature trends with interactive charts
 - ⚙️ **Advanced Settings** - Hysteresis control, temperature limits, and fine-tuning
 - 🌐 **REST API** - Full API for programmatic control
@@ -31,6 +38,8 @@ A Home Assistant custom integration for managing multi-area heating systems with
 ### Per-Area Devices
 - **Thermostat** - Room thermostats for direct temperature control
 - **Temperature Sensor** - External temperature measurement for area monitoring
+- **Window/Door Sensor** - Binary sensors for automatic heating adjustment when open
+- **Presence/Motion Sensor** - Binary sensors for occupancy-based temperature boosting
 - **Valve/TRV** - Smart radiator valves with **dynamic capability detection**
   - **No device-specific code** - System queries Home Assistant entity attributes at runtime
   - **Works with ANY valve model** from any manufacturer
@@ -169,6 +178,334 @@ Returns:
   }
 }
 ```
+
+## 🎯 Advanced Heating Features
+
+Smart Heating includes advanced features for enhanced comfort and energy efficiency.
+
+### Preset Modes
+
+Quick temperature presets for common scenarios. Each preset has a default temperature that can be customized per area.
+
+**Available Presets:**
+- **NONE** - Use manual temperature or schedule
+- **AWAY** (16°C) - Energy-saving when nobody's home
+- **ECO** (18°C) - Economical heating
+- **COMFORT** (22°C) - Maximum comfort
+- **HOME** (20°C) - Standard home temperature
+- **SLEEP** (19°C) - Optimal sleeping temperature
+- **ACTIVITY** (21°C) - Active room usage
+- **BOOST** (24°C) - Quick heat-up
+
+**Usage:**
+```yaml
+service: smart_heating.set_preset_mode
+data:
+  area_id: "living_room"
+  preset_mode: "comfort"
+```
+
+**Temperature Priority:**
+Preset modes override schedules. Priority order:
+1. Boost mode (highest)
+2. Window open (reduces temp)
+3. Preset mode
+4. Schedule temperature
+5. Manual target temperature
+6. Night boost (additive)
+7. Presence boost (additive)
+
+### Boost Mode
+
+Temporary high-temperature override for quick heating. Perfect for rapid warm-up when coming home.
+
+**Features:**
+- Configurable duration (5-180 minutes)
+- Optional custom boost temperature (default: 24°C)
+- Automatic expiry and return to normal operation
+- Visual indication in frontend
+
+**Usage:**
+```yaml
+# Boost for 30 minutes at default temp
+service: smart_heating.set_boost_mode
+data:
+  area_id: "living_room"
+  duration: 30
+
+# Boost for 60 minutes at custom temp
+service: smart_heating.set_boost_mode
+data:
+  area_id: "bedroom"
+  duration: 60
+  temperature: 25.0
+```
+
+**Cancel Boost:**
+```yaml
+service: smart_heating.cancel_boost
+data:
+  area_id: "living_room"
+```
+
+**REST API:**
+```bash
+# Activate boost
+POST /api/smart_heating/areas/living_room/boost
+{"duration": 30, "temperature": 24}
+
+# Cancel boost
+POST /api/smart_heating/areas/living_room/cancel_boost
+```
+
+### Window Sensor Integration
+
+Automatically adjusts heating when windows/doors open to save energy.
+
+**How It Works:**
+1. Add window/door sensors to an area
+2. When any sensor detects "open" state
+3. Target temperature is automatically reduced by configured amount (default: 5°C)
+4. Heating returns to normal when all windows closed
+5. Status logged for monitoring
+
+**Configuration:**
+```yaml
+# Add window sensor
+service: smart_heating.add_window_sensor
+data:
+  area_id: "living_room"
+  entity_id: "binary_sensor.living_room_window"
+
+# Remove window sensor
+service: smart_heating.remove_window_sensor
+data:
+  area_id: "living_room"
+  entity_id: "binary_sensor.living_room_window"
+```
+
+**Customization:**
+Per-area settings (in `area_manager.py`):
+- `window_open_action_enabled`: Enable/disable feature (default: true)
+- `window_open_temp_drop`: Temperature reduction in °C (default: 5.0)
+
+**REST API:**
+```bash
+# Add sensor
+POST /api/smart_heating/areas/living_room/window_sensors
+{"entity_id": "binary_sensor.living_room_window"}
+
+# Remove sensor
+DELETE /api/smart_heating/areas/living_room/window_sensors/binary_sensor.living_room_window
+```
+
+### Presence Detection
+
+Boost temperature when presence/motion is detected for enhanced comfort.
+
+**How It Works:**
+1. Add presence/motion sensors to an area
+2. When motion detected → automatic temperature boost (default: +2°C)
+3. When no presence → boost removed
+4. Works additively with other temperature settings
+5. Ideal for rooms used intermittently
+
+**Configuration:**
+```yaml
+# Add presence sensor
+service: smart_heating.add_presence_sensor
+data:
+  area_id: "home_office"
+  entity_id: "binary_sensor.office_motion"
+
+# Remove presence sensor
+service: smart_heating.remove_presence_sensor
+data:
+  area_id: "home_office"
+  entity_id: "binary_sensor.office_motion"
+```
+
+**Customization:**
+Per-area setting (in `area_manager.py`):
+- `presence_temp_boost`: Temperature increase in °C (default: 2.0)
+
+**Supported Sensor Types:**
+- Motion sensors (`binary_sensor` with `device_class: motion`)
+- Occupancy sensors (`device_class: occupancy`)
+- Presence sensors (`device_class: presence`)
+- Person detection sensors
+
+**REST API:**
+```bash
+# Add sensor
+POST /api/smart_heating/areas/home_office/presence_sensors
+{"entity_id": "binary_sensor.office_motion"}
+
+# Remove sensor
+DELETE /api/smart_heating/areas/home_office/presence_sensors/binary_sensor.office_motion
+```
+
+### Frost Protection
+
+Global minimum temperature setting to prevent freezing in all areas.
+
+**How It Works:**
+1. Enable frost protection globally
+2. Set minimum temperature (default: 7°C)
+3. If any area's target falls below minimum → automatically raised to frost protection temperature
+4. Applies even when areas are disabled
+5. Safety feature for winter vacations
+
+**Configuration:**
+```yaml
+service: smart_heating.set_frost_protection
+data:
+  enabled: true
+  temperature: 7.0
+```
+
+**Use Cases:**
+- Winter holidays (prevent pipe freezing)
+- Empty properties
+- Seasonal properties
+- Backup safety measure
+
+**REST API:**
+```bash
+POST /api/smart_heating/frost_protection
+{"enabled": true, "temperature": 7.0}
+```
+
+### HVAC Modes
+
+Support for different HVAC operation modes per area.
+
+**Available Modes:**
+- **HEAT** - Heating mode (default)
+- **COOL** - Cooling mode (for AC-equipped areas)
+- **AUTO** - Automatic heating/cooling
+- **OFF** - System off (overrides all settings)
+
+**Usage:**
+```yaml
+service: smart_heating.set_hvac_mode
+data:
+  area_id: "bedroom"
+  hvac_mode: "heat"
+```
+
+**Behavior:**
+- **OFF mode**: Area completely disabled, no heating commands sent
+- **HEAT mode**: Normal heating operation
+- **COOL/AUTO modes**: Framework ready for future AC support
+
+**REST API:**
+```bash
+POST /api/smart_heating/areas/bedroom/hvac_mode
+{"hvac_mode": "heat"}
+```
+
+### Schedule Copying
+
+Duplicate schedules between areas or days to save time.
+
+**Features:**
+- Copy from one area to another
+- Copy to specific days of week
+- Copy all schedules at once
+- Unique IDs automatically generated
+
+**Usage:**
+```yaml
+# Copy Monday schedule to Tuesday-Friday
+service: smart_heating.copy_schedule
+data:
+  source_area_id: "living_room"
+  source_schedule_id: "monday_morning"
+  target_area_id: "living_room"
+  target_days:
+    - "tue"
+    - "wed"
+    - "thu"
+    - "fri"
+
+# Copy entire area schedule to another area
+service: smart_heating.copy_schedule
+data:
+  source_area_id: "living_room"
+  target_area_id: "bedroom"
+```
+
+**Use Cases:**
+- Weekday schedule replication
+- Duplicate successful schedules to other rooms
+- Quick setup of similar areas
+- Seasonal schedule templates
+
+## 🔧 Advanced Configuration
+
+### Temperature Calculation Priority
+
+Smart Heating uses a sophisticated 7-level priority system to determine the final target temperature:
+
+1. **Boost Mode** (Highest Priority)
+   - Temporary override
+   - Time-limited
+   - Typically 24-26°C
+
+2. **Window Open Detection**
+   - Reduces target by configured amount
+   - Default: -5°C
+   - Immediate response
+
+3. **Preset Mode Temperature**
+   - Away: 16°C, Eco: 18°C, Comfort: 22°C, etc.
+   - Overrides schedule
+
+4. **Schedule Temperature**
+   - Time-based temperature profiles
+   - Different temps for different times
+
+5. **Base Target Temperature**
+   - Manual setting
+   - Fallback value
+
+6. **Night Boost** (Additive)
+   - Adds to current target
+   - Default: +0.5°C during night hours
+
+7. **Presence Boost** (Additive)
+   - Adds to current target
+   - Default: +2°C when presence detected
+
+**Example Calculation:**
+```
+Base schedule: 20°C
++ Preset mode (COMFORT): → 22°C
++ Presence detected: +2°C → 24°C
+- Window open: -5°C → 19°C
+= Final target: 19°C
+```
+
+### Sensor State Monitoring
+
+The climate controller automatically monitors all configured sensors every 30 seconds:
+
+**Window Sensors:**
+- State values considered "open": `on`, `open`, `true`, `True`
+- All other states considered "closed"
+- Multiple sensors per area supported (any open triggers action)
+
+**Presence Sensors:**
+- State values considered "detected": `on`, `home`, `detected`, `true`, `True`
+- All other states considered "no presence"
+- Multiple sensors per area supported (any detection triggers boost)
+
+**State Caching:**
+Sensor states are cached in area objects:
+- `area.window_is_open` - Boolean
+- `area.presence_detected` - Boolean
+- Updates logged for monitoring
 
 ## 🚀 Installation
 
@@ -743,9 +1080,63 @@ custom_components/smart_heating/
 
 ## 📝 Version
 
-Current version: **0.2.0**
+Current version: **0.3.0**
 
 ### Changelog
+
+#### v0.3.0 (2025-12-05)
+- ✨ **Preset Modes** - 8 quick temperature presets (AWAY, ECO, COMFORT, HOME, SLEEP, ACTIVITY, BOOST, NONE)
+  - Per-area preset temperatures with customizable defaults
+  - Service: `smart_heating.set_preset_mode`
+  - REST API: `POST /areas/{id}/preset_mode`
+- ⚡ **Boost Mode** - Temporary high-temperature override
+  - Configurable duration (5-180 minutes) and optional custom temperature
+  - Automatic expiry with time tracking
+  - Services: `set_boost_mode`, `cancel_boost`
+  - REST API: `POST /areas/{id}/boost`, `POST /areas/{id}/cancel_boost`
+- 🪟 **Window Sensor Integration** - Automatic heating adjustment when windows open
+  - Binary sensor support for windows/doors
+  - Configurable temperature drop (default: -5°C)
+  - Services: `add_window_sensor`, `remove_window_sensor`
+  - REST API: `POST/DELETE /areas/{id}/window_sensors`
+- 👤 **Presence Detection** - Temperature boost when motion/presence detected
+  - Binary sensor support for motion/occupancy/presence
+  - Configurable temperature boost (default: +2°C)
+  - Services: `add_presence_sensor`, `remove_presence_sensor`
+  - REST API: `POST/DELETE /areas/{id}/presence_sensors`
+- ❄️ **Frost Protection** - Global minimum temperature to prevent freezing
+  - Applies to all areas automatically
+  - Default: 7°C minimum
+  - Service: `set_frost_protection`
+  - REST API: `POST /frost_protection`
+- 🌡️ **HVAC Modes** - Support for heat/cool/auto/off modes per area
+  - OFF mode completely disables area
+  - Service: `set_hvac_mode`
+  - REST API: `POST /areas/{id}/hvac_mode`
+- 📋 **Schedule Copying** - Duplicate schedules between areas and days
+  - Copy to specific days or entire areas
+  - Automatic unique ID generation
+  - Service: `copy_schedule`
+- 🔧 **7-Level Temperature Priority System**
+  1. Boost mode (highest)
+  2. Window open (reduces temp)
+  3. Preset mode
+  4. Schedule
+  5. Base target
+  6. Night boost (additive)
+  7. Presence boost (additive)
+- 🔄 **Climate Controller Enhancements**
+  - Automatic sensor state monitoring every 30 seconds
+  - Boost mode expiry checking
+  - Frost protection enforcement
+  - HVAC mode support
+- 📚 **Comprehensive Documentation**
+  - Complete service reference with examples
+  - REST API endpoint documentation
+  - Temperature calculation priority explanation
+  - Sensor integration guides
+  - Use case examples
+- 🐛 Bug fixes and performance improvements
 
 #### v0.2.0 (2025-12-04)
 - ✨ **Adaptive Learning System** - Machine learning for optimal heating start times
