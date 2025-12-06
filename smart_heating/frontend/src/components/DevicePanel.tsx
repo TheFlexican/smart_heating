@@ -10,7 +10,10 @@ import {
   Divider,
   IconButton,
   Tooltip,
-  CircularProgress
+  CircularProgress,
+  TextField,
+  FormControlLabel,
+  Switch,
 } from '@mui/material'
 import { Droppable, Draggable } from 'react-beautiful-dnd'
 import ThermostatIcon from '@mui/icons-material/Thermostat'
@@ -29,6 +32,8 @@ interface DevicePanelProps {
 
 const DevicePanel = ({ devices, onUpdate }: DevicePanelProps) => {
   const [refreshing, setRefreshing] = useState(false)
+  const [deviceSearch, setDeviceSearch] = useState('')
+  const [showOnlyHeating, setShowOnlyHeating] = useState(true)
 
   const handleRefresh = async () => {
     setRefreshing(true)
@@ -65,6 +70,22 @@ const DevicePanel = ({ devices, onUpdate }: DevicePanelProps) => {
     return type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
   }
 
+  // Filter devices based on search and type filter
+  const filteredDevices = devices.filter(device => {
+    // Type filter
+    const typeMatch = !showOnlyHeating || ['climate', 'temperature'].includes(device.subtype || '')
+    
+    // Search filter
+    if (!deviceSearch) return typeMatch
+    
+    const searchLower = deviceSearch.toLowerCase()
+    const nameMatch = (device.name || device.id || '').toLowerCase().includes(searchLower)
+    const entityMatch = (device.entity_id || device.id || '').toLowerCase().includes(searchLower)
+    const areaMatch = (device.ha_area_name || '').toLowerCase().includes(searchLower)
+    
+    return typeMatch && (nameMatch || entityMatch || areaMatch)
+  })
+
   return (
     <Paper
       sx={{
@@ -81,7 +102,7 @@ const DevicePanel = ({ devices, onUpdate }: DevicePanelProps) => {
       <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Box>
           <Typography variant="h6" color="text.primary">
-            Available Devices
+            Available Devices ({filteredDevices.length})
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Drag devices to areas
@@ -101,21 +122,57 @@ const DevicePanel = ({ devices, onUpdate }: DevicePanelProps) => {
 
       <Divider />
 
+      {/* Filter Toggle */}
+      <Box sx={{ px: 2, py: 1 }}>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={showOnlyHeating}
+              onChange={(e) => setShowOnlyHeating(e.target.checked)}
+              size="small"
+              color="primary"
+            />
+          }
+          label={
+            <Typography variant="caption" color="text.secondary">
+              Climate & temp sensors only
+            </Typography>
+          }
+        />
+      </Box>
+
+      {/* Search Bar */}
+      <Box sx={{ px: 2, pb: 1 }}>
+        <TextField
+          fullWidth
+          size="small"
+          placeholder="Search devices..."
+          value={deviceSearch}
+          onChange={(e) => setDeviceSearch(e.target.value)}
+        />
+      </Box>
+
       <Box sx={{ flex: 1, overflow: 'auto' }}>
-        {devices.length === 0 ? (
+        {filteredDevices.length === 0 ? (
           <Box sx={{ p: 3, textAlign: 'center' }}>
             <Typography variant="body2" color="text.secondary">
-              No Zigbee2MQTT devices found
+              {deviceSearch 
+                ? `No devices found matching "${deviceSearch}"`
+                : showOnlyHeating
+                  ? 'No climate/temperature devices available'
+                  : 'No devices found'}
             </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-              Make sure Zigbee2MQTT is running and devices are paired
-            </Typography>
+            {!deviceSearch && !showOnlyHeating && (
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                Make sure devices are configured in Home Assistant
+              </Typography>
+            )}
           </Box>
         ) : (
           <Droppable droppableId="devices-panel" isDropDisabled={true}>
             {(provided) => (
               <List ref={provided.innerRef} {...provided.droppableProps}>
-                {devices.map((device, index) => (
+                {filteredDevices.map((device, index) => (
                   <Draggable
                     key={device.id}
                     draggableId={`device-${device.id}`}

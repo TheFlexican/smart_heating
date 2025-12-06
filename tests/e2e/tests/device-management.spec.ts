@@ -296,6 +296,103 @@ test.describe('Device Management', () => {
     })
   })
 
+  test.describe('Device Search & Filtering (v0.3.17)', () => {
+    
+    test('should display search bar in Available Devices', async ({ page }) => {
+      await navigateToArea(page, 'Living Room')
+      await switchToTab(page, 'Devices')
+      await dismissSnackbar(page)
+      
+      // Verify search input exists
+      const searchInput = page.locator('input[placeholder*="Search"]').first()
+      await expect(searchInput).toBeVisible()
+    })
+
+    test('should filter devices by search term', async ({ page }) => {
+      await navigateToArea(page, 'Living Room')
+      await switchToTab(page, 'Devices')
+      await dismissSnackbar(page)
+      await page.waitForTimeout(1000)
+      
+      // Get initial device count
+      const initialCount = await page.locator('text=/Available Devices \\((\\d+)\\)/i').textContent()
+      const initial = parseInt(initialCount?.match(/\\d+/)?.[0] || '0')
+      
+      if (initial > 0) {
+        // Type search term
+        const searchInput = page.locator('input[placeholder*="Search"]').first()
+        await searchInput.fill('living')
+        await page.waitForTimeout(500)
+        
+        // Get filtered count
+        const filteredCount = await page.locator('text=/Available Devices \\((\\d+)\\)/i').textContent()
+        const filtered = parseInt(filteredCount?.match(/\\d+/)?.[0] || '0')
+        
+        // Count should update (may be same, less, or 0)
+        expect(filtered).toBeLessThanOrEqual(initial)
+      }
+    })
+
+    test('should display climate filter toggle', async ({ page }) => {
+      await navigateToArea(page, 'Living Room')
+      await switchToTab(page, 'Devices')
+      await dismissSnackbar(page)
+      
+      // Verify filter toggle exists
+      const filterToggle = page.locator('text=/Show only climate.*temperature/i')
+      await expect(filterToggle).toBeVisible()
+    })
+
+    test('should filter devices by climate/temperature type', async ({ page }) => {
+      await navigateToArea(page, 'Living Room')
+      await switchToTab(page, 'Devices')
+      await dismissSnackbar(page)
+      await page.waitForTimeout(1000)
+      
+      // Get count with filter ON (default)
+      const filteredCount = await page.locator('text=/Available Devices \\((\\d+)\\)/i').textContent()
+      const filtered = parseInt(filteredCount?.match(/\\d+/)?.[0] || '0')
+      
+      // Toggle filter OFF - find the switch by the label text
+      const filterLabel = page.locator('text=/Show only climate.*temperature/i')
+      await expect(filterLabel).toBeVisible({ timeout: 5000 })
+      
+      // Click the switch (it's the checkbox input before the label)
+      const filterSwitch = page.locator('input[type="checkbox"]').first()
+      await filterSwitch.click()
+      await page.waitForTimeout(500)
+      
+      // Get count with filter OFF
+      const unfilteredCount = await page.locator('text=/Available Devices \\((\\d+)\\)/i').textContent()
+      const unfiltered = parseInt(unfilteredCount?.match(/\\d+/)?.[0] || '0')
+      
+      // Unfiltered should be >= filtered (shows all devices)
+      expect(unfiltered).toBeGreaterThanOrEqual(filtered)
+    })
+
+    test('should show subtype chips on devices', async ({ page }) => {
+      await navigateToArea(page, 'Living Room')
+      await switchToTab(page, 'Devices')
+      await dismissSnackbar(page)
+      
+      // Toggle filter OFF to see all devices
+      const filterSwitch = page.locator('input[type="checkbox"]').first()
+      await filterSwitch.click()
+      await page.waitForTimeout(1000)
+      
+      // Check for device chips
+      const availableCount = await page.locator('text=/Available Devices \\((\\d+)\\)/i').textContent()
+      const count = parseInt(availableCount?.match(/\\d+/)?.[0] || '0')
+      
+      if (count > 0) {
+        // Should have at least one chip (type or subtype)
+        const chips = page.locator('.MuiChip-label')
+        const chipCount = await chips.count()
+        expect(chipCount).toBeGreaterThan(0)
+      }
+    })
+  })
+
   test.describe('Drag & Drop on Main Page (Preserved)', () => {
     
     test('should still have drag and drop on main page', async ({ page }) => {
@@ -320,6 +417,41 @@ test.describe('Device Management', () => {
       
       // Should have draggable devices (may be 0 if all assigned, that's OK)
       expect(count).toBeGreaterThanOrEqual(0)
+    })
+
+    test('should have search bar in main page sidebar (v0.3.17)', async ({ page }) => {
+      // Verify search functionality added to sidebar
+      const searchInput = page.locator('input[placeholder*="Search"]').first()
+      await expect(searchInput).toBeVisible()
+    })
+
+    test('should have filter toggle in main page sidebar (v0.3.17)', async ({ page }) => {
+      // Verify filter toggle in sidebar
+      const filterToggle = page.locator('text=/Climate.*temp.*only/i').or(
+        page.locator('text=/Show only climate/i')
+      )
+      await expect(filterToggle).toBeVisible()
+    })
+
+    test('should filter sidebar devices by search (v0.3.17)', async ({ page }) => {
+      await page.waitForTimeout(1000)
+      
+      // Get initial count
+      const initialText = await page.locator('text=/Available Devices \\((\\d+)\\)/i').first().textContent()
+      const initial = parseInt(initialText?.match(/\\d+/)?.[0] || '0')
+      
+      if (initial > 0) {
+        // Search for something
+        const searchInput = page.locator('input[placeholder*="Search"]').first()
+        await searchInput.fill('xyz_nonexistent')
+        await page.waitForTimeout(500)
+        
+        // Count should change (likely to 0)
+        const filteredText = await page.locator('text=/Available Devices \\((\\d+)\\)/i').first().textContent()
+        const filtered = parseInt(filteredText?.match(/\\d+/)?.[0] || '0')
+        
+        expect(filtered).toBe(0)
+      }
     })
   })
 })

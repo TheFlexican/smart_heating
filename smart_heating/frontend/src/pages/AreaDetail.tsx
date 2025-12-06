@@ -23,6 +23,7 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  FormControlLabel,
 } from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import ThermostatIcon from '@mui/icons-material/Thermostat'
@@ -92,6 +93,8 @@ const ZoneDetail = () => {
   const navigate = useNavigate()
   const [area, setZone] = useState<Zone | null>(null)
   const [availableDevices, setAvailableDevices] = useState<Device[]>([])
+  const [showOnlyHeating, setShowOnlyHeating] = useState(true)
+  const [deviceSearch, setDeviceSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [tabValue, setTabValue] = useState(0)
   const [temperature, setTemperature] = useState(21)
@@ -1289,20 +1292,72 @@ const ZoneDetail = () => {
 
             {/* Available Devices */}
             <Paper sx={{ p: 3 }}>
-              <Typography variant="h6" gutterBottom color="text.primary">
-                Available Devices ({availableDevices.length})
-              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6" color="text.primary">
+                  Available Devices ({availableDevices.filter(device => {
+                    const typeMatch = !showOnlyHeating || ['climate', 'temperature'].includes(device.subtype || '')
+                    if (!deviceSearch) return typeMatch
+                    const searchLower = deviceSearch.toLowerCase()
+                    const nameMatch = (device.name || '').toLowerCase().includes(searchLower)
+                    const entityMatch = (device.entity_id || device.id || '').toLowerCase().includes(searchLower)
+                    const areaMatch = (device.ha_area_name || '').toLowerCase().includes(searchLower)
+                    return typeMatch && (nameMatch || entityMatch || areaMatch)
+                  }).length})
+                </Typography>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={showOnlyHeating}
+                      onChange={(e) => setShowOnlyHeating(e.target.checked)}
+                      color="primary"
+                    />
+                  }
+                  label="Show only climate & temperature sensors"
+                />
+              </Box>
               <Typography variant="body2" color="text.secondary" paragraph>
                 Devices assigned to "{area.name}" in Home Assistant but not yet added to Smart Heating
               </Typography>
 
-              {availableDevices.length === 0 ? (
+              {/* Search Bar */}
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="Search by device name, entity ID, or area..."
+                value={deviceSearch}
+                onChange={(e) => setDeviceSearch(e.target.value)}
+                sx={{ mb: 2 }}
+              />
+
+              {availableDevices.filter(device => {
+                const typeMatch = !showOnlyHeating || ['climate', 'temperature'].includes(device.subtype || '')
+                if (!deviceSearch) return typeMatch
+                const searchLower = deviceSearch.toLowerCase()
+                const nameMatch = (device.name || '').toLowerCase().includes(searchLower)
+                const entityMatch = (device.entity_id || device.id || '').toLowerCase().includes(searchLower)
+                const areaMatch = (device.ha_area_name || '').toLowerCase().includes(searchLower)
+                return typeMatch && (nameMatch || entityMatch || areaMatch)
+              }).length === 0 ? (
                 <Alert severity="info">
-                  No additional devices available. All devices from this area are already assigned.
+                  {deviceSearch
+                    ? `No devices found matching "${deviceSearch}"`
+                    : showOnlyHeating 
+                      ? 'No climate/temperature devices available. Toggle off the filter to see all devices.'
+                      : 'No additional devices available. All devices from this area are already assigned.'}
                 </Alert>
               ) : (
                 <List>
-                  {availableDevices.map((device) => (
+                  {availableDevices
+                    .filter(device => {
+                      const typeMatch = !showOnlyHeating || ['climate', 'temperature'].includes(device.subtype || '')
+                      if (!deviceSearch) return typeMatch
+                      const searchLower = deviceSearch.toLowerCase()
+                      const nameMatch = (device.name || '').toLowerCase().includes(searchLower)
+                      const entityMatch = (device.entity_id || device.id || '').toLowerCase().includes(searchLower)
+                      const areaMatch = (device.ha_area_name || '').toLowerCase().includes(searchLower)
+                      return typeMatch && (nameMatch || entityMatch || areaMatch)
+                    })
+                    .map((device) => (
                     <ListItem
                       key={device.entity_id || device.id}
                       sx={{
@@ -1342,9 +1397,15 @@ const ZoneDetail = () => {
                           </Typography>
                         }
                         secondary={
-                          <Typography variant="caption" color="text.secondary">
-                            {device.type.replace(/_/g, ' ')} • {device.entity_id || device.id}
-                          </Typography>
+                          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 0.5 }}>
+                            <Chip label={device.type.replace(/_/g, ' ')} size="small" />
+                            {device.subtype && (
+                              <Chip label={device.subtype} size="small" color="primary" variant="outlined" />
+                            )}
+                            <Typography variant="caption" color="text.secondary">
+                              {device.entity_id || device.id}
+                            </Typography>
+                          </Box>
                         }
                       />
                     </ListItem>

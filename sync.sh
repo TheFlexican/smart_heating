@@ -77,6 +77,12 @@ docker cp /tmp/smart_heating_sync.tar.gz "$HA_CONTAINER:/tmp/" > /dev/null
 # Extract in container
 docker exec "$HA_CONTAINER" tar xzf /tmp/smart_heating_sync.tar.gz -C /config/custom_components/smart_heating/
 
+# Extract in production container
+tar xzf /tmp/smart_heating_sync.tar.gz -C /Volumes/config/custom_components/smart_heating
+
+# Need to restart Home Assistant for changes to take effect
+ssh root@192.168.2.2 -p 22222 "ha core restart"
+
 # Clean up
 docker exec "$HA_CONTAINER" rm /tmp/smart_heating_sync.tar.gz
 rm /tmp/smart_heating_sync.tar.gz
@@ -102,6 +108,8 @@ else
     exit 1
 fi
 echo ""
+
+
 
 echo -e "${GREEN}════════════════════════════════════════════════════════${NC}"
 echo -e "${GREEN}  Sync Complete!${NC}"

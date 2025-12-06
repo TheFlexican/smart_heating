@@ -1183,6 +1183,33 @@ Current version: **0.3.3**
 
 ### Changelog
 
+#### v0.3.17 (2025-12-06)
+**Universal Device Support & Enhanced Search**
+
+- 🌍 **Language-Independent Device Discovery**
+  - Removed all hardcoded keyword filtering (no more "pump", "pomp", "heating", etc.)
+  - Truly universal device support - all climate, switch, number, and sensor entities
+  - Domain-based device type mapping (climate→thermostat, switch→switch, etc.)
+  - Added `subtype` field for better categorization (climate, switch, number, temperature)
+
+- 🔍 **Smart Device Filtering**
+  - New filter toggle: "Show only climate & temperature sensors"
+  - Default shows climate entities and temperature sensors only
+  - Toggle off to see ALL devices (switches, numbers, etc.)
+  - Works on both main overview and area detail pages
+
+- 🔎 **Advanced Device Search**
+  - Search bar in Available Devices panel (main overview sidebar)
+  - Search bar in Area Detail Available Devices section
+  - Search by device name, entity ID, or Home Assistant area
+  - Real-time filtering with dynamic device count
+  - Works together with climate/temperature filter
+
+- 🐛 **Bug Fixes**
+  - Fixed TypeScript type safety in Schedule creation (proper null checks)
+  - Fixed area.add_schedule null reference issue
+  - Improved error handling for missing schedule data
+
 #### v0.3.14 (2025-12-05)
 **Improved Device Discovery**
 

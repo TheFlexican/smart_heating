@@ -382,7 +382,7 @@ class SmartHeatingAPIView(HomeAssistantView):
         return web.json_response(area_data)
 
     async def get_devices(self, request: web.Request) -> web.Response:
-        """Get available Zigbee2MQTT devices.
+        """Get available devices from Home Assistant.
         
         Args:
             request: Request object
@@ -397,9 +397,6 @@ class SmartHeatingAPIView(HomeAssistantView):
         device_registry = dr.async_get(self.hass)
         area_registry = ar.async_get(self.hass)
         
-        # Find all heating-related entities (climate, sensors, switches)
-        heating_platforms = ["climate", "sensor", "number", "switch"]
-        
         _LOGGER.warning("=== SMART HEATING: Starting device discovery ===")
         
         for entity in entity_registry.entities.values():
@@ -407,129 +404,116 @@ class SmartHeatingAPIView(HomeAssistantView):
             if entity.entity_id.startswith("climate.zone_"):
                 continue
             
-            # Check if entity is from a heating-related domain
-            if entity.domain in heating_platforms:
-                # Get entity state for additional info
-                state = self.hass.states.get(entity.entity_id)
-                if not state:
-                    continue
-                
-                # Determine device type based on entity domain and attributes
-                device_type = None
-                device_class = state.attributes.get("device_class")
-                
-                if entity.domain == "climate":
-                    device_type = "thermostat"
-                elif entity.domain == "sensor":
-                    # Use device_class if available
-                    if device_class == "temperature":
-                        device_type = "temperature_sensor"
-                    else:
-                        # Fallback to unit check - be more inclusive
-                        unit = state.attributes.get("unit_of_measurement", "")
-                        entity_lower = entity.entity_id.lower()
-                        if ("°C" in unit or "°F" in unit or 
-                            "temperature" in entity_lower or "temp" in entity_lower or
-                            "thermostat" in entity_lower):
-                            device_type = "temperature_sensor"
-                        else:
-                            continue  # Skip non-temperature sensors
-                elif entity.domain == "switch":
-                    # Include switches that are heating-related (pumps, relays, heaters)
-                    if any(keyword in entity.entity_id.lower() 
-                           for keyword in ["thermostat", "heater", "radiator", "heating", "pump", "floor", "relay"]):
-                        device_type = "switch"  # Use "switch" type, not "thermostat"
-                    else:
-                        continue  # Skip non-heating switches
-                elif entity.domain == "number":
-                    if "valve" in entity.entity_id.lower() or device_class == "valve":
-                        device_type = "valve"
-                    else:
-                        continue
+            # Get entity state for additional info
+            state = self.hass.states.get(entity.entity_id)
+            if not state:
+                continue
+            
+            # Map domain to device type - simple, universal mapping
+            # Subtype based on HA device_class or domain only (no keyword filtering)
+            device_type = None
+            subtype = None
+            device_class = state.attributes.get("device_class")
+            
+            if entity.domain == "climate":
+                device_type = "thermostat"
+                subtype = "climate"
+            elif entity.domain == "switch":
+                device_type = "switch"
+                subtype = "switch"  # Just use domain as subtype
+            elif entity.domain == "number":
+                device_type = "number"
+                subtype = "number"  # Just use domain as subtype
+            elif entity.domain == "sensor":
+                # Only include temperature sensors
+                unit = state.attributes.get("unit_of_measurement", "")
+                if device_class == "temperature" or unit in ["°C", "°F"]:
+                    device_type = "sensor"
+                    subtype = "temperature"
                 else:
-                    # Skip entities that don't match heating domains
-                    continue
+                    continue  # Skip non-temperature sensors
+            
+            # Skip if no device type
+            if not device_type:
+                continue
+            
+            # Check if device is already assigned to a area
+            assigned_areas = []
+            assigned_to_hidden_area = False
+            for area_id, area in self.area_manager.get_all_areas().items():
+                if entity.entity_id in area.devices:
+                    assigned_areas.append(area_id)
+                    # Check if any assigned area is hidden
+                    if area.hidden:
+                        assigned_to_hidden_area = True
                 
-                # Skip if device type couldn't be determined
-                if not device_type:
-                    continue
-                
-                # Check if device is already assigned to a area
-                assigned_areas = []
-                assigned_to_hidden_area = False
-                for area_id, area in self.area_manager.get_all_areas().items():
-                    if entity.entity_id in area.devices:
-                        assigned_areas.append(area_id)
-                        # Check if any assigned area is hidden
-                        if area.hidden:
-                            assigned_to_hidden_area = True
+                # Also check if device name/entity_id contains a hidden area name
+                if area.hidden and not assigned_to_hidden_area:
+                    area_name_lower = area.name.lower()
+                    entity_id_lower = entity.entity_id.lower()
+                    friendly_name_lower = state.attributes.get("friendly_name", "").lower()
                     
-                    # Also check if device name/entity_id contains a hidden area name
-                    if area.hidden and not assigned_to_hidden_area:
-                        area_name_lower = area.name.lower()
-                        entity_id_lower = entity.entity_id.lower()
-                        friendly_name_lower = state.attributes.get("friendly_name", "").lower()
+                    if area_name_lower in entity_id_lower or area_name_lower in friendly_name_lower:
+                        _LOGGER.debug(
+                            "Filtering device %s - contains hidden area name '%s'",
+                            entity.entity_id, area.name
+                        )
+                        assigned_to_hidden_area = True
+            
+            # Skip devices assigned to hidden areas
+            if assigned_to_hidden_area:
+                continue
+            
+            # Get Home Assistant area for this entity
+            ha_area_id = None
+            ha_area_name = None
+            if entity.device_id:
+                device_entry = device_registry.async_get(entity.device_id)
+                if device_entry and device_entry.area_id:
+                    area_entry = area_registry.async_get_area(device_entry.area_id)
+                    if area_entry:
+                        ha_area_id = area_entry.id
+                        ha_area_name = area_entry.name
                         
-                        if area_name_lower in entity_id_lower or area_name_lower in friendly_name_lower:
-                            _LOGGER.debug(
-                                "Filtering device %s - contains hidden area name '%s'",
-                                entity.entity_id, area.name
-                            )
-                            assigned_to_hidden_area = True
-                
-                # Skip devices assigned to hidden areas
-                if assigned_to_hidden_area:
-                    continue
-                
-                # Get Home Assistant area for this entity
-                ha_area_id = None
-                ha_area_name = None
-                if entity.device_id:
-                    device_entry = device_registry.async_get(entity.device_id)
-                    if device_entry and device_entry.area_id:
-                        area_entry = area_registry.async_get_area(device_entry.area_id)
-                        if area_entry:
-                            ha_area_id = area_entry.id
-                            ha_area_name = area_entry.name
-                            
-                            # Also skip if HA area matches a hidden Smart Heating area
-                            if not assigned_to_hidden_area:
-                                for area_id, area in self.area_manager.get_all_areas().items():
-                                    if area.hidden and area.name.lower() == ha_area_name.lower():
-                                        _LOGGER.debug(
-                                            "Filtering device %s - HA area %s matches hidden Smart Heating area",
-                                            entity.entity_id, ha_area_name
-                                        )
-                                        assigned_to_hidden_area = True
-                                        break
-                
-                # Skip devices assigned to hidden areas (any method)
-                if assigned_to_hidden_area:
-                    _LOGGER.debug("Skipping device %s - assigned to hidden area", entity.entity_id)
-                    continue
-                
-                _LOGGER.warning(
-                    "DISCOVERED: %s (%s) - type: %s, HA area: %s",
-                    state.attributes.get("friendly_name", entity.entity_id),
-                    entity.entity_id, device_type, ha_area_name or "none"
-                )
-                
-                devices.append({
-                    "id": entity.entity_id,
-                    "name": state.attributes.get("friendly_name", entity.entity_id),
-                    "type": device_type,
-                    "entity_id": entity.entity_id,
-                    "domain": entity.domain,
-                    "assigned_areas": assigned_areas,
-                    "ha_area_id": ha_area_id,
-                    "ha_area_name": ha_area_name,
-                    "state": state.state,
-                    "attributes": {
-                        "temperature": state.attributes.get("temperature"),
-                        "current_temperature": state.attributes.get("current_temperature"),
-                        "unit_of_measurement": state.attributes.get("unit_of_measurement"),
-                    }
-                })
+                        # Also skip if HA area matches a hidden Smart Heating area
+                        if not assigned_to_hidden_area:
+                            for area_id, area in self.area_manager.get_all_areas().items():
+                                if area.hidden and area.name.lower() == ha_area_name.lower():
+                                    _LOGGER.debug(
+                                        "Filtering device %s - HA area %s matches hidden Smart Heating area",
+                                        entity.entity_id, ha_area_name
+                                    )
+                                    assigned_to_hidden_area = True
+                                    break
+            
+            # Skip devices assigned to hidden areas (any method)
+            if assigned_to_hidden_area:
+                _LOGGER.debug("Skipping device %s - assigned to hidden area", entity.entity_id)
+                continue
+            
+            _LOGGER.warning(
+                "DISCOVERED: %s (%s) - type: %s, HA area: %s",
+                state.attributes.get("friendly_name", entity.entity_id),
+                entity.entity_id, device_type, ha_area_name or "none"
+            )
+            
+            devices.append({
+                "id": entity.entity_id,
+                "name": state.attributes.get("friendly_name", entity.entity_id),
+                "type": device_type,
+                "subtype": subtype,
+                "entity_id": entity.entity_id,
+                "domain": entity.domain,
+                "assigned_areas": assigned_areas,
+                "ha_area_id": ha_area_id,
+                "ha_area_name": ha_area_name,
+                "state": state.state,
+                "attributes": {
+                    "temperature": state.attributes.get("temperature"),
+                    "current_temperature": state.attributes.get("current_temperature"),
+                    "unit_of_measurement": state.attributes.get("unit_of_measurement"),
+                }
+            })
         
         _LOGGER.warning("=== SMART HEATING: Discovery complete - found %d devices ===", len(devices))
         return web.json_response({"devices": devices})
@@ -1216,9 +1200,17 @@ class SmartHeatingAPIView(HomeAssistantView):
             
             # Create schedule from frontend data
             from .area_manager import Schedule
+            
+            # Validate required fields
+            time_str = data.get("time")
+            if not time_str:
+                return web.json_response(
+                    {"error": "Missing required field: time"}, status=400
+                )
+            
             schedule = Schedule(
                 schedule_id=schedule_id,
-                time=data.get("time"),
+                time=time_str,
                 temperature=temperature,
                 days=data.get("days"),
                 enabled=data.get("enabled", True),
@@ -1228,6 +1220,11 @@ class SmartHeatingAPIView(HomeAssistantView):
             )
             
             area = self.area_manager.get_area(area_id)
+            if not area:
+                return web.json_response(
+                    {"error": f"Area {area_id} not found"}, status=404
+                )
+            
             area.add_schedule(schedule)
             await self.area_manager.async_save()
             

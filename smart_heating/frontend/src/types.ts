@@ -1,7 +1,8 @@
 export interface Device {
   id: string
   entity_id?: string  // Universal device ID (HA entity_id)
-  type: 'thermostat' | 'temperature_sensor' | 'opentherm_gateway' | 'valve' | 'switch'
+  type: 'thermostat' | 'temperature_sensor' | 'opentherm_gateway' | 'valve' | 'switch' | 'sensor' | 'number'
+  subtype?: 'climate' | 'switch' | 'number' | 'temperature'  // Domain-based categorization (no keyword filtering)
   mqtt_topic?: string
   name?: string
   state?: string
