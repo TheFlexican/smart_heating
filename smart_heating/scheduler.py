@@ -86,8 +86,20 @@ class ScheduleExecutor:
         Args:
             now: Current datetime (for testing, otherwise uses current time)
         """
+        # Get current UTC time and convert to HA's configured timezone
         if now is None:
-            now = dt_util.now()  # Use Home Assistant's timezone-aware now()
+            now = dt_util.utcnow()
+        
+        # Always convert to HA's configured timezone
+        if self.hass.config.time_zone:
+            import zoneinfo
+            tz = zoneinfo.ZoneInfo(self.hass.config.time_zone)
+            now = now.astimezone(tz)
+        
+        _LOGGER.warning(
+            "⏰ Local time = %s (timezone: %s, UTC offset: %s, HA tz: %s)",
+            now, now.tzinfo, now.strftime("%z"), self.hass.config.time_zone
+        )
             
         current_time = now.time()
         current_day = DAYS_OF_WEEK[now.weekday()]
@@ -171,6 +183,11 @@ class ScheduleExecutor:
         current_day_idx = day_order.index(current_day)
         previous_day = day_order[(current_day_idx - 1) % 7]
         
+        _LOGGER.warning(
+            "🔍 Schedule matching: day=%s, time=%s, previous_day=%s, num_schedules=%d",
+            current_day, current_time, previous_day, len(schedules)
+        )
+        
         # FIRST: Check if a schedule from the previous day extends into today (higher priority)
         for schedule in schedules.values():
             if schedule.day == previous_day:
@@ -181,9 +198,9 @@ class ScheduleExecutor:
                 if start_time > end_time:
                     # Check if we're in the early period (< end_time)
                     if current_time < end_time:
-                        _LOGGER.debug(
-                            "Matched midnight-crossing schedule from %s: %s-%s",
-                            previous_day, schedule.start_time, schedule.end_time
+                        _LOGGER.warning(
+                            "🎯 Matched midnight-crossing schedule from %s: %s-%s (current: %s)",
+                            previous_day, schedule.start_time, schedule.end_time, current_time
                         )
                         return schedule
         
@@ -197,9 +214,11 @@ class ScheduleExecutor:
                 if start_time > end_time:
                     # Only match if we're in the late period (>= start_time)
                     if current_time >= start_time:
-                        _LOGGER.debug(
-                            "Matched midnight-crossing schedule: %s-%s",
-                            schedule.start_time, schedule.end_time
+                        _LOGGER.warning(
+                            "🎯 Matched midnight-crossing schedule: %s %s-%s @ %s (current: %s)",
+                            schedule.day, schedule.start_time, schedule.end_time, 
+                            getattr(schedule, 'preset_mode', getattr(schedule, 'temperature', '?')),
+                            current_time
                         )
                         return schedule
         
@@ -212,12 +231,18 @@ class ScheduleExecutor:
                 # Normal case: 08:00 - 22:00
                 if start_time <= end_time:
                     if start_time <= current_time < end_time:
-                        _LOGGER.debug(
-                            "Matched normal schedule: %s-%s",
-                            schedule.start_time, schedule.end_time
+                        _LOGGER.warning(
+                            "🎯 Matched normal schedule: %s %s-%s @ %s (current: %s)",
+                            schedule.day, schedule.start_time, schedule.end_time,
+                            getattr(schedule, 'preset_mode', getattr(schedule, 'temperature', '?')),
+                            current_time
                         )
                         return schedule
-                    
+        
+        _LOGGER.warning(
+            "❌ No schedule matched for %s at %s",
+            current_day, current_time
+        )
         return None
 
     async def _handle_smart_night_boost(self, area, now: datetime) -> None:
