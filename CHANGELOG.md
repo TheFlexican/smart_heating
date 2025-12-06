@@ -15,7 +15,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - 📱 Mobile app notifications
 - 🏡 Multi-home support
 
-## [0.4.0] - 2025-12-06
+## [0.4.1] - 2025-01-06
+
+### 🐛 Fixed - Manual Override Persistence
+
+**Bug Fix**
+- **Fixed**: Manual override mode now correctly persists across Home Assistant restarts
+- **Issue**: While `manual_override` flag was saved to storage, it wasn't being loaded during startup
+- **Solution**: Added `manual_override` to both `Area.to_dict()` and `Area.from_dict()` methods in `area_manager.py`
+- **Impact**: Users' manual thermostat adjustments are now preserved even after HA restarts/updates
+- **Affected Files**:
+  - `smart_heating/area_manager.py`: Added persistence for `manual_override` flag
+
+## [0.4.0] - 2025-01-06
 
 ### ✨ Added - Manual Override Mode & Real-Time Updates
 
