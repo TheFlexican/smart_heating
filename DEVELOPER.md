@@ -2,6 +2,28 @@
 
 Quick reference for developing and extending Smart Heating.
 
+## 🔄 Current Version & Roadmap
+
+**Current Stable**: v0.5.7
+**Next Release**: v0.6.0 (Planning Phase)
+
+### v0.6.0 Development Roadmap
+
+See detailed documentation:
+- [V0.6.0_ROADMAP.md](V0.6.0_ROADMAP.md) - Implementation plan and priorities
+- [V0.6.0_ARCHITECTURE.md](V0.6.0_ARCHITECTURE.md) - Technical architecture and design
+
+**Planned Features**:
+1. **Vacation Mode** - One-click away mode for all areas
+2. **Import/Export** - Configuration backup and restore
+3. **Multi-User Presence** - Per-user temperature preferences
+4. **Efficiency Reports** - Heating performance analytics
+5. **Historical Comparisons** - Time-period comparisons
+
+**Implementation Strategy**: Incremental releases with full testing at each stage.
+
+---
+
 ## Project Structure
 
 ```
@@ -19,6 +41,14 @@ smart_heating/
 │   ├── api.py                # REST API endpoints
 │   ├── websocket.py          # WebSocket handlers
 │   │
+│   ├── climate_controller.py # Heating control logic
+│   ├── scheduler.py          # Schedule management
+│   ├── learning_engine.py    # Adaptive learning system
+│   ├── history.py            # Temperature history tracking
+│   ├── area_logger.py        # Development logging system
+│   │
+│   ├── vacation_manager.py   # Vacation mode (v0.6.0 - in progress)
+│   │
 │   ├── climate.py            # Climate platform
 │   ├── switch.py             # Switch platform
 │   ├── sensor.py             # Sensor platform
@@ -34,14 +64,20 @@ smart_heating/
 │           ├── types.ts
 │           ├── api.ts
 │           └── components/
+│               ├── Dashboard.tsx
+│               ├── GlobalSettings.tsx
+│               └── AreaDetail.tsx
 │
 ├── README.md                 # User documentation
 ├── INSTALL.md                # Installation guide
-├── ARCHITECTURE.md           # Architecture overview
+├── ARCHITECTURE.md           # Architecture overview (v0.5.x)
+├── V0.6.0_ARCHITECTURE.md    # v0.6.0 technical design
+├── V0.6.0_ROADMAP.md         # v0.6.0 implementation plan
 ├── DEVELOPER.md              # Developer quick reference (this file)
 ├── CHANGELOG.md              # Version history
-├── deploy.sh                 # Development deploy script
-├── build_frontend.sh         # Frontend build script
+├── deploy_production.sh      # Production deploy script
+├── sync.sh                   # Development sync script
+├── setup.sh                  # Test environment setup
 └── .gitignore                # Git ignore rules
 ```
 
@@ -771,9 +807,140 @@ useEffect(() => {
 - [TypeScript Handbook](https://www.typescriptlang.org/docs/)
 - [Vite Guide](https://vitejs.dev/guide/)
 
+---
+
+## 🚀 Contributing to v0.6.0 Development
+
+### Getting Started with v0.6.0 Features
+
+The v0.6.0 release introduces several major features. Development is organized into phases:
+
+**Phase 1: Foundation (Current)**
+- Vacation Mode backend (`vacation_manager.py` - ✅ created)
+- Import/Export functionality
+
+**Phase 2: User Management**
+- Multi-User Presence tracking
+- User profiles and preferences
+
+**Phase 3: Analytics**
+- Heating Efficiency Reports
+- Historical Comparisons
+
+### Development Workflow for New Features
+
+1. **Read Architecture Docs**
+   ```bash
+   cat V0.6.0_ARCHITECTURE.md  # Technical design
+   cat V0.6.0_ROADMAP.md       # Implementation plan
+   ```
+
+2. **Backend Implementation**
+   - Create new manager class (e.g., `vacation_manager.py`)
+   - Add API endpoints in `api.py`
+   - Update WebSocket handlers in `websocket.py`
+   - Add services in `services.yaml`
+
+3. **Frontend Implementation**
+   - Add TypeScript types in `types.ts`
+   - Create API functions in `api.ts`
+   - Build React components
+   - Add WebSocket subscription hooks
+
+4. **Testing**
+   - Write E2E tests in `tests/e2e/tests/`
+   - Test with `npm test` in E2E directory
+   - Manual testing with `./sync.sh` or `./deploy_production.sh`
+
+5. **Documentation**
+   - Update CHANGELOG.md
+   - Update README.md if user-facing
+   - Add inline code comments
+
+### File-Based Storage Pattern (v0.6.0)
+
+New features use async file operations to avoid blocking:
+
+```python
+from pathlib import Path
+
+class MyManager:
+    def __init__(self, hass: HomeAssistant, storage_path: str):
+        self.hass = hass
+        self._storage_file = Path(storage_path) / "my_data.json"
+    
+    async def async_save(self):
+        def _write():
+            with open(self._storage_file, 'w') as f:
+                json.dump(self._data, f, indent=2)
+        
+        await self.hass.async_add_executor_job(_write)
+```
+
+### API Endpoint Pattern (v0.6.0)
+
+Add endpoints in `api.py`:
+
+```python
+async def get(self, request, endpoint):
+    if endpoint == "vacation_mode":
+        return await self.get_vacation_mode(request)
+    # ... existing endpoints
+
+async def post(self, request, endpoint):
+    if endpoint == "vacation_mode":
+        return await self.enable_vacation_mode(request)
+    # ... existing endpoints
+
+async def delete(self, request, endpoint):
+    if endpoint == "vacation_mode":
+        return await self.disable_vacation_mode(request)
+```
+
+### Testing New Features
+
+Create test file in `tests/e2e/tests/`:
+
+```typescript
+import { test, expect } from '@playwright/test'
+
+test.describe('Vacation Mode', () => {
+  test('should enable vacation mode', async ({ page }) => {
+    // Navigate to settings
+    // Enable vacation mode
+    // Verify all areas show away preset
+  })
+})
+```
+
+Run tests:
+```bash
+cd tests/e2e
+npm test -- vacation-mode.spec.ts
+```
+
+### v0.6.0 Development Checklist
+
+For each new feature:
+
+- [ ] Backend manager class created
+- [ ] API endpoints implemented
+- [ ] WebSocket events added (if needed)
+- [ ] Services registered (if needed)
+- [ ] Frontend types defined
+- [ ] Frontend API functions created
+- [ ] React components built
+- [ ] E2E tests written and passing
+- [ ] CHANGELOG.md updated
+- [ ] README.md updated (if user-facing)
+- [ ] Code reviewed and tested
+
+---
+
 ## Getting Help
 
 - Check existing issues on GitHub
-- Read the documentation
+- Read the documentation  
+- Read v0.6.0 architecture docs (V0.6.0_ARCHITECTURE.md)
 - Enable debug logging
 - Ask in GitHub Discussions

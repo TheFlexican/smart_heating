@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.5.7] - 2025-12-06
+
+### 🐛 Critical Fixes
+
+**Async File I/O**
+- Fixed blocking file operations in area logger
+  - All file reads/writes now use `hass.async_add_executor_job()`
+  - Prevents event loop blocking warnings
+  - Improved performance and responsiveness
+
+**API Rate Limiting Protection**
+- Temperature change detection already in place (v0.5.6+)
+  - Only sets thermostat temperature if changed by ≥0.1°C
+  - Prevents hitting Google Nest API rate limits
+  - Cached last set temperature per thermostat
+
+**Disabled Area Handling**
+- Fixed disabled areas attempting to control devices
+  - Disabled areas now skip ALL device control
+  - No more `climate.turn_off` errors on MQTT devices
+  - Devices maintain their current state
+  - Temperature tracking continues normally
+
+**Scheduler Cleanup**
+- Removed unnecessary climate service call for preset modes
+  - Preset mode set directly on area object
+  - No more "Action climate.set_preset_mode not found" warnings
+  - Cleaner, more efficient schedule activation
+
+**Learning Engine Parameter Fix**
+- Fixed `async_predict_heating_time()` parameter mismatch
+  - Changed `start_temp` → `current_temp` 
+  - Removed unused `outdoor_temp` parameter
+  - Smart night boost predictions working correctly
+
 ## [0.5.6] - 2025-12-06
 
 ### 🚀 Performance Improvements - File-Based Logging

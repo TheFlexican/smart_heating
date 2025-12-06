@@ -84,6 +84,48 @@ A Home Assistant custom integration for managing multi-area heating systems with
 - 🔄 **Auto-update** - Data coordinator with 30-second interval
 - 📝 **Debug logging** - Extensive logging for troubleshooting
 
+## 🚀 Coming in v0.6.0
+
+**Status**: Planning & Architecture Phase - [See Roadmap](V0.6.0_ROADMAP.md)
+
+The following features are planned for the next major release:
+
+### 🏖️ Vacation Mode
+One-click mode to set all areas to Away preset for extended periods
+- Set date range for vacation
+- Auto-disable when someone arrives home
+- Frost protection override
+- Simple toggle in UI
+
+### 💾 Import/Export Configuration
+Backup and restore all Smart Heating settings
+- Export complete configuration to JSON
+- Import with validation and preview
+- Selective restore (choose what to import)
+- Automatic backup before import
+
+### 👥 Multi-User Presence (Planned)
+Track which family members are home and adjust per-person preferences
+- User profiles with temperature preferences
+- Priority system for multiple users
+- Per-user preset overrides
+
+### 📊 Heating Efficiency Reports (Planned)
+Analyze which areas are heating efficiently
+- Efficiency score per area (0-100)
+- Daily/weekly/monthly reports
+- Recommendations for improvement
+
+### 📈 Historical Comparisons (Planned)
+Compare heating performance across time periods
+- Week-to-week, month-to-month comparisons
+- Year-over-year analysis
+- Energy savings tracking
+
+**Implementation Strategy**: Features will be released incrementally with thorough testing. See [V0.6.0_ARCHITECTURE.md](V0.6.0_ARCHITECTURE.md) for technical details.
+
+---
+
 ## 📋 Supported Device Types
 
 ### Per-Area Devices
