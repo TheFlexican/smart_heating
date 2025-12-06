@@ -301,10 +301,31 @@ class ClimateController:
         
         # Then control each area
         for area_id, area in self.area_manager.get_all_areas().items():
+            # Record history for ALL areas (even disabled ones) - every 5 minutes
+            if should_record_history and history_tracker and area.current_temperature is not None:
+                await history_tracker.async_record_temperature(
+                    area_id, 
+                    area.current_temperature, 
+                    area.target_temperature, 
+                    area.state
+                )
+            
             if not area.enabled:
                 # Area disabled - turn off heating
                 await self._async_set_area_heating(area, False)
                 area.state = "off"  # Update area state
+                
+                # Log disabled state but still track temperature
+                if hasattr(self, 'area_logger') and self.area_logger:
+                    self.area_logger.log_event(
+                        area_id,
+                        "mode",
+                        "Area disabled - temperature tracking continues",
+                        {
+                            "mode": "disabled",
+                            "current_temperature": area.current_temperature
+                        }
+                    )
                 continue
             
             # Check for manual override mode
@@ -382,12 +403,6 @@ class ClimateController:
             if current_temp is None:
                 _LOGGER.warning("No temperature data for area %s", area_id)
                 continue
-            
-            # Record history (every 5 minutes)
-            if should_record_history and history_tracker:
-                await history_tracker.async_record_temperature(
-                    area_id, current_temp, target_temp, area.state
-                )
             
             # Determine if heating is needed (with hysteresis)
             should_heat = current_temp < (target_temp - self._hysteresis)

@@ -1380,65 +1380,6 @@ const ZoneDetail = () => {
               )}
             </Paper>
 
-            <Paper sx={{ p: 3, mb: 3 }}>
-              <Typography variant="h6" gutterBottom color="text.primary">
-                Device Status
-              </Typography>
-              {area.devices.length === 0 ? (
-                <Alert severity="info">
-                  No devices assigned to this area.
-                </Alert>
-              ) : (
-                <List>
-                  {area.devices.map((device) => (
-                    <ListItem
-                      key={device.id}
-                      sx={{
-                        border: 1,
-                        borderColor: 'divider',
-                        borderRadius: 1,
-                        mb: 1,
-                      }}
-                    >
-                      <ListItemIcon>
-                        {getDeviceStatusIcon(device)}
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={
-                          <Box display="flex" alignItems="center" gap={1}>
-                            <Typography variant="body1" color="text.primary">
-                              {device.name || device.id}
-                            </Typography>
-                            {device.type === 'thermostat' && area && 
-                             area.target_temperature !== undefined && 
-                             device.current_temperature !== undefined && 
-                             area.target_temperature > device.current_temperature && (
-                              <Chip 
-                                label="heating" 
-                                size="small" 
-                                color="error"
-                                sx={{ height: 20, fontSize: '0.7rem' }}
-                              />
-                            )}
-                          </Box>
-                        }
-                        secondary={
-                          <Box>
-                            <Typography variant="caption" color="text.secondary" display="block">
-                              {device.type.replace(/_/g, ' ')}
-                            </Typography>
-                            <Typography variant="body2" color="text.primary" sx={{ mt: 0.5 }}>
-                              {getDeviceStatus(device)}
-                            </Typography>
-                          </Box>
-                        }
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-              )}
-            </Paper>
-
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" gutterBottom color="text.primary">
                 Quick Stats
