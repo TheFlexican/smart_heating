@@ -400,7 +400,7 @@ class SmartHeatingAPIView(HomeAssistantView):
         # Find entities that are from MQTT/Zigbee2MQTT and could be heating-related
         heating_platforms = ["climate", "sensor", "number", "switch"]
         
-        _LOGGER.info("Discovering devices from MQTT and Zigbee2MQTT platforms")
+        _LOGGER.warning("=== SMART HEATING: Starting device discovery ===")
         
         for entity in entity_registry.entities.values():
             # Check if entity is from MQTT or Zigbee2MQTT integration
@@ -505,8 +505,8 @@ class SmartHeatingAPIView(HomeAssistantView):
                     _LOGGER.debug("Skipping device %s - assigned to hidden area", entity.entity_id)
                     continue
                 
-                _LOGGER.info(
-                    "Discovered device: %s (%s) - type: %s, HA area: %s",
+                _LOGGER.warning(
+                    "DISCOVERED: %s (%s) - type: %s, HA area: %s",
                     state.attributes.get("friendly_name", entity.entity_id),
                     entity.entity_id, device_type, ha_area_name or "none"
                 )
@@ -528,7 +528,7 @@ class SmartHeatingAPIView(HomeAssistantView):
                     }
                 })
         
-        _LOGGER.info("Device discovery complete: found %d devices", len(devices))
+        _LOGGER.warning("=== SMART HEATING: Discovery complete - found %d devices ===", len(devices))
         return web.json_response({"devices": devices})
 
     async def refresh_devices(self, request: web.Request) -> web.Response:
