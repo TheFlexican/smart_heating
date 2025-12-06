@@ -76,9 +76,11 @@ Area:
   - name: str
   - target_temperature: float
   - enabled: bool
+  - hidden: bool
+  - manual_override: bool  # v0.4.0+ - Enters manual mode when thermostat changed externally
   - devices: Dict[str, Device]
   - schedules: Dict[str, Schedule]
-  - state: ZoneState (heating/idle/off)
+  - state: ZoneState (heating/idle/off/manual)
   - night_boost_enabled: bool
   - night_boost_offset: float
   - current_temperature: Optional[float]
@@ -132,6 +134,62 @@ Data update coordinator using Home Assistant's `DataUpdateCoordinator`.
 - Fetch area data every 30 seconds
 - Broadcast updates to entities
 - Handle refresh requests
+- **Monitor thermostat state changes in real-time** (v0.4.0+)
+- **Automatic manual override detection** (v0.4.0+)
+
+**Manual Override System** (v0.4.0+):
+
+Detects when thermostats are adjusted outside the Smart Heating app and automatically enters manual override mode.
+
+**Components:**
+1. **State Change Listeners** (`async_setup()`):
+   - Registers `async_track_state_change_event` for all climate entities
+   - Monitors `temperature` and `hvac_action` attribute changes
+   - Filters out app-initiated changes via `_ignore_next_state_change` flag
+
+2. **Debouncing** (`_handle_state_change()`):
+   - 2-second delay (configurable via `MANUAL_TEMP_CHANGE_DEBOUNCE`)
+   - Prevents flood of updates from rapid dial adjustments (e.g., Google Nest)
+   - Cancels previous pending updates when new changes detected
+
+3. **Manual Override Activation** (`debounced_temp_update()`):
+   - Sets `area.manual_override = True`
+   - Updates `area.target_temperature` to match thermostat
+   - Persists state via `await self.area_manager.async_save()`
+   - Forces coordinator refresh for immediate UI update
+
+4. **Persistence** (v0.4.1+):
+   - `manual_override` flag saved in `Area.to_dict()`
+   - Restored in `Area.from_dict()` during startup
+   - Survives Home Assistant restarts
+
+**Clearing Manual Override:**
+- Automatically cleared when temperature set via app API
+- API sets `area.manual_override = False` on temperature changes
+- Climate controller skips areas in manual override mode
+
+**Flow:**
+```
+User adjusts thermostat externally (e.g., Google Nest dial)
+  ↓
+State change event fired by Home Assistant
+  ↓
+_handle_state_change() receives event
+  ↓
+Wait 2 seconds (debounce)
+  ↓
+debounced_temp_update() executes:
+  - Set manual_override = True
+  - Update target_temperature
+  - Save to storage
+  - Force coordinator refresh
+  ↓
+WebSocket broadcasts update to frontend
+  ↓
+UI shows orange "MANUAL" badge (2-3 second delay)
+  ↓
+Climate controller skips automatic control
+```
 
 ### 3. Climate Controller (`climate_controller.py`)
 

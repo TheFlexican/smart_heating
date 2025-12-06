@@ -212,6 +212,108 @@ Returns:
 
 Smart Heating includes advanced features for enhanced comfort and energy efficiency.
 
+### Manual Override Mode (v0.4.0+)
+
+Automatic detection of external thermostat adjustments with intelligent manual override.
+
+**How It Works:**
+
+When you adjust a thermostat directly (e.g., turning the Google Nest dial, pressing buttons on a physical thermostat, or using the thermostat's own app), Smart Heating automatically detects this change and enters "Manual Override Mode" for that area.
+
+**Features:**
+- 🔍 **Real-Time Detection** - Monitors all thermostats for external temperature changes
+- ⏱️ **Smart Debouncing** - 2-second delay prevents flood of updates from rapid dial adjustments
+- 🟠 **Visual Indication** - Orange "MANUAL" badge displayed on area card
+- 🔒 **Automatic Control Pause** - App stops sending temperature commands to that area
+- 💾 **Persistence** - Manual mode survives Home Assistant restarts
+- 🔄 **Easy Exit** - Automatically cleared when temperature adjusted via Smart Heating app
+
+**User Experience:**
+
+1. **External Adjustment:**
+   - You adjust your Google Nest from 20°C to 22°C
+   - System detects change within 2 seconds
+   - Area enters MANUAL mode
+   - Frontend shows orange "MANUAL" badge (2-3 second delay)
+
+2. **During Manual Mode:**
+   - Climate controller skips this area
+   - Your manual setting is preserved
+   - No automatic temperature changes
+   - Schedules don't apply
+   - Night boost disabled
+
+3. **Resuming Automatic Control:**
+   - Adjust temperature via Smart Heating app
+   - Manual mode automatically cleared
+   - Normal operation resumes (schedules, night boost, etc.)
+
+**Technical Details:**
+
+**State Change Monitoring:**
+```python
+# Backend monitors all climate entities in real-time
+async_track_state_change_event(hass, entity_id, handler)
+# Triggered on temperature or hvac_action changes
+```
+
+**Debouncing Logic:**
+```python
+MANUAL_TEMP_CHANGE_DEBOUNCE = 2.0  # seconds
+# Prevents multiple updates from rapid dial turns
+# Cancels previous pending updates when new changes detected
+```
+
+**Persistence:**
+```json
+{
+  "area_id": "living_room",
+  "manual_override": true,  // v0.4.1+ persists across restarts
+  "target_temperature": 22.0
+}
+```
+
+**API Integration:**
+```bash
+# Check manual override status
+GET /api/smart_heating/areas/living_room
+# Response: {"manual_override": true, ...}
+
+# Clear manual mode by setting temperature
+POST /api/smart_heating/areas/living_room/temperature
+{"temperature": 21.0}
+# Automatically sets manual_override: false
+```
+
+**Why Manual Override?**
+
+Smart Heating is designed to be non-intrusive. If you manually adjust a thermostat, the system respects your decision and gets out of the way. This prevents frustrating "fights" where the app keeps overriding your manual adjustments.
+
+**Use Cases:**
+- 🏠 Quick comfort adjustment without opening app
+- 🌡️ Guest preferences in specific rooms  
+- 🛋️ Temporary changes for specific activities
+- 🔧 Testing thermostat functionality
+- 👶 Nursery temperature fine-tuning
+
+**Logging:**
+```bash
+# Monitor manual override events
+2025-01-06 10:30:15 DEBUG Thermostat temperature change detected: living_room 20.0°C → 22.0°C
+2025-01-06 10:30:17 DEBUG Applying debounced temperature update: living_room = 22.0°C
+2025-01-06 10:30:17 DEBUG Setting manual override mode for living_room
+2025-01-06 10:30:17 DEBUG Area living_room entered MANUAL mode
+```
+
+**Compatibility:**
+Works with **ALL** Home Assistant climate integrations:
+- Google Nest thermostats
+- Ecobee thermostats
+- Generic Thermostat
+- MQTT/Zigbee2MQTT devices
+- Z-Wave thermostats
+- Any climate entity from any integration
+
 ### Preset Modes
 
 Quick temperature presets for common scenarios. Each preset has a default temperature that can be customized per area.

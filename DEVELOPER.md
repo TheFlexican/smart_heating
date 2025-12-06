@@ -86,6 +86,41 @@ smart_heating/
          example: "example_value"
    ```
 
+### Area Manager Data Model
+
+**Area Properties** (v0.4.1+):
+```python
+class Area:
+    area_id: str
+    name: str
+    target_temperature: float
+    enabled: bool
+    hidden: bool  # v0.4.0+ - Hide area from UI
+    manual_override: bool  # v0.4.0+ - Manual mode when thermostat changed externally
+    devices: dict
+    schedules: dict
+    # ... other properties
+```
+
+**Persistence Methods:**
+```python
+# Serialization (save to storage)
+def to_dict(self) -> dict:
+    return {
+        "manual_override": self.manual_override,  # v0.4.1+
+        "hidden": self.hidden,
+        # ... all other fields
+    }
+
+# Deserialization (load from storage)
+@classmethod
+def from_dict(cls, data: dict) -> "Area":
+    area = cls(...)
+    area.manual_override = data.get("manual_override", False)  # v0.4.1+
+    area.hidden = data.get("hidden", False)
+    return area
+```
+
 ### Adding a New API Endpoint
 
 1. **Add method** to `ZoneHeaterAPIView` in `api.py`:
@@ -281,6 +316,118 @@ class ZoneHeaterManagerCoordinator(DataUpdateCoordinator):
     area_manager: ZoneManager
     
     async def _async_update_data() -> Dict[str, Any]
+    
+    # Manual Override System (v0.4.0+)
+    async def async_setup() -> None
+    async def _handle_state_change(event: Event) -> None
+    async def debounced_temp_update(area_id: str, new_temp: float) -> None
+```
+
+**Manual Override System** (v0.4.0+):
+
+Real-time detection of external thermostat changes with automatic manual override mode.
+
+**Key Constants:**
+```python
+MANUAL_TEMP_CHANGE_DEBOUNCE = 2.0  # seconds
+```
+
+**Implementation Details:**
+
+1. **State Listener Setup** (`async_setup()`):
+   ```python
+   # Register listeners for all climate entities in all areas
+   for area in self.area_manager.areas.values():
+       for device in area.devices.values():
+           if device.get("type") == "thermostat":
+               entity_id = device.get("entity_id")
+               async_track_state_change_event(
+                   self.hass, entity_id, self._handle_state_change
+               )
+   ```
+
+2. **Debounced State Change Handler**:
+   ```python
+   async def _handle_state_change(self, event: Event) -> None:
+       """Handle thermostat state changes with debouncing."""
+       # Skip if change was initiated by app
+       if self._ignore_next_state_change.get(area_id):
+           self._ignore_next_state_change[area_id] = False
+           return
+       
+       # Cancel previous pending update
+       if area_id in self._pending_manual_updates:
+           self._pending_manual_updates[area_id].cancel()
+       
+       # Schedule debounced update (2 seconds)
+       handle = self.hass.async_create_task(
+           self._delayed_manual_update(area_id, new_temp)
+       )
+       self._pending_manual_updates[area_id] = handle
+   ```
+
+3. **Manual Override Activation**:
+   ```python
+   async def debounced_temp_update(self, area_id: str, new_temp: float):
+       """Apply manual override after debounce delay."""
+       area = self.area_manager.areas.get(area_id)
+       if not area:
+           return
+       
+       # Enter manual mode
+       area.manual_override = True
+       area.target_temperature = new_temp
+       
+       # Persist to storage (v0.4.1+ includes manual_override)
+       await self.area_manager.async_save()
+       
+       # Force UI update
+       await self.async_refresh()
+   ```
+
+4. **Clearing Manual Override** (in `api.py`):
+   ```python
+   async def set_temperature(self, request: web.Request) -> web.Response:
+       """Set area temperature via app."""
+       area.target_temperature = temperature
+       area.manual_override = False  # Clear manual mode
+       await self.area_manager.async_save()
+   ```
+
+**Persistence** (v0.4.1+):
+```python
+# Area.to_dict() - Serialization
+def to_dict(self) -> dict:
+    return {
+        "area_id": self.area_id,
+        "manual_override": self.manual_override,  # Added v0.4.1
+        # ... other fields
+    }
+
+# Area.from_dict() - Deserialization
+@classmethod
+def from_dict(cls, data: dict) -> "Area":
+    area = cls(...)
+    area.manual_override = data.get("manual_override", False)  # Added v0.4.1
+    return area
+```
+
+**Testing Manual Override:**
+```bash
+# 1. Adjust thermostat externally (e.g., Google Nest)
+# 2. Check backend logs
+ssh root@192.168.2.2 -p 22222 "ha core logs" | grep "Thermostat temperature change detected"
+
+# 3. Verify manual_override flag set
+curl -H "Authorization: Bearer TOKEN" \
+  http://homeassistant.local:8123/api/smart_heating/areas/AREA_ID
+
+# 4. Check persistence after restart
+ssh root@192.168.2.2 -p 22222 "ha core restart"
+sleep 30
+curl -H "Authorization: Bearer TOKEN" \
+  http://homeassistant.local:8123/api/smart_heating/areas/AREA_ID
+# Should still show manual_override: true
 ```
 
 ## Testing
