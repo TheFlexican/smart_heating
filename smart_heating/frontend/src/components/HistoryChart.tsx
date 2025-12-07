@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { 
   Box, 
   CircularProgress, 
@@ -35,6 +36,7 @@ interface HistoryChartProps {
 }
 
 const HistoryChart = ({ areaId }: HistoryChartProps) => {
+  const { t } = useTranslation()
   const [data, setData] = useState<HistoryEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -245,7 +247,7 @@ const HistoryChart = ({ areaId }: HistoryChartProps) => {
             stroke="#03a9f4"
             strokeWidth={2}
             dot={false}
-            name="Current Temperature"
+            name={t('areaDetail.currentTempLine')}
           />
           <Line
             type="stepAfter"
@@ -254,25 +256,25 @@ const HistoryChart = ({ areaId }: HistoryChartProps) => {
             strokeWidth={2}
             strokeDasharray="5 5"
             dot={false}
-            name="Target Temperature"
+            name={t('areaDetail.targetTempLine')}
           />
           <Scatter
             dataKey="heatingDot"
             fill="#f44336"
             shape="circle"
-            name="Heating Active"
+            name={t('areaDetail.heatingActiveLine')}
           />
         </ComposedChart>
       </ResponsiveContainer>
 
       <Box sx={{ mt: 2 }}>
         <Alert severity="info" variant="outlined">
-          <strong>Chart Legend:</strong>
+          <strong>{t('areaDetail.chartLegend')}</strong>
           <ul style={{ margin: '8px 0', paddingLeft: '20px' }}>
-            <li><strong style={{ color: '#03a9f4' }}>Blue line:</strong> Current temperature</li>
-            <li><strong style={{ color: '#ffc107' }}>Yellow dashed:</strong> Target temperature</li>
-            <li><strong style={{ color: '#f44336' }}>Red dots:</strong> Heating active periods</li>
-            <li><strong style={{ color: '#4caf50' }}>Green dashed:</strong> Average target temperature</li>
+            <li><strong style={{ color: '#03a9f4' }}>{t('areaDetail.blueLine')}</strong> {t('areaDetail.blueLineDesc')}</li>
+            <li><strong style={{ color: '#ffc107' }}>{t('areaDetail.yellowDashed')}</strong> {t('areaDetail.yellowDashedDesc')}</li>
+            <li><strong style={{ color: '#f44336' }}>{t('areaDetail.redDots')}</strong> {t('areaDetail.redDotsDesc')}</li>
+            <li><strong style={{ color: '#4caf50' }}>{t('areaDetail.greenDashed')}</strong> {t('areaDetail.greenDashedDesc')}</li>
           </ul>
         </Alert>
       </Box>

@@ -672,3 +672,65 @@ set_history_retention:
           max: 365
           step: 1
           unit_of_measurement: "days"
+
+enable_vacation_mode:
+  name: Enable Vacation Mode
+  description: Enable vacation mode to set all areas to a specific preset for an extended period
+  fields:
+    start_date:
+      name: Start Date
+      description: Start date for vacation mode (ISO format YYYY-MM-DD)
+      required: false
+      example: "2025-12-15"
+      selector:
+        text:
+    end_date:
+      name: End Date
+      description: End date for vacation mode (ISO format YYYY-MM-DD)
+      required: false
+      example: "2025-12-25"
+      selector:
+        text:
+    preset_mode:
+      name: Preset Mode
+      description: Preset mode to apply to all areas during vacation
+      required: false
+      default: "away"
+      example: "away"
+      selector:
+        select:
+          options:
+            - "away"
+            - "eco"
+            - "sleep"
+    frost_protection_override:
+      name: Frost Protection Override
+      description: Enable minimum temperature override for frost protection
+      required: false
+      default: true
+      selector:
+        boolean:
+    min_temperature:
+      name: Minimum Temperature
+      description: Minimum temperature for frost protection (°C)
+      required: false
+      default: 10.0
+      example: 10.0
+      selector:
+        number:
+          min: 5
+          max: 15
+          step: 0.5
+          unit_of_measurement: "°C"
+    auto_disable:
+      name: Auto Disable
+      description: Automatically disable vacation mode when someone arrives home
+      required: false
+      default: true
+      selector:
+        boolean:
+
+disable_vacation_mode:
+  name: Disable Vacation Mode
+  description: Disable vacation mode and return to normal heating schedules
+  fields: {}

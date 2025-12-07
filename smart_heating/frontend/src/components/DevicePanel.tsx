@@ -24,6 +24,7 @@ import RefreshIcon from '@mui/icons-material/Refresh'
 import { Device } from '../types'
 import { refreshDevices } from '../api'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 interface DevicePanelProps {
   devices: Device[]
@@ -31,6 +32,7 @@ interface DevicePanelProps {
 }
 
 const DevicePanel = ({ devices, onUpdate }: DevicePanelProps) => {
+  const { t } = useTranslation()
   const [refreshing, setRefreshing] = useState(false)
   const [deviceSearch, setDeviceSearch] = useState('')
   const [showOnlyHeating, setShowOnlyHeating] = useState(true)
@@ -101,13 +103,13 @@ const DevicePanel = ({ devices, onUpdate }: DevicePanelProps) => {
       <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Box>
           <Typography variant="h6" color="text.primary">
-            Available Devices ({filteredDevices.length})
+            {t('devices.availableCount', { count: filteredDevices.length })}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Drag devices to areas
+            {t('devices.dragToAreas')}
           </Typography>
         </Box>
-        <Tooltip title="Refresh devices from Home Assistant">
+        <Tooltip title={t('devices.refreshTooltip')}>
           <IconButton
             onClick={handleRefresh}
             disabled={refreshing}
@@ -134,7 +136,7 @@ const DevicePanel = ({ devices, onUpdate }: DevicePanelProps) => {
           }
           label={
             <Typography variant="caption" color="text.secondary">
-              Climate & temp sensors only
+              {t('devices.climateOnly')}
             </Typography>
           }
         />
@@ -145,7 +147,7 @@ const DevicePanel = ({ devices, onUpdate }: DevicePanelProps) => {
         <TextField
           fullWidth
           size="small"
-          placeholder="Search devices..."
+          placeholder={t('devices.searchPlaceholder')}
           value={deviceSearch}
           onChange={(e) => setDeviceSearch(e.target.value)}
         />
@@ -156,14 +158,14 @@ const DevicePanel = ({ devices, onUpdate }: DevicePanelProps) => {
           <Box sx={{ p: 3, textAlign: 'center' }}>
             <Typography variant="body2" color="text.secondary">
               {deviceSearch 
-                ? `No devices found matching "${deviceSearch}"`
+                ? t('devices.noMatch', { search: deviceSearch })
                 : showOnlyHeating
-                  ? 'No climate/temperature devices available'
-                  : 'No devices found'}
+                  ? t('devices.noClimateDevices')
+                  : t('devices.noDevicesFound')}
             </Typography>
             {!deviceSearch && !showOnlyHeating && (
               <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                Make sure devices are configured in Home Assistant
+                {t('devices.configureInHA')}
               </Typography>
             )}
           </Box>

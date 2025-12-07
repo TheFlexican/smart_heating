@@ -9,6 +9,7 @@ import {
 } from '@mui/material'
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
+import { useTranslation } from 'react-i18next'
 import ZoneCard from './ZoneCard'
 import { Zone } from '../types'
 
@@ -21,6 +22,8 @@ interface ZoneListProps {
 }
 
 const ZoneList = ({ areas, loading, onUpdate, showHidden, onToggleShowHidden }: ZoneListProps) => {
+  const { t } = useTranslation()
+  
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" height="400px">
@@ -39,11 +42,11 @@ const ZoneList = ({ areas, loading, onUpdate, showHidden, onToggleShowHidden }: 
       <Box mb={3} display="flex" justifyContent="space-between" alignItems="center">
         <Box display="flex" alignItems="center" gap={2}>
           <Typography variant="h4">
-            Zones
+            {t('dashboard.zones')}
           </Typography>
           {hiddenCount > 0 && !showHidden && (
             <Chip 
-              label={`${hiddenCount} hidden`} 
+              label={t('dashboard.hiddenCount', { count: hiddenCount })} 
               size="small" 
               color="default"
               variant="outlined"
@@ -57,14 +60,14 @@ const ZoneList = ({ areas, loading, onUpdate, showHidden, onToggleShowHidden }: 
             variant="outlined"
             size="small"
           >
-            {showHidden ? 'Hide Hidden Areas' : 'Show Hidden Areas'}
+            {showHidden ? t('dashboard.hideHiddenAreas') : t('dashboard.showHiddenAreas')}
           </Button>
         )}
       </Box>
 
       {visibleAreas.length === 0 ? (
         <Alert severity="info">
-          No areas found. Please configure areas in Home Assistant first (Settings → Areas & Zones → Areas).
+          {t('dashboard.noAreasFound')}
         </Alert>
       ) : (
         <Grid container spacing={3}>

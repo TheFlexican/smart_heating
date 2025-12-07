@@ -74,6 +74,8 @@ class SmartHeatingAPIView(HomeAssistantView):
                 return await self.get_global_presets(request)
             elif endpoint == "global_presence":
                 return await self.get_global_presence(request)
+            elif endpoint == "vacation_mode":
+                return await self.get_vacation_mode(request)
             elif endpoint.startswith("areas/"):
                 area_id = endpoint.split("/")[1]
                 return await self.get_area(request, area_id)
@@ -159,6 +161,8 @@ class SmartHeatingAPIView(HomeAssistantView):
                 return await self.set_global_presets(request, data)
             elif endpoint == "global_presence":
                 return await self.set_global_presence(request, data)
+            elif endpoint == "vacation_mode":
+                return await self.enable_vacation_mode(request, data)
             elif endpoint.startswith("areas/") and endpoint.endswith("/preset_config"):
                 area_id = endpoint.split("/")[1]
                 return await self.set_area_preset_config(request, area_id, data)
@@ -188,7 +192,9 @@ class SmartHeatingAPIView(HomeAssistantView):
             JSON response
         """
         try:
-            if endpoint.startswith("areas/") and "/devices/" in endpoint:
+            if endpoint == "vacation_mode":
+                return await self.disable_vacation_mode(request)
+            elif endpoint.startswith("areas/") and "/devices/" in endpoint:
                 parts = endpoint.split("/")
                 area_id = parts[1]
                 device_id = parts[3]
@@ -1374,6 +1380,89 @@ class SmartHeatingAPIView(HomeAssistantView):
         _LOGGER.warning("✓ Global presence saved")
         
         return web.json_response({"success": True})
+
+    async def get_vacation_mode(self, request: web.Request) -> web.Response:
+        """Get vacation mode status and configuration.
+        
+        Args:
+            request: Request object
+            
+        Returns:
+            JSON response with vacation mode data
+        """
+        vacation_manager = self.hass.data[DOMAIN].get("vacation_manager")
+        if not vacation_manager:
+            return web.json_response(
+                {"error": "Vacation manager not initialized"}, status=500
+            )
+        
+        return web.json_response(vacation_manager.get_data())
+
+    async def enable_vacation_mode(
+        self, request: web.Request, data: dict
+    ) -> web.Response:
+        """Enable vacation mode.
+        
+        Args:
+            request: Request object
+            data: Dictionary with vacation mode configuration
+            
+        Returns:
+            JSON response with updated vacation mode data
+        """
+        vacation_manager = self.hass.data[DOMAIN].get("vacation_manager")
+        if not vacation_manager:
+            return web.json_response(
+                {"error": "Vacation manager not initialized"}, status=500
+            )
+        
+        try:
+            result = await vacation_manager.async_enable(
+                start_date=data.get("start_date"),
+                end_date=data.get("end_date"),
+                preset_mode=data.get("preset_mode", "away"),
+                frost_protection_override=data.get("frost_protection_override", True),
+                min_temperature=data.get("min_temperature", 10.0),
+                auto_disable=data.get("auto_disable", True),
+                person_entities=data.get("person_entities", [])
+            )
+            
+            # Broadcast vacation mode change via WebSocket
+            self.hass.bus.async_fire(
+                f"{DOMAIN}_vacation_mode_changed",
+                {"enabled": True, "data": result}
+            )
+            
+            _LOGGER.info("Vacation mode enabled via API")
+            return web.json_response(result)
+        except ValueError as err:
+            return web.json_response({"error": str(err)}, status=400)
+
+    async def disable_vacation_mode(self, request: web.Request) -> web.Response:
+        """Disable vacation mode.
+        
+        Args:
+            request: Request object
+            
+        Returns:
+            JSON response with updated vacation mode data
+        """
+        vacation_manager = self.hass.data[DOMAIN].get("vacation_manager")
+        if not vacation_manager:
+            return web.json_response(
+                {"error": "Vacation manager not initialized"}, status=500
+            )
+        
+        result = await vacation_manager.async_disable()
+        
+        # Broadcast vacation mode change via WebSocket
+        self.hass.bus.async_fire(
+            f"{DOMAIN}_vacation_mode_changed",
+            {"enabled": False, "data": result}
+        )
+        
+        _LOGGER.info("Vacation mode disabled via API")
+        return web.json_response(result)
 
     async def set_area_preset_config(
         self, request: web.Request, area_id: str, data: dict

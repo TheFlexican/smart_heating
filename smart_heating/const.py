@@ -44,6 +44,8 @@ SERVICE_REMOVE_PRESENCE_SENSOR: Final = "remove_presence_sensor"
 SERVICE_SET_HVAC_MODE: Final = "set_hvac_mode"
 SERVICE_COPY_SCHEDULE: Final = "copy_schedule"
 SERVICE_SET_HISTORY_RETENTION: Final = "set_history_retention"
+SERVICE_ENABLE_VACATION_MODE: Final = "enable_vacation_mode"
+SERVICE_DISABLE_VACATION_MODE: Final = "disable_vacation_mode"
 
 # Sensor states
 STATE_INITIALIZED: Final = "initialized"

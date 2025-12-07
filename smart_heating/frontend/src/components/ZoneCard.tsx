@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import {
   Card,
   CardContent,
@@ -40,6 +41,7 @@ interface ZoneCardProps {
 }
 
 const ZoneCard = ({ area, onUpdate }: ZoneCardProps) => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   
@@ -247,7 +249,7 @@ const ZoneCard = ({ area, onUpdate }: ZoneCardProps) => {
             <Box display="flex" gap={1} flexWrap="wrap">
               <Chip
                 icon={getStateIcon()}
-                label={area.manual_override ? 'MANUAL' : area.state.toUpperCase()}
+                label={area.manual_override ? t('area.manual') : area.state.toUpperCase()}
                 color={getStateColor()}
                 size="small"
               />
@@ -271,7 +273,7 @@ const ZoneCard = ({ area, onUpdate }: ZoneCardProps) => {
         <Box my={3} onClick={handleSliderClick}>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
             <Typography variant="body2" color="text.secondary">
-              Target Temperature
+              {t('area.targetTemperature')}
               {area.preset_mode && area.preset_mode !== 'none' && (
                 <Chip 
                   label={area.preset_mode.toUpperCase()} 
@@ -303,7 +305,7 @@ const ZoneCard = ({ area, onUpdate }: ZoneCardProps) => {
             <Box display="flex" alignItems="center" gap={1} mt={1} sx={{ color: 'warning.main' }}>
               <InfoOutlinedIcon fontSize="small" />
               <Typography variant="caption">
-                Add devices to this area to control temperature
+                {t('area.addDevicesPrompt')}
               </Typography>
             </Box>
           )}
@@ -312,7 +314,7 @@ const ZoneCard = ({ area, onUpdate }: ZoneCardProps) => {
         {area.current_temperature !== undefined && area.current_temperature !== null && (
           <Box display="flex" justifyContent="space-between" mb={2}>
             <Typography variant="body2" color="text.secondary">
-              Current Temperature
+              {t('area.currentTemperature')}
             </Typography>
             <Typography variant="body1">
               {area.current_temperature.toFixed(1)}°C
@@ -342,7 +344,7 @@ const ZoneCard = ({ area, onUpdate }: ZoneCardProps) => {
               <Box display="flex" alignItems="center" gap={1}>
                 <BookmarkIcon fontSize="small" />
                 <Typography variant="body2">
-                  {area.manual_override ? 'Use Preset Mode' : 'Using Preset Mode'}
+                  {area.manual_override ? t('area.usePresetMode') : t('area.usingPresetMode')}
                 </Typography>
               </Box>
             }
@@ -352,8 +354,8 @@ const ZoneCard = ({ area, onUpdate }: ZoneCardProps) => {
         <Box display="flex" alignItems="center" gap={1} mb={area.devices.length > 0 ? 2 : 0}>
           <SensorsIcon fontSize="small" color="action" />
           <Typography variant="body2" color="text.secondary">
-            {area.devices.length} device(s)
-            {snapshot.isDraggingOver && ' - Drop here to add'}
+            {t('area.deviceCount', { count: area.devices.length })}
+            {snapshot.isDraggingOver && ` - ${t('area.dropToAdd')}`}
           </Typography>
         </Box>
 
@@ -421,7 +423,7 @@ const ZoneCard = ({ area, onUpdate }: ZoneCardProps) => {
           <ListItemIcon>
             {area.hidden ? <VisibilityIcon /> : <VisibilityOffIcon />}
           </ListItemIcon>
-          <ListItemText primary={area.hidden ? "Unhide Area" : "Hide Area"} />
+          <ListItemText primary={area.hidden ? t('area.unhideArea') : t('area.hideArea')} />
         </MenuItem>
       </Menu>
     </Card>

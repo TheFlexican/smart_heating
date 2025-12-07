@@ -7,6 +7,7 @@ import Header from './components/Header'
 import ZoneList from './components/ZoneList'
 import DevicePanel from './components/DevicePanel'
 import OpenThermStatus from './components/OpenThermStatus'
+import { VacationModeBanner } from './components/VacationModeBanner'
 import ZoneDetail from './pages/AreaDetail'
 import GlobalSettings from './pages/GlobalSettings'
 import { Zone, Device } from './types'
@@ -198,6 +199,7 @@ function App() {
         <Header wsConnected={wsConnected} />
         <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           <Box sx={{ flex: 1, overflow: 'auto', p: 3, bgcolor: 'background.default' }}>
+            <VacationModeBanner />
             <OpenThermStatus 
               openthermGatewayId={openthermConfig.gateway_id}
               enabled={openthermConfig.enabled}

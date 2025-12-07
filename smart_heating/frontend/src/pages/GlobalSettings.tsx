@@ -19,6 +19,7 @@ import { useNavigate } from 'react-router-dom'
 import { getGlobalPresets, setGlobalPresets, getGlobalPresence, setGlobalPresence } from '../api'
 import { PresenceSensorConfig, WindowSensorConfig } from '../types'
 import SensorConfigDialog from '../components/SensorConfigDialog'
+import { VacationModeSettings } from '../components/VacationModeSettings'
 
 interface GlobalPresetsData {
   away_temp: number
@@ -178,6 +179,9 @@ export default function GlobalSettings() {
       </Paper>
 
       <Box sx={{ px: 2 }}>
+        {/* Vacation Mode Section */}
+        <VacationModeSettings />
+
         {saveSuccess && (
           <Alert severity="success" sx={{ mb: 2 }}>
             Preset saved successfully

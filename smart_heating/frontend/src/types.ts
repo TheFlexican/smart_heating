@@ -138,6 +138,18 @@ export interface GlobalPresence {
   sensors: PresenceSensorConfig[]
 }
 
+// Vacation mode configuration
+export interface VacationMode {
+  enabled: boolean
+  start_date: string | null
+  end_date: string | null
+  preset_mode: string
+  frost_protection_override: boolean
+  min_temperature: number
+  auto_disable: boolean
+  person_entities: string[]
+}
+
 export interface LearningStats {
   total_events: number
   avg_heating_rate: number

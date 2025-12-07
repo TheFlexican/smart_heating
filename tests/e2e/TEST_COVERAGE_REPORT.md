@@ -1,15 +1,15 @@
 # E2E Test Coverage Report
 
-**Generated:** December 6, 2025  
+**Generated:** December 7, 2025  
 **Framework:** Playwright 1.57.0 with TypeScript  
 **Test Philosophy:** Real data from Home Assistant, no mocks
 
 ## Test Statistics
 
-**Total Tests:** 77 tests  
-**Test Files:** 8 files
+**Total Tests:** 86 tests  
+**Test Files:** 9 files
 
-**Execution Time:** ~17 minutes  
+**Execution Time:** ~19 minutes  
 
 ---
 
@@ -25,7 +25,32 @@
 
 ---
 
-### 2. **area-logs.spec.ts** (10 tests) 🆕
+### 2. **vacation-mode.spec.ts** (9 tests) 🆕 v0.6.0
+**Status:** NEW - Vacation Mode Feature  
+**Coverage:**
+- ✅ Display vacation mode settings in global settings page
+- ✅ Enable vacation mode with valid configuration
+- ✅ Display vacation mode banner on dashboard when active
+- ✅ Disable vacation mode from banner
+- ✅ Disable vacation mode from settings
+- ✅ Show frost protection minimum temperature field when enabled
+- ✅ Preserve vacation mode settings across page reloads
+- ✅ Show different preset mode options (Away, Eco, Sleep)
+
+**Key Features Tested:**
+- Vacation mode settings UI in global settings
+- Date range configuration for vacation period
+- Preset mode selection (Away, Eco, Sleep)
+- Frost protection override with minimum temperature
+- Auto-disable toggle for person entity integration
+- Enable/Disable functionality
+- Dashboard banner with quick disable
+- Settings persistence across reloads
+- Visual indicators and alerts
+
+---
+
+### 3. **area-logs.spec.ts** (10 tests) 🆕
 **Status:** NEW - Area Logging System  
 **Coverage:**
 - ✅ Display Logs tab in area details
@@ -48,7 +73,30 @@
 
 ---
 
-### 3. **temperature-control.spec.ts** (2 tests) ✅
+### 3. **area-logs.spec.ts** (10 tests) 🆕
+**Status:** NEW - Area Logging System  
+**Coverage:**
+- ✅ Display Logs tab in area details
+- ✅ Show logs when Logs tab is clicked
+- ✅ Display log filter dropdown
+- ✅ Filter logs by event type (Temperature, Heating, Schedule, Smart Boost, Sensors, Mode)
+- ✅ Have refresh button
+- ✅ Display log entries with proper structure
+- ✅ Display log timestamps
+- ✅ Show color-coded event type chips
+- ✅ Display log details in JSON format
+
+**Key Features Tested:**
+- Tab navigation and visibility
+- Log entry display with timestamps and event types
+- Filter dropdown with 6 event type options
+- Refresh functionality
+- Color-coded badges (heating=error, temperature=info, schedule=success, etc.)
+- JSON details rendering in monospace format
+
+---
+
+### 4. **temperature-control.spec.ts** (2 tests) ✅
 **Status:** ALL PASSING  
 **Coverage:**
 - ✅ Adjust target temperature via slider
@@ -56,7 +104,7 @@
 
 ---
 
-### 3. **boost-mode.spec.ts** (3 tests) ✅
+### 5. **boost-mode.spec.ts** (3 tests) ✅
 **Status:** ALL PASSING  
 **Coverage:**
 - ✅ Activate boost mode with temperature and duration
@@ -70,7 +118,21 @@
 
 ---
 
-### 4. **comprehensive-features.spec.ts** (29 tests)
+### 5. **boost-mode.spec.ts** (3 tests) ✅
+**Status:** ALL PASSING  
+**Coverage:**
+- ✅ Activate boost mode with temperature and duration
+- ✅ Cancel active boost mode
+- ✅ Verify boost affects heating state
+
+**Key Implementation Details:**
+- Tests handle auto-expanding/collapsing cards
+- Uses `.MuiChip-label:has-text("ACTIVE")` for status badges
+- Re-expands card after canceling boost
+
+---
+
+### 6. **comprehensive-features.spec.ts** (29 tests)
 **Status:** 15 PASSING, 14 FAILING  
 **Passing Tests:**
 - ✅ Display area heating state correctly
@@ -98,7 +160,7 @@
 
 ---
 
-### 5. **sensor-management.spec.ts** (18 tests)
+### 7. **sensor-management.spec.ts** (18 tests)
 **Status:** 14 PASSING, 4 FAILING  
 **Passing Tests:**
 - ✅ Display window sensors section
@@ -148,7 +210,7 @@ WARNING: Detected blocking call to open (api.py lines 1415, 1478)
 
 ---
 
-### 7. **preset-modes.spec.ts** (1 test) ⏭️
+### 8. **preset-modes.spec.ts** (1 test) ⏭️
 **Status:** SKIPPED  
 **Reason:** Requires investigation of dropdown UI state
 
@@ -159,6 +221,7 @@ WARNING: Detected blocking call to open (api.py lines 1415, 1478)
 | Feature Category | Tests Written | Tests Passing | Coverage % |
 |------------------|---------------|---------------|------------|
 | Navigation | 3 | 3 | 100% ✅ |
+| Vacation Mode (v0.6.0) | 9 | TBD | TBD 🆕 |
 | Temperature Control | 6 | 4 | 67% ⚠️ |
 | Area Management | 4 | 2 | 50% ⚠️ |
 | Boost Mode | 6 | 5 | 83% ✅ |
@@ -173,7 +236,7 @@ WARNING: Detected blocking call to open (api.py lines 1415, 1478)
 | WebSocket Updates | 2 | 0 | 0% ❌ |
 | Backend Logging | 12 | 9 | 75% ⚠️ |
 
-**Overall Feature Coverage:** 64.6% passing
+**Overall Feature Coverage:** TBD (pending vacation mode test execution)
 
 ---
 

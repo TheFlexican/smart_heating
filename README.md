@@ -83,21 +83,59 @@ A Home Assistant custom integration for managing multi-area heating systems with
 - 💾 **Persistent storage** - Configuration and history automatically saved
 - 🔄 **Auto-update** - Data coordinator with 30-second interval
 - 📝 **Debug logging** - Extensive logging for troubleshooting
+- 🏖️ **Vacation Mode** - One-click mode to set all areas to Away preset (NEW in v0.6.0)
+  - Set date range for extended absences
+  - Auto-disable when someone arrives home
+  - Frost protection with minimum temperature override
+  - Visual banner and quick disable
+- 🌍 **Internationalization** - Multi-language support (NEW in v0.6.0)
+  - Automatic language detection from Home Assistant settings
+  - Supported languages: English (🇬🇧) and Dutch (🇳🇱)
+  - Manual language switching via interface
+  - Full UI translation including all features
 
-## 🚀 Coming in v0.6.0
+## 🚀 Coming in v0.6.0+
 
-**Status**: Planning & Architecture Phase - [See Roadmap](V0.6.0_ROADMAP.md)
+**Status**: Vacation Mode & Internationalization Released! Additional features in development.
 
-The following features are planned for the next major release:
+The following features are released or planned for future releases:
 
-### 🏖️ Vacation Mode
+### 🏖️ Vacation Mode ✅ RELEASED in v0.6.0
 One-click mode to set all areas to Away preset for extended periods
-- Set date range for vacation
-- Auto-disable when someone arrives home
-- Frost protection override
-- Simple toggle in UI
+- ✅ Set date range for vacation (start/end dates)
+- ✅ Auto-disable when someone arrives home
+- ✅ Frost protection override with minimum temperature
+- ✅ Visual banner on dashboard when active
+- ✅ Service calls for automation integration
 
-### 💾 Import/Export Configuration
+**Usage:**
+1. Navigate to **Settings** (gear icon in header)
+2. Find the **Vacation Mode** section at the top
+3. Set your vacation dates and preferred preset mode
+4. Enable frost protection if needed (recommended for winter)
+5. Click **Enable Vacation Mode**
+
+All areas will automatically switch to your chosen preset. A banner will appear on the dashboard. When you return, simply click **Disable** in the banner or settings.
+
+### 🌍 Internationalization (i18n) ✅ RELEASED in v0.6.0
+Multi-language support for global deployment
+- ✅ Automatic language detection from Home Assistant settings
+- ✅ Supported languages: English (🇬🇧) and Dutch (🇳🇱)
+- ✅ Manual language switching via header menu (🌍 icon)
+- ✅ Complete UI translation
+- ✅ Dutch documentation (README.nl.md, CHANGELOG.nl.md)
+
+**Usage:**
+1. Language is automatically detected from your Home Assistant settings
+2. To change manually, click the 🌍 icon in the header
+3. Select your preferred language (English or Nederlands)
+4. All UI elements will update immediately
+
+**Documentation:**
+- 🇬🇧 English: `README.md`, `CHANGELOG.md`
+- 🇳🇱 Dutch: `README.nl.md`, `CHANGELOG.nl.md`
+
+### 💾 Import/Export Configuration (Planned)
 Backup and restore all Smart Heating settings
 - Export complete configuration to JSON
 - Import with validation and preview

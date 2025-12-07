@@ -7,7 +7,93 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [0.5.7] - 2025-12-06
+## [0.6.0] - 2025-12-07
+
+### ✨ Added - Vacation Mode & Internationalization
+
+**One-Click Vacation Management**
+- **Vacation Mode**: Set all areas to Away preset for extended periods with a single click
+  - Configure date range (start/end dates) for vacation period
+  - Choose preset mode (Away, Eco, or Sleep) to apply to all areas
+  - Frost protection override with configurable minimum temperature
+  - Auto-disable when someone arrives home (person entity integration)
+  - Visual banner on dashboard when vacation mode is active
+  - Service calls for automation integration
+
+**Backend Implementation**
+- New `VacationManager` class manages vacation mode state and area overrides
+- API endpoints: `GET/POST/DELETE /api/smart_heating/vacation_mode`
+- Climate controller integration: automatically overrides area presets during vacation
+- WebSocket events broadcast vacation mode changes in real-time
+- Persistent storage in `.storage/smart_heating/vacation_mode.json`
+
+**Frontend Implementation**
+- New **VacationModeSettings** component in Global Settings page
+  - Material-UI date pickers for start/end date selection
+  - Preset mode dropdown (Away, Eco, Sleep)
+  - Frost protection toggle with minimum temperature slider
+  - Auto-disable toggle for person entity integration
+  - Enable/Disable buttons with loading states
+- **VacationModeBanner** component displays active vacation mode on dashboard
+  - Shows current preset mode and end date
+  - Quick disable button for easy exit
+  - Auto-refreshes every 30 seconds
+
+**Service Calls**
+- `smart_heating.enable_vacation_mode` - Enable vacation mode
+  - Fields: start_date, end_date, preset_mode, frost_protection_override, min_temperature, auto_disable
+- `smart_heating.disable_vacation_mode` - Disable vacation mode
+
+**Use Cases**
+- Set entire home to energy-saving mode for holidays
+- Protect against freezing pipes during winter vacations
+  - Automatically resume normal heating when arriving home
+  - Schedule vacation mode via automations
+
+**Multi-Language Support**
+- **Internationalization (i18n)**: Full multi-language user interface
+  - Automatic language detection from Home Assistant settings
+  - Supported languages: English (🇬🇧) and Dutch (🇳🇱)
+  - Manual language switching via interface (🌍 button in header)
+  - Full UI translation including:
+    - Dashboard and zone cards
+    - All settings pages
+    - Forms and error messages
+    - Vacation mode interface
+    - Help texts and tooltips
+  - i18next framework for robust translation management
+  - Custom Home Assistant language detector
+  - Browser language fallback mechanism
+
+**i18n Implementation**
+- Frontend: i18next + react-i18next + i18next-browser-languagedetector
+- Translation files: `src/locales/{en,nl}/translation.json`
+- 200+ translation keys organized by feature domain
+- Custom language detector checks Home Assistant localStorage first
+- Components updated with `useTranslation` hook
+
+### 🔧 Dependencies
+- Added `@mui/x-date-pickers` v7.22.2 for date selection UI
+- Added `date-fns` v2.30.0 for date handling
+- Added `i18next` v23.16.11 for internationalization
+- Added `react-i18next` v15.1.3 for React integration
+- Added `i18next-browser-languagedetector` v8.0.2 for automatic language detection
+
+### 📚 Documentation
+- Updated README.md with Vacation Mode feature description
+- Updated README.md with Internationalization feature description
+- Updated CHANGELOG.md with v0.6.0 release notes
+- Added vacation mode services to services.yaml
+- New README.nl.md: Full Dutch translation of documentation
+- New CHANGELOG.nl.md: Dutch translation of changelog
+- New docs/ folder structure for language-specific documentation
+- E2E tests for vacation mode (9 tests in vacation-mode.spec.ts)
+- Test documentation: VACATION_MODE_TEST_GUIDE.md
+
+### 🧪 Testing
+- E2E test suite for vacation mode with 9 comprehensive tests
+- Test coverage: enable/disable flows, date validation, frost protection, UI states
+- Tests verify: API integration, WebSocket updates, visual components## [0.5.7] - 2025-12-06
 
 ### 🐛 Critical Fixes
 

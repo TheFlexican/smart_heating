@@ -360,6 +360,25 @@ class ClimateController:
                 # Skip rest of climate control logic
                 continue
             
+            # Check for vacation mode - override preset if active
+            vacation_manager = self.hass.data.get("smart_heating", {}).get("vacation_manager")
+            if vacation_manager and vacation_manager.is_active():
+                vacation_preset = vacation_manager.get_preset_mode()
+                if vacation_preset:
+                    # Override area preset mode with vacation preset
+                    area.preset_mode = vacation_preset
+                    _LOGGER.debug(
+                        "Area %s: Vacation mode active - using preset %s",
+                        area_id, vacation_preset
+                    )
+                    if hasattr(self, 'area_logger') and self.area_logger:
+                        self.area_logger.log_event(
+                            area_id,
+                            "mode",
+                            f"Vacation mode active - preset set to {vacation_preset}",
+                            {"preset_mode": vacation_preset, "vacation_mode": True}
+                        )
+            
             # Get effective target (considering schedules and night boost)
             target_temp = area.get_effective_target_temperature(current_time)
             _LOGGER.info(
@@ -389,6 +408,16 @@ class ClimateController:
                         area_id, target_temp, frost_temp
                     )
                     target_temp = frost_temp
+            
+            # Apply vacation mode frost protection override if active
+            if vacation_manager and vacation_manager.is_active():
+                vacation_min_temp = vacation_manager.get_min_temperature()
+                if vacation_min_temp and target_temp < vacation_min_temp:
+                    _LOGGER.debug(
+                        "Area %s: Vacation frost protection - raising target from %.1f°C to %.1f°C",
+                        area_id, target_temp, vacation_min_temp
+                    )
+                    target_temp = vacation_min_temp
             
             # Apply HVAC mode (off/heat/cool/auto)
             if hasattr(area, 'hvac_mode'):

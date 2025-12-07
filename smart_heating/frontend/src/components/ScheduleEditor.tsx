@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Box,
   Paper,
@@ -37,6 +38,7 @@ const DAYS_OF_WEEK: string[] = [
 ]
 
 const ScheduleEditor = ({ area, onUpdate }: ScheduleEditorProps) => {
+  const { t } = useTranslation()
   const [schedules, setSchedules] = useState<ScheduleEntry[]>(area.schedules || [])
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingEntry, setEditingEntry] = useState<ScheduleEntry | null>(null)
@@ -121,7 +123,7 @@ const ScheduleEditor = ({ area, onUpdate }: ScheduleEditorProps) => {
     const mondaySchedules = schedules.filter(s => s.day === 'Monday')
     
     if (mondaySchedules.length === 0) {
-      alert('No Monday schedules to copy')
+      alert(t('areaDetail.noMondaySchedules'))
       return
     }
 
@@ -156,7 +158,7 @@ const ScheduleEditor = ({ area, onUpdate }: ScheduleEditorProps) => {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h6" color="text.primary">
-          Weekly Schedule for {area.name}
+          {t('areaDetail.weeklySchedule', { area: area.name })}
         </Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
@@ -164,30 +166,31 @@ const ScheduleEditor = ({ area, onUpdate }: ScheduleEditorProps) => {
             size="small"
             onClick={handleCopyToWeekdays}
           >
-            Copy Monday to Weekdays
+            {t('areaDetail.copyToWeekdays')}
           </Button>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
             onClick={handleAddNew}
           >
-            Add Schedule
+            {t('areaDetail.addSchedule')}
           </Button>
         </Box>
       </Box>
 
       {DAYS_OF_WEEK.map(day => {
         const daySchedules = getSchedulesForDay(day)
+        const dayKey = day.toLowerCase() as 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'
         
         return (
           <Paper key={day} sx={{ mb: 2, p: 2 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: daySchedules.length > 0 ? 2 : 0 }}>
               <Typography variant="subtitle1" fontWeight="bold" color="text.primary">
-                {day}
+                {t(`areaDetail.${dayKey}`)}
               </Typography>
               {daySchedules.length === 0 && (
                 <Typography variant="body2" color="text.secondary">
-                  No schedules set
+                  {t('areaDetail.noSchedulesSet')}
                 </Typography>
               )}
             </Box>
@@ -221,15 +224,15 @@ const ScheduleEditor = ({ area, onUpdate }: ScheduleEditorProps) => {
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>
-          {editingEntry ? 'Edit Schedule Entry' : 'Add Schedule Entry'}
+          {editingEntry ? t('scheduleDialog.editTitle') : t('scheduleDialog.addTitle')}
         </DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
             <FormControl fullWidth>
-              <InputLabel>Day of Week</InputLabel>
+              <InputLabel>{t('scheduleDialog.dayOfWeek')}</InputLabel>
               <Select
                 value={formData.day}
-                label="Day of Week"
+                label={t('scheduleDialog.dayOfWeek')}
                 onChange={(e) => setFormData({ ...formData, day: e.target.value })}
               >
                 {DAYS_OF_WEEK.map(day => (
@@ -239,17 +242,17 @@ const ScheduleEditor = ({ area, onUpdate }: ScheduleEditorProps) => {
             </FormControl>
 
             <TextField
-              label="Start Time"
+              label={t('scheduleDialog.startTime')}
               type="time"
               value={formData.start_time}
               onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
               InputLabelProps={{ shrink: true }}
               fullWidth
-              helperText="Schedule can span across days (e.g., Saturday 22:00 to Sunday 07:00)"
+              helperText={t('scheduleDialog.spanHelperText')}
             />
 
             <TextField
-              label="End Time"
+              label={t('scheduleDialog.endTime')}
               type="time"
               value={formData.end_time}
               onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
@@ -258,37 +261,37 @@ const ScheduleEditor = ({ area, onUpdate }: ScheduleEditorProps) => {
             />
 
             <FormControl fullWidth>
-              <InputLabel>Mode</InputLabel>
+              <InputLabel>{t('scheduleDialog.mode')}</InputLabel>
               <Select
                 value={usePreset ? 'preset' : 'temperature'}
-                label="Mode"
+                label={t('scheduleDialog.mode')}
                 onChange={(e) => setUsePreset(e.target.value === 'preset')}
               >
-                <MenuItem value="temperature">Fixed Temperature</MenuItem>
-                <MenuItem value="preset">Preset Mode</MenuItem>
+                <MenuItem value="temperature">{t('scheduleDialog.fixedTemperature')}</MenuItem>
+                <MenuItem value="preset">{t('scheduleDialog.presetMode')}</MenuItem>
               </Select>
             </FormControl>
 
             {usePreset ? (
               <FormControl fullWidth>
-                <InputLabel>Preset</InputLabel>
+                <InputLabel>{t('scheduleDialog.preset')}</InputLabel>
                 <Select
                   value={formData.preset_mode}
-                  label="Preset"
+                  label={t('scheduleDialog.preset')}
                   onChange={(e) => setFormData({ ...formData, preset_mode: e.target.value })}
                 >
-                  <MenuItem value="none">None</MenuItem>
-                  <MenuItem value="eco">Eco</MenuItem>
-                  <MenuItem value="away">Away</MenuItem>
-                  <MenuItem value="comfort">Comfort</MenuItem>
-                  <MenuItem value="home">Home</MenuItem>
-                  <MenuItem value="sleep">Sleep</MenuItem>
-                  <MenuItem value="activity">Activity</MenuItem>
+                  <MenuItem value="none">{t('scheduleDialog.presetNone')}</MenuItem>
+                  <MenuItem value="eco">{t('scheduleDialog.presetEco')}</MenuItem>
+                  <MenuItem value="away">{t('scheduleDialog.presetAway')}</MenuItem>
+                  <MenuItem value="comfort">{t('scheduleDialog.presetComfort')}</MenuItem>
+                  <MenuItem value="home">{t('scheduleDialog.presetHome')}</MenuItem>
+                  <MenuItem value="sleep">{t('scheduleDialog.presetSleep')}</MenuItem>
+                  <MenuItem value="activity">{t('scheduleDialog.presetActivity')}</MenuItem>
                 </Select>
               </FormControl>
             ) : (
               <TextField
-                label="Temperature (°C)"
+                label={t('scheduleDialog.temperature')}
                 type="number"
                 value={formData.temperature}
                 onChange={(e) => setFormData({ ...formData, temperature: parseFloat(e.target.value) })}
@@ -300,9 +303,9 @@ const ScheduleEditor = ({ area, onUpdate }: ScheduleEditorProps) => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => setDialogOpen(false)}>{t('common.cancel')}</Button>
           <Button onClick={handleSave} variant="contained">
-            Save
+            {t('common.save')}
           </Button>
         </DialogActions>
       </Dialog>

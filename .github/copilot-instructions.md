@@ -23,18 +23,48 @@ Home Assistant integration for zone-based heating control with learning capabili
 - Workflow: Code → Deploy → Test → Approve → Git operations
 
 **RULE #4: Update Documentation Before Releases**
-- **ALWAYS** update CHANGELOG.md and README.md BEFORE creating releases
-- CHANGELOG.md must include new version section with all changes
-- README.md must document new features in appropriate sections
-- Update API documentation if endpoints changed
-- Workflow: Code → Test → Update Docs → Commit → Tag Release
+- **ALWAYS** update documentation in BOTH languages (EN + NL) BEFORE creating releases
+- Required updates:
+  - `CHANGELOG.md` + `CHANGELOG.nl.md` - Version history
+  - `README.md` + `README.nl.md` - User documentation
+  - `docs/en/ARCHITECTURE.md` + `docs/nl/ARCHITECTURE.md` - Architecture changes
+  - `docs/en/DEVELOPER.md` + `docs/nl/DEVELOPER.md` - Developer workflow changes
+  - Frontend translations if UI text changed: `locales/en/translation.json` + `locales/nl/translation.json`
+- Root `ARCHITECTURE.md` and `DEVELOPER.md` should match `docs/en/` versions
+- Workflow: Code → Test → Update All Docs (EN+NL) → Commit → Tag Release
 
 ## Key Directories
 ```
 smart_heating/          # Main integration (backend .py files + frontend/)
 tests/e2e/             # Playwright tests
+docs/                  # Language-specific documentation
+  en/                  # English technical docs (ARCHITECTURE.md, DEVELOPER.md)
+  nl/                  # Dutch technical docs (ARCHITECTURE.md, DEVELOPER.md)
 sync.sh / setup.sh     # Deploy to test container
 ```
+
+## Documentation Structure
+
+**Dual-language support:** All documentation available in English and Dutch
+
+**Root-level files:**
+- `README.md` / `README.nl.md` - User documentation
+- `CHANGELOG.md` / `CHANGELOG.nl.md` - Version history
+- `ARCHITECTURE.md` / `DEVELOPER.md` - Quick access (English, match docs/en/)
+
+**Organized docs:**
+- `docs/en/` - English technical documentation
+- `docs/nl/` - Dutch technical documentation
+
+**Frontend translations:**
+- `smart_heating/frontend/src/locales/en/translation.json` - English UI text
+- `smart_heating/frontend/src/locales/nl/translation.json` - Dutch UI text
+
+**When updating documentation:**
+1. Update both EN and NL versions
+2. Keep root and docs/en/ versions in sync
+3. Update frontend translation.json if UI text changed
+4. See `docs/README.md` for complete maintenance checklist
 
 ## Development Workflow
 

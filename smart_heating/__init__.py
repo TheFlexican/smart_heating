@@ -71,6 +71,8 @@ from .const import (
     SERVICE_SET_HVAC_MODE,
     SERVICE_COPY_SCHEDULE,
     SERVICE_SET_HISTORY_RETENTION,
+    SERVICE_ENABLE_VACATION_MODE,
+    SERVICE_DISABLE_VACATION_MODE,
 )
 from .coordinator import SmartHeatingCoordinator
 from .area_manager import AreaManager
@@ -81,6 +83,7 @@ from .scheduler import ScheduleExecutor
 from .history import HistoryTracker
 from .learning_engine import LearningEngine
 from .area_logger import AreaLogger
+from .vacation_manager import VacationManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -132,6 +135,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     area_logger = AreaLogger(storage_path, hass)
     hass.data[DOMAIN]["area_logger"] = area_logger
     _LOGGER.info("Area logger initialized at %s", storage_path)
+    
+    # Create vacation manager
+    vacation_manager = VacationManager(hass, storage_path)
+    await vacation_manager.async_load()
+    hass.data[DOMAIN]["vacation_manager"] = vacation_manager
+    _LOGGER.info("Vacation manager initialized")
     
     # Create learning engine
     learning_engine = LearningEngine(hass)
@@ -762,6 +771,48 @@ async def async_setup_services(hass: HomeAssistant, coordinator: SmartHeatingCoo
         except Exception as err:
             _LOGGER.error("Failed to set history retention: %s", err)
     
+    async def async_handle_enable_vacation_mode(call: ServiceCall) -> None:
+        """Handle enable_vacation_mode service."""
+        start_date = call.data.get("start_date")
+        end_date = call.data.get("end_date")
+        preset_mode = call.data.get("preset_mode", "away")
+        frost_protection = call.data.get("frost_protection_override", True)
+        min_temp = call.data.get("min_temperature", 10.0)
+        auto_disable = call.data.get("auto_disable", True)
+        
+        try:
+            vacation_manager = hass.data.get(DOMAIN, {}).get("vacation_manager")
+            if not vacation_manager:
+                _LOGGER.error("Vacation manager not available")
+                return
+            
+            await vacation_manager.async_enable(
+                start_date=start_date,
+                end_date=end_date,
+                preset_mode=preset_mode,
+                frost_protection_override=frost_protection,
+                min_temperature=min_temp,
+                auto_disable=auto_disable,
+                person_entities=[]  # TODO: Add support for person entities in service call
+            )
+            
+            _LOGGER.info("Vacation mode enabled: %s to %s, preset=%s", start_date, end_date, preset_mode)
+        except Exception as err:
+            _LOGGER.error("Failed to enable vacation mode: %s", err)
+    
+    async def async_handle_disable_vacation_mode(call: ServiceCall) -> None:
+        """Handle disable_vacation_mode service."""
+        try:
+            vacation_manager = hass.data.get(DOMAIN, {}).get("vacation_manager")
+            if not vacation_manager:
+                _LOGGER.error("Vacation manager not available")
+                return
+            
+            await vacation_manager.async_disable()
+            _LOGGER.info("Vacation mode disabled")
+        except Exception as err:
+            _LOGGER.error("Failed to disable vacation mode: %s", err)
+    
     # Service schemas
     ADD_DEVICE_SCHEMA = vol.Schema({
         vol.Required(ATTR_AREA_ID): cv.string,
@@ -879,6 +930,15 @@ async def async_setup_services(hass: HomeAssistant, coordinator: SmartHeatingCoo
         vol.Required(ATTR_HISTORY_RETENTION_DAYS): vol.All(vol.Coerce(int), vol.Range(min=1, max=365)),
     })
     
+    VACATION_MODE_SCHEMA = vol.Schema({
+        vol.Optional("start_date"): cv.string,
+        vol.Optional("end_date"): cv.string,
+        vol.Optional("preset_mode", default="away"): vol.In(PRESET_MODES),
+        vol.Optional("frost_protection_override", default=True): cv.boolean,
+        vol.Optional("min_temperature", default=10.0): vol.Coerce(float),
+        vol.Optional("auto_disable", default=True): cv.boolean,
+    })
+    
     # Register all services
     hass.services.async_register(DOMAIN, SERVICE_REFRESH, async_handle_refresh)
     hass.services.async_register(DOMAIN, SERVICE_ADD_DEVICE_TO_AREA, async_handle_add_device, schema=ADD_DEVICE_SCHEMA)
@@ -906,6 +966,8 @@ async def async_setup_services(hass: HomeAssistant, coordinator: SmartHeatingCoo
     hass.services.async_register(DOMAIN, SERVICE_SET_HVAC_MODE, async_handle_set_hvac_mode, schema=HVAC_MODE_SCHEMA)
     hass.services.async_register(DOMAIN, SERVICE_COPY_SCHEDULE, async_handle_copy_schedule, schema=COPY_SCHEDULE_SCHEMA)
     hass.services.async_register(DOMAIN, SERVICE_SET_HISTORY_RETENTION, async_handle_set_history_retention, schema=HISTORY_RETENTION_SCHEMA)
+    hass.services.async_register(DOMAIN, SERVICE_ENABLE_VACATION_MODE, async_handle_enable_vacation_mode, schema=VACATION_MODE_SCHEMA)
+    hass.services.async_register(DOMAIN, SERVICE_DISABLE_VACATION_MODE, async_handle_disable_vacation_mode)
     
     _LOGGER.debug("All services registered")
 
@@ -987,7 +1049,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             hass.services.async_remove(DOMAIN, SERVICE_SET_HVAC_MODE)
             hass.services.async_remove(DOMAIN, SERVICE_COPY_SCHEDULE)
             hass.services.async_remove(DOMAIN, SERVICE_SET_HISTORY_RETENTION)
-            hass.services.async_remove(DOMAIN, SERVICE_COPY_SCHEDULE)
+            hass.services.async_remove(DOMAIN, SERVICE_ENABLE_VACATION_MODE)
+            hass.services.async_remove(DOMAIN, SERVICE_DISABLE_VACATION_MODE)
             _LOGGER.debug("Smart Heating services removed")
     
     _LOGGER.info("Smart Heating integration unloaded")

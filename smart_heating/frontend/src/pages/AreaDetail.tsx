@@ -41,6 +41,7 @@ import HistoryIcon from '@mui/icons-material/History'
 import SpeedIcon from '@mui/icons-material/Speed'
 import BookmarkIcon from '@mui/icons-material/Bookmark'
 import ArticleIcon from '@mui/icons-material/Article'
+import { useTranslation } from 'react-i18next'
 import { Zone, WindowSensorConfig, PresenceSensorConfig, Device, GlobalPresets } from '../types'
 import { 
   getZones, 
@@ -97,6 +98,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const ZoneDetail = () => {
+  const { t } = useTranslation()
   const { areaId } = useParams<{ areaId: string }>()
   const navigate = useNavigate()
   const [area, setZone] = useState<Zone | null>(null)
@@ -414,18 +416,18 @@ const ZoneDetail = () => {
     return [
       {
         id: 'preset-modes',
-        title: 'Preset Modes',
-        description: 'Quick temperature presets for different scenarios',
+        title: t('settingsCards.presetModesTitle'),
+        description: t('settingsCards.presetModesDescription'),
         icon: <BookmarkIcon />,
         badge: area.preset_mode !== 'none' ? area.preset_mode : undefined,
         defaultExpanded: false,
         content: (
           <>
             <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel>Current Preset</InputLabel>
+              <InputLabel>{t('settingsCards.currentPreset')}</InputLabel>
               <Select
                 value={area.preset_mode || 'none'}
-                label="Current Preset"
+                label={t('settingsCards.currentPreset')}
                 onChange={async (e) => {
                   try {
                     await setPresetMode(area.id, e.target.value)
@@ -435,27 +437,27 @@ const ZoneDetail = () => {
                   }
                 }}
               >
-                <MenuItem value="none">None (Manual)</MenuItem>
-                <MenuItem value="away">Away ({getPresetTemp('away', area.away_temp, 16)})</MenuItem>
-                <MenuItem value="eco">Eco ({getPresetTemp('eco', area.eco_temp, 18)})</MenuItem>
-                <MenuItem value="comfort">Comfort ({getPresetTemp('comfort', area.comfort_temp, 22)})</MenuItem>
-                <MenuItem value="home">Home ({getPresetTemp('home', area.home_temp, 21)})</MenuItem>
-                <MenuItem value="sleep">Sleep ({getPresetTemp('sleep', area.sleep_temp, 19)})</MenuItem>
-                <MenuItem value="activity">Activity ({getPresetTemp('activity', area.activity_temp, 23)})</MenuItem>
-                <MenuItem value="boost">Boost (See Boost Mode)</MenuItem>
+                <MenuItem value="none">{t('settingsCards.presetNoneManual')}</MenuItem>
+                <MenuItem value="away">{t('settingsCards.presetAwayTemp', { temp: getPresetTemp('away', area.away_temp, 16) })}</MenuItem>
+                <MenuItem value="eco">{t('settingsCards.presetEcoTemp', { temp: getPresetTemp('eco', area.eco_temp, 18) })}</MenuItem>
+                <MenuItem value="comfort">{t('settingsCards.presetComfortTemp', { temp: getPresetTemp('comfort', area.comfort_temp, 22) })}</MenuItem>
+                <MenuItem value="home">{t('settingsCards.presetHomeTemp', { temp: getPresetTemp('home', area.home_temp, 21) })}</MenuItem>
+                <MenuItem value="sleep">{t('settingsCards.presetSleepTemp', { temp: getPresetTemp('sleep', area.sleep_temp, 19) })}</MenuItem>
+                <MenuItem value="activity">{t('settingsCards.presetActivityTemp', { temp: getPresetTemp('activity', area.activity_temp, 23) })}</MenuItem>
+                <MenuItem value="boost">{t('settingsCards.presetBoost')}</MenuItem>
               </Select>
             </FormControl>
 
             <Alert severity="info">
-              Current preset: <strong>{area.preset_mode || 'none'}</strong>
+              {t('settingsCards.currentPresetInfo', { preset: area.preset_mode || 'none' })}
             </Alert>
           </>
         )
       },
       {
         id: 'preset-config',
-        title: 'Preset Temperature Configuration',
-        description: 'Choose between global defaults or custom temperatures per preset',
+        title: t('settingsCards.presetTemperatureConfigTitle'),
+        description: t('settingsCards.presetTemperatureConfigDescription'),
         icon: <BookmarkIcon />,
         defaultExpanded: false,
         content: (
@@ -494,12 +496,12 @@ const ZoneDetail = () => {
                     label={
                       <Box>
                         <Typography variant="body1">
-                          {preset.label}: {useGlobal ? 'Use Global' : 'Use Custom'}
+                          {useGlobal ? t('settingsCards.presetUseGlobal', { preset: preset.label }) : t('settingsCards.presetUseCustom', { preset: preset.label })}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
                           {useGlobal 
-                            ? `Using global setting: ${preset.global}°C`
-                            : `Using custom setting: ${preset.custom ?? 'not set'}°C`
+                            ? t('settingsCards.usingGlobalSetting', { temp: preset.global })
+                            : t('settingsCards.usingCustomSetting', { temp: preset.custom ?? 'not set' })
                           }
                         </Typography>
                       </Box>
@@ -507,8 +509,7 @@ const ZoneDetail = () => {
                   />
                   {!useGlobal && (
                     <Alert severity="info" sx={{ mt: 1 }}>
-                      Custom temperature can be set via Home Assistant services.
-                      Current effective temperature: <strong>{effectiveTemp}°C</strong>
+                      {t('settingsCards.customTempInfo', { temp: effectiveTemp })}
                     </Alert>
                   )}
                 </Box>
@@ -516,16 +517,15 @@ const ZoneDetail = () => {
             })}
             
             <Alert severity="info" sx={{ mt: 2 }}>
-              Toggle each preset to choose between the global default temperature or a custom temperature for this area.
-              Global presets can be configured in <strong>Settings → Global Presets</strong>.
+              {t('settingsCards.presetConfigInfo')}
             </Alert>
           </Box>
         )
       },
       {
         id: 'boost-mode',
-        title: 'Boost Mode',
-        description: 'Temporarily increase temperature for a specified duration',
+        title: t('settingsCards.boostModeTitle'),
+        description: t('settingsCards.boostModeDescription'),
         icon: <SpeedIcon />,
         badge: area.boost_mode_active ? 'ACTIVE' : undefined,
         defaultExpanded: area.boost_mode_active,
@@ -620,8 +620,8 @@ const ZoneDetail = () => {
       },
       {
         id: 'switch-control',
-        title: 'Switch/Pump Control',
-        description: 'Control how switches and pumps behave when area is not heating',
+        title: t('settingsCards.switchPumpControlTitle'),
+        description: t('settingsCards.switchPumpControlDescription'),
         icon: <PowerSettingsNewIcon />,
         badge: (area.shutdown_switches_when_idle ?? true) ? 'Auto Off' : 'Always On',
         defaultExpanded: false,
@@ -641,19 +641,18 @@ const ZoneDetail = () => {
                   }}
                 />
               }
-              label="Shutdown switches/pumps when not heating"
+              label={t('settingsCards.shutdownSwitchesPumps')}
             />
             <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1, ml: 4 }}>
-              When enabled, switches and pumps assigned to this area will automatically turn off when the area doesn't need heating. 
-              Disable this if you want pumps to run continuously regardless of heating demand.
+              {t('settingsCards.shutdownSwitchesDescription')}
             </Typography>
           </Box>
         )
       },
       {
         id: 'window-sensors',
-        title: 'Window Sensors',
-        description: 'Automatically adjust heating when windows are open',
+        title: t('settingsCards.windowSensorsTitle'),
+        description: t('settingsCards.windowSensorsDescription'),
         icon: <WindowIcon />,
         badge: area.window_sensors?.length || undefined,
         defaultExpanded: false,
@@ -723,8 +722,8 @@ const ZoneDetail = () => {
       },
       {
         id: 'presence-config',
-        title: 'Presence Configuration',
-        description: 'Choose between global or area-specific presence sensors',
+        title: t('settingsCards.presenceConfigTitle'),
+        description: t('settingsCards.presenceConfigDescription'),
         icon: <SensorOccupiedIcon />,
         defaultExpanded: false,
         content: (
@@ -752,12 +751,12 @@ const ZoneDetail = () => {
               label={
                 <Box>
                   <Typography variant="body1">
-                    {area.use_global_presence ? 'Use Global Presence Sensors' : 'Use Area-Specific Sensors'}
+                    {area.use_global_presence ? t('settingsCards.useGlobalPresence') : t('settingsCards.useAreaSpecificSensors')}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     {area.use_global_presence 
-                      ? 'Using global presence sensors configured in Settings'
-                      : 'Using area-specific presence sensors configured below'
+                      ? t('settingsCards.useGlobalPresenceDescription')
+                      : t('settingsCards.useAreaSpecificDescription')
                     }
                   </Typography>
                 </Box>
@@ -765,16 +764,15 @@ const ZoneDetail = () => {
             />
             
             <Alert severity="info">
-              Toggle to choose between global presence sensors (shared across all areas) or area-specific sensors.
-              Global presence sensors can be configured in <strong>Settings → Global Settings</strong>.
+              {t('settingsCards.presenceToggleInfo')}
             </Alert>
           </Box>
         )
       },
       {
         id: 'presence-sensors',
-        title: 'Presence Sensors',
-        description: 'Adjust heating based on presence/motion detection',
+        title: t('settingsCards.presenceSensorsTitle'),
+        description: t('settingsCards.presenceSensorsDescription'),
         icon: <SensorOccupiedIcon />,
         badge: area.presence_sensors?.length || undefined,
         defaultExpanded: false,
@@ -816,7 +814,7 @@ const ZoneDetail = () => {
                             <Typography>{friendlyName}</Typography>
                             {isActive && (
                               <Chip 
-                                label={isAway ? 'AWAY' : 'HOME'} 
+                                label={isAway ? t('settingsCards.awayChip') : t('settingsCards.homeChip')} 
                                 size="small" 
                                 color={isAway ? 'warning' : 'success'}
                                 sx={{ height: '20px', fontSize: '0.7rem' }}
@@ -826,7 +824,7 @@ const ZoneDetail = () => {
                         }
                         secondary={
                           <Typography component="span" variant="body2" color="text.secondary">
-                            Controls preset mode: switches to "Away" when nobody is home
+                            {t('settingsCards.presenceSensorDescription')}
                           </Typography>
                         }
                       />
@@ -836,7 +834,7 @@ const ZoneDetail = () => {
               </List>
             ) : (
               <Alert severity="info" sx={{ mb: 2 }}>
-                No presence sensors configured. Add binary sensors to enable presence detection.
+                {t('settingsCards.noPresenceSensors')}
               </Alert>
             )}
             
@@ -848,15 +846,15 @@ const ZoneDetail = () => {
                 setSensorDialogOpen(true)
               }}
             >
-              Add Presence Sensor
+              {t('settingsCards.addPresenceSensor')}
             </Button>
           </>
         )
       },
       {
         id: 'night-boost',
-        title: 'Night Boost Settings',
-        description: 'Gradually increase temperature during night hours for morning comfort',
+        title: t('settingsCards.nightBoostTitle'),
+        description: t('settingsCards.nightBoostDescription'),
         icon: <NightsStayIcon />,
         badge: area.night_boost_enabled ? 'ON' : 'OFF',
         defaultExpanded: false,
@@ -865,10 +863,10 @@ const ZoneDetail = () => {
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
               <Box>
                 <Typography variant="body1" color="text.primary">
-                  Enable Night Boost
+                  {t('settingsCards.enableNightBoost')}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Automatically add temperature offset during night hours
+                  {t('settingsCards.enableNightBoostDescription')}
                 </Typography>
               </Box>
               <Switch
@@ -893,11 +891,11 @@ const ZoneDetail = () => {
             </Box>
 
             <Typography variant="body2" color="text.secondary" gutterBottom>
-              Night Boost Period
+              {t('settingsCards.nightBoostPeriod')}
             </Typography>
             <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
               <TextField
-                label="Start Time"
+                label={t('settingsCards.startTime')}
                 type="time"
                 value={area.night_boost_start_time ?? '22:00'}
                 onChange={async (e) => {
@@ -922,7 +920,7 @@ const ZoneDetail = () => {
                 sx={{ flex: 1 }}
               />
               <TextField
-                label="End Time"
+                label={t('settingsCards.endTime')}
                 type="time"
                 value={area.night_boost_end_time ?? '06:00'}
                 onChange={async (e) => {
@@ -949,7 +947,7 @@ const ZoneDetail = () => {
             </Box>
 
             <Typography variant="body2" color="text.secondary" gutterBottom>
-              Night Boost Temperature Offset
+              {t('settingsCards.nightBoostOffset')}
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <Slider
@@ -992,25 +990,24 @@ const ZoneDetail = () => {
       },
       {
         id: 'smart-night-boost',
-        title: 'Smart Night Boost (AI Learning)',
-        description: 'ML-based optimal heating start time prediction',
+        title: t('settingsCards.smartNightBoostTitle'),
+        description: t('settingsCards.smartNightBoostDescription'),
         icon: <PsychologyIcon />,
         badge: area.smart_night_boost_enabled ? 'LEARNING' : 'OFF',
         defaultExpanded: false,
         content: (
           <>
             <Typography variant="body2" color="text.secondary" paragraph>
-              Uses machine learning to predict optimal heating start time based on weather and historical data.
-              The system learns how long your room takes to heat up and automatically starts heating at the right time.
+              {t('settingsCards.smartNightBoostIntro')}
             </Typography>
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
               <Box>
                 <Typography variant="body1" color="text.primary">
-                  Enable Smart Night Boost
+                  {t('settingsCards.enableSmartNightBoost')}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Automatically predict and optimize heating start time
+                  {t('settingsCards.enableSmartNightBoostDescription')}
                 </Typography>
               </Box>
               <Switch
@@ -1035,7 +1032,7 @@ const ZoneDetail = () => {
             </Box>
 
             <TextField
-              label="Target Wake-up Time"
+              label={t('settingsCards.targetWakeupTime')}
               type="time"
               value={area.smart_night_boost_target_time ?? '06:00'}
               onChange={async (e) => {
@@ -1056,14 +1053,14 @@ const ZoneDetail = () => {
               }}
               disabled={!area.smart_night_boost_enabled}
               fullWidth
-              helperText="Time when the room should reach target temperature"
+              helperText={t('settingsCards.targetWakeupTimeHelper')}
               InputLabelProps={{ shrink: true }}
               inputProps={{ step: 300 }}
               sx={{ mb: 3 }}
             />
 
             <TextField
-              label="Outdoor Temperature Sensor"
+              label={t('settingsCards.outdoorTemperatureSensor')}
               value={area.weather_entity_id ?? ''}
               onChange={async (e) => {
                 try {
@@ -1083,20 +1080,20 @@ const ZoneDetail = () => {
               }}
               disabled={!area.smart_night_boost_enabled}
               fullWidth
-              placeholder="sensor.outdoor_temperature"
-              helperText="Entity ID of outdoor temperature sensor for weather correlation"
+              placeholder={t('settingsCards.outdoorTemperatureSensorPlaceholder')}
+              helperText={t('settingsCards.outdoorTemperatureSensorHelper')}
             />
 
             {area.smart_night_boost_enabled && (
               <Box sx={{ mt: 3, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
-                  <strong>How it works:</strong>
+                  <strong>{t('settingsCards.smartNightBoostHowItWorksTitle')}</strong>
                 </Typography>
                 <Typography variant="caption" color="text.secondary" component="div">
-                  • System tracks every heating cycle automatically<br/>
-                  • Learns how weather affects heating time<br/>
-                  • Predicts when to start heating to reach target by wake-up time<br/>
-                  • Improves accuracy over time with more data
+                  • {t('settingsCards.smartNightBoostBullet1')}<br/>
+                  • {t('settingsCards.smartNightBoostBullet2')}<br/>
+                  • {t('settingsCards.smartNightBoostBullet3')}<br/>
+                  • {t('settingsCards.smartNightBoostBullet4')}
                 </Typography>
               </Box>
             )}
@@ -1105,20 +1102,20 @@ const ZoneDetail = () => {
       },
       {
         id: 'heating-control',
-        title: 'Heating Control Settings',
-        description: 'Configure temperature hysteresis and limits',
+        title: t('settingsCards.heatingControlTitle'),
+        description: t('settingsCards.heatingControlDescription'),
         icon: <TuneIcon />,
         defaultExpanded: false,
         content: (
           <>
             <Typography variant="body2" color="text.secondary" gutterBottom>
-              Temperature Hysteresis
+              {t('settingsCards.temperatureHysteresis')}
             </Typography>
             <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
-              Hysteresis prevents rapid on/off cycling. Heating turns on when temperature is below (target - hysteresis) and off when it reaches target.
+              {t('settingsCards.temperatureHysteresisDescription')}
             </Typography>
             <Alert severity="info" sx={{ mb: 2 }}>
-              Global hysteresis setting affects all areas. Current value: 0.5°C
+              {t('settingsCards.globalHysteresisInfo')}
             </Alert>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4 }}>
               <Slider
@@ -1152,15 +1149,15 @@ const ZoneDetail = () => {
             </Box>
 
             <Typography variant="body2" color="text.secondary" gutterBottom>
-              Temperature Limits
+              {t('settingsCards.temperatureLimits')}
             </Typography>
             <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
-              Minimum and maximum temperature limits for this area
+              {t('settingsCards.temperatureLimitsDescription')}
             </Typography>
             <Box sx={{ display: 'flex', gap: 3 }}>
               <Box sx={{ flex: 1 }}>
                 <Typography variant="caption" color="text.secondary">
-                  Minimum Temperature
+                  {t('settingsCards.minimumTemperature')}
                 </Typography>
                 <Typography variant="h4" color="text.primary">
                   5°C
@@ -1168,7 +1165,7 @@ const ZoneDetail = () => {
               </Box>
               <Box sx={{ flex: 1 }}>
                 <Typography variant="caption" color="text.secondary">
-                  Maximum Temperature
+                  {t('settingsCards.maximumTemperature')}
                 </Typography>
                 <Typography variant="h4" color="text.primary">
                   30°C
@@ -1180,18 +1177,18 @@ const ZoneDetail = () => {
       },
       {
         id: 'history-management',
-        title: 'History Data Management',
-        description: 'Configure temperature history retention and recording',
+        title: t('settingsCards.historyManagementTitle'),
+        description: t('settingsCards.historyManagementDescription'),
         icon: <HistoryIcon />,
         defaultExpanded: false,
         content: (
           <>
             <Typography variant="body2" color="text.secondary" paragraph>
-              Configure how long temperature history is stored. Data is recorded every {recordInterval} minutes and automatically cleaned up after the retention period.
+              {t('settingsCards.dataRetentionDescription', { interval: recordInterval })}
             </Typography>
             
             <Typography variant="body2" color="text.secondary" gutterBottom>
-              Data Retention Period: {historyRetention} days
+              {t('settingsCards.dataRetentionPeriod', { days: historyRetention })}
             </Typography>
             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mt: 2, mb: 3 }}>
               <Slider
@@ -1220,13 +1217,12 @@ const ZoneDetail = () => {
                   }
                 }}
               >
-                Save
+                {t('common.save')}
               </Button>
             </Box>
             
             <Alert severity="info" sx={{ mt: 2 }}>
-              <strong>Note:</strong> History data older than the retention period will be automatically deleted during the next cleanup cycle (runs every hour). 
-              Reducing the retention period will trigger an immediate cleanup. Recording interval is fixed at {recordInterval} minutes and cannot be changed.
+              <strong>Note:</strong> {t('settingsCards.historyNote', { interval: recordInterval })}
             </Alert>
           </>
         )
@@ -1312,13 +1308,13 @@ const ZoneDetail = () => {
         }}
       >
         <Tabs value={tabValue} onChange={handleTabChange}>
-          <Tab label="Overview" />
-          <Tab label="Devices" />
-          <Tab label="Schedule" />
-          <Tab label="History" />
-          <Tab label="Settings" />
-          <Tab label="Learning" />
-          <Tab label="Logs" icon={<ArticleIcon />} iconPosition="start" />
+          <Tab label={t('tabs.overview')} />
+          <Tab label={t('tabs.devices')} />
+          <Tab label={t('tabs.schedule')} />
+          <Tab label={t('tabs.history')} />
+          <Tab label={t('tabs.settings')} />
+          <Tab label={t('tabs.learning')} />
+          <Tab label={t('tabs.logs')} icon={<ArticleIcon />} iconPosition="start" />
         </Tabs>
       </Paper>
 
@@ -1329,11 +1325,11 @@ const ZoneDetail = () => {
           <Box sx={{ maxWidth: 800, mx: 'auto' }}>
             <Paper sx={{ p: 3, mb: 3 }}>
               <Typography variant="h6" gutterBottom color="text.primary">
-                Temperature Control
+                {t('areaDetail.temperatureControl')}
               </Typography>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                 <Typography variant="body2" color="text.secondary">
-                  Target Temperature
+                  {t('areaDetail.targetTemperature')}
                 </Typography>
                 <Typography variant="h4" color="primary">
                   {temperature}°C
@@ -1359,9 +1355,9 @@ const ZoneDetail = () => {
               {area.preset_mode && area.preset_mode !== 'none' && (
                 <Box mt={1} display="flex" alignItems="center" gap={1}>
                   <BookmarkIcon fontSize="small" color="secondary" />
-                  <Typography variant="caption" color="text.secondary">
-                    Preset mode <strong>{area.preset_mode.toUpperCase()}</strong> is active. Change preset to adjust temperature.
-                  </Typography>
+                  <Typography variant="caption" color="text.secondary" dangerouslySetInnerHTML={{
+                    __html: t('areaDetail.presetModeActive', { mode: area.preset_mode.toUpperCase() })
+                  }} />
                 </Box>
               )}
 
@@ -1370,7 +1366,7 @@ const ZoneDetail = () => {
                   <Divider sx={{ my: 3 }} />
                   <Box display="flex" justifyContent="space-between">
                     <Typography variant="body1" color="text.secondary">
-                      Current Temperature
+                      {t('areaDetail.currentTemperature')}
                     </Typography>
                     <Typography variant="h5" color="text.primary">
                       {area.current_temperature?.toFixed(1)}°C
@@ -1382,24 +1378,24 @@ const ZoneDetail = () => {
 
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" gutterBottom color="text.primary">
-                Quick Stats
+                {t('areaDetail.quickStats')}
               </Typography>
               <List>
                 <ListItem>
                   <ListItemText
-                    primary="Devices"
-                    secondary={`${area.devices.length} device(s) assigned`}
+                    primary={t('areaDetail.devices')}
+                    secondary={t('areaDetail.devicesAssigned', { count: area.devices.length })}
                   />
                 </ListItem>
                 <ListItem>
                   <ListItemText
-                    primary="Status"
+                    primary={t('areaDetail.status')}
                     secondary={area.state}
                   />
                 </ListItem>
                 <ListItem>
                   <ListItemText
-                    primary="Zone ID"
+                    primary={t('areaDetail.zoneId')}
                     secondary={area.id}
                   />
                 </ListItem>
@@ -1414,15 +1410,15 @@ const ZoneDetail = () => {
             {/* Assigned Devices */}
             <Paper sx={{ p: 3, mb: 3 }}>
               <Typography variant="h6" gutterBottom color="text.primary">
-                Assigned Devices ({area.devices.length})
+                {t('areaDetail.assignedDevices', { count: area.devices.length })}
               </Typography>
               <Typography variant="body2" color="text.secondary" paragraph>
-                Devices currently assigned to this area in Smart Heating
+                {t('areaDetail.devicesDescription')}
               </Typography>
 
               {area.devices.length === 0 ? (
                 <Alert severity="info">
-                  No devices assigned yet. See available devices below or use drag & drop on the main page.
+                  {t('areaDetail.noDevicesAssigned')}
                 </Alert>
               ) : (
                 <List>
@@ -1495,7 +1491,7 @@ const ZoneDetail = () => {
             <Paper sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="h6" color="text.primary">
-                  Available Devices ({availableDevices.filter(device => {
+                  {t('areaDetail.availableDevices', { count: availableDevices.filter(device => {
                     const typeMatch = !showOnlyHeating || ['climate', 'temperature'].includes(device.subtype || '')
                     if (!deviceSearch) return typeMatch
                     const searchLower = deviceSearch.toLowerCase()
@@ -1503,7 +1499,7 @@ const ZoneDetail = () => {
                     const entityMatch = (device.entity_id || device.id || '').toLowerCase().includes(searchLower)
                     const areaMatch = (device.ha_area_name || '').toLowerCase().includes(searchLower)
                     return typeMatch && (nameMatch || entityMatch || areaMatch)
-                  }).length})
+                  }).length })}
                 </Typography>
                 <FormControlLabel
                   control={
@@ -1513,18 +1509,18 @@ const ZoneDetail = () => {
                       color="primary"
                     />
                   }
-                  label="Show only climate & temperature sensors"
+                  label={t('areaDetail.showOnlyClimate')}
                 />
               </Box>
               <Typography variant="body2" color="text.secondary" paragraph>
-                Devices assigned to "{area.name}" in Home Assistant but not yet added to Smart Heating
+                {t('areaDetail.availableDevicesDescription', { area: area.name })}
               </Typography>
 
               {/* Search Bar */}
               <TextField
                 fullWidth
                 size="small"
-                placeholder="Search by device name, entity ID, or area..."
+                placeholder={t('areaDetail.searchPlaceholder')}
                 value={deviceSearch}
                 onChange={(e) => setDeviceSearch(e.target.value)}
                 sx={{ mb: 2 }}
@@ -1541,10 +1537,10 @@ const ZoneDetail = () => {
               }).length === 0 ? (
                 <Alert severity="info">
                   {deviceSearch
-                    ? `No devices found matching "${deviceSearch}"`
+                    ? t('areaDetail.noDevicesMatch', { search: deviceSearch })
                     : showOnlyHeating 
-                      ? 'No climate/temperature devices available. Toggle off the filter to see all devices.'
-                      : 'No additional devices available. All devices from this area are already assigned.'}
+                      ? t('areaDetail.noClimateDevices')
+                      : t('areaDetail.noAdditionalDevices')}
                 </Alert>
               ) : (
                 <List>
@@ -1629,10 +1625,10 @@ const ZoneDetail = () => {
           <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" gutterBottom color="text.primary">
-                Temperature History (Last 24 Hours)
+                {t('areaDetail.temperatureHistory')}
               </Typography>
               <Typography variant="body2" color="text.secondary" paragraph>
-                Track temperature trends over time to optimize your heating schedule.
+                {t('areaDetail.historyDescription')}
               </Typography>
               
               {area.id && (
@@ -1682,82 +1678,81 @@ const ZoneDetail = () => {
           <Box sx={{ maxWidth: 800, mx: 'auto' }}>
             <Paper sx={{ p: 3, mb: 3 }}>
               <Typography variant="h6" gutterBottom color="text.primary">
-                Adaptive Learning Statistics
+                {t('areaDetail.adaptiveLearning')}
               </Typography>
               <Typography variant="body2" color="text.secondary" paragraph>
-                Monitor the machine learning system's performance and predictions for this area.
+                {t('areaDetail.learningDescription')}
               </Typography>
 
               {area.smart_night_boost_enabled ? (
                 <Box sx={{ mt: 3 }}>
                   <Typography variant="body2" color="success.main" gutterBottom>
-                    ✓ Smart night boost is active
+                    ✓ {t('areaDetail.smartNightBoostActive')}
                   </Typography>
                   <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 3 }}>
-                    The system is learning from each heating cycle and will improve predictions over time.
+                    {t('areaDetail.learningSystemText')}
                   </Typography>
 
                   <Box sx={{ p: 2, bgcolor: 'info.light', borderRadius: 1, mb: 3 }}>
                     <Typography variant="body2" color="info.dark">
-                      <strong>Note:</strong> Learning statistics will be available after the system has tracked several heating cycles.
-                      The more data collected, the more accurate predictions become.
+                      <strong>Note:</strong> {t('areaDetail.learningNote')}
                     </Typography>
                   </Box>
 
                   <Typography variant="subtitle2" color="text.primary" gutterBottom sx={{ mt: 3 }}>
-                    Configuration
+                    {t('areaDetail.configuration')}
                   </Typography>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 3 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Typography variant="body2" color="text.secondary">Target Wake-up Time:</Typography>
+                      <Typography variant="body2" color="text.secondary">{t('areaDetail.targetWakeupTime')}</Typography>
                       <Typography variant="body2" color="text.primary"><strong>{area.smart_night_boost_target_time ?? '06:00'}</strong></Typography>
                     </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Typography variant="body2" color="text.secondary">Weather Sensor:</Typography>
+                      <Typography variant="body2" color="text.secondary">{t('areaDetail.weatherSensor')}</Typography>
                       <Typography variant="body2" color="text.primary">
-                        {area.weather_entity_id ? <strong>{area.weather_entity_id}</strong> : <em>Not configured</em>}
+                        {area.weather_entity_id ? <strong>{area.weather_entity_id}</strong> : <em>{t('areaDetail.notConfigured')}</em>}
                       </Typography>
                     </Box>
                   </Box>
 
                   <Typography variant="subtitle2" color="text.primary" gutterBottom sx={{ mt: 3 }}>
-                    Learning Process
+                    {t('areaDetail.learningProcessTitle')}
                   </Typography>
                   <Box component="ol" sx={{ pl: 2, mt: 1 }}>
                     <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                      System records each heating cycle (start/end time, temperatures)
+                      {t('settingsCards.learningStep1')}
                     </Typography>
                     <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                      Calculates heating rate (°C per minute) and outdoor correlation
+                      {t('settingsCards.learningStep2')}
                     </Typography>
                     <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                      Stores statistics in Home Assistant database
+                      {t('settingsCards.learningStep3')}
                     </Typography>
                     <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                      Uses historical data to predict future heating times
+                      {t('settingsCards.learningStep4')}
                     </Typography>
                     <Typography component="li" variant="body2" color="text.secondary">
-                      Automatically starts heating to reach target by wake-up time
+                      {t('settingsCards.learningStep5')}
                     </Typography>
                   </Box>
 
                   <Box sx={{ mt: 3, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
                     <Typography variant="caption" color="text.secondary">
-                      <strong>API Endpoint:</strong> /api/smart_heating/areas/{area.id}/learning
+                      <strong>{t('areaDetail.apiEndpointLabel')}</strong> /api/smart_heating/areas/{area.id}/learning
                     </Typography>
                   </Box>
                 </Box>
               ) : (
                 <Box sx={{ mt: 3, textAlign: 'center', py: 4 }}>
                   <Typography variant="body1" color="text.secondary" gutterBottom>
-                    Smart night boost is not enabled
+                    {t('settingsCards.smartNightBoostNotEnabled')}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" paragraph>
-                    Enable smart night boost in the Settings tab to start collecting learning data.
+                    {t('settingsCards.enableSmartNightBoostInfo')}
                   </Typography>
                   <Box sx={{ mt: 2 }}>
                     <Typography variant="caption" color="text.secondary">
-                      The adaptive learning system will automatically track heating cycles and improve predictions over time.
+                      {t('settingsCards.adaptiveLearningInfo')}
                     </Typography>
                   </Box>
                 </Box>
@@ -1772,7 +1767,7 @@ const ZoneDetail = () => {
             <Paper sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="h6" color="text.primary">
-                  Heating Strategy Logs
+                  {t('areaDetail.heatingStrategyLogs')}
                 </Typography>
                 <Button 
                   variant="outlined" 
@@ -1780,59 +1775,59 @@ const ZoneDetail = () => {
                   onClick={loadLogs}
                   disabled={logsLoading}
                 >
-                  {logsLoading ? 'Loading...' : 'Refresh'}
+                  {logsLoading ? 'Loading...' : t('areaDetail.refresh')}
                 </Button>
               </Box>
 
               <Typography variant="body2" color="text.secondary" paragraph>
-                Development log showing all heating strategy decisions for this area.
+                {t('areaDetail.logsDescription')}
               </Typography>
 
               <Box sx={{ mb: 3, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                 <Chip
-                  label="All Events"
+                  label={t('areaDetail.allEvents')}
                   onClick={() => setLogFilter('all')}
                   color={logFilter === 'all' ? 'primary' : 'default'}
                   variant={logFilter === 'all' ? 'filled' : 'outlined'}
                   sx={{ cursor: 'pointer' }}
                 />
                 <Chip
-                  label="Temperature"
+                  label={t('areaDetail.temperature')}
                   onClick={() => setLogFilter('temperature')}
                   color={logFilter === 'temperature' ? 'info' : 'default'}
                   variant={logFilter === 'temperature' ? 'filled' : 'outlined'}
                   sx={{ cursor: 'pointer' }}
                 />
                 <Chip
-                  label="Heating"
+                  label={t('areaDetail.heating')}
                   onClick={() => setLogFilter('heating')}
                   color={logFilter === 'heating' ? 'error' : 'default'}
                   variant={logFilter === 'heating' ? 'filled' : 'outlined'}
                   sx={{ cursor: 'pointer' }}
                 />
                 <Chip
-                  label="Schedule"
+                  label={t('areaDetail.schedule')}
                   onClick={() => setLogFilter('schedule')}
                   color={logFilter === 'schedule' ? 'success' : 'default'}
                   variant={logFilter === 'schedule' ? 'filled' : 'outlined'}
                   sx={{ cursor: 'pointer' }}
                 />
                 <Chip
-                  label="Smart Boost"
+                  label={t('areaDetail.smartBoost')}
                   onClick={() => setLogFilter('smart_boost')}
                   color={logFilter === 'smart_boost' ? 'secondary' : 'default'}
                   variant={logFilter === 'smart_boost' ? 'filled' : 'outlined'}
                   sx={{ cursor: 'pointer' }}
                 />
                 <Chip
-                  label="Sensors"
+                  label={t('areaDetail.sensors')}
                   onClick={() => setLogFilter('sensor')}
                   color={logFilter === 'sensor' ? 'warning' : 'default'}
                   variant={logFilter === 'sensor' ? 'filled' : 'outlined'}
                   sx={{ cursor: 'pointer' }}
                 />
                 <Chip
-                  label="Mode"
+                  label={t('areaDetail.mode')}
                   onClick={() => setLogFilter('mode')}
                   color={logFilter === 'mode' ? 'primary' : 'default'}
                   variant={logFilter === 'mode' ? 'filled' : 'outlined'}
@@ -1847,7 +1842,7 @@ const ZoneDetail = () => {
               ) : logs.length === 0 ? (
                 <Box sx={{ textAlign: 'center', py: 4 }}>
                   <Typography variant="body2" color="text.secondary">
-                    No log entries yet. Logs will appear as heating events occur.
+                    {t('settingsCards.noLogsYet')}
                   </Typography>
                 </Box>
               ) : (
