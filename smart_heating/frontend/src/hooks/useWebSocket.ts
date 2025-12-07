@@ -33,9 +33,11 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
   const reconnectAttempts = useRef(0)
-  const maxReconnectAttempts = 5
+  const maxReconnectAttempts = 10  // Increased for mobile
   const messageIdRef = useRef(1)
   const isAuthenticatedRef = useRef(false)
+  const pingIntervalRef = useRef<ReturnType<typeof setInterval>>()
+  const intentionalCloseRef = useRef(false)
 
   const getAuthToken = (): string | null => {
     // Try to get auth token from localStorage (HA stores it there)
@@ -53,16 +55,23 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
 
   const connect = () => {
     try {
+      // Don't create new connection if one already exists and is open/connecting
+      if (wsRef.current && (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING)) {
+        console.log('[WebSocket] Already connected or connecting')
+        return
+      }
+
       // Get WebSocket URL from current location
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
       const wsUrl = `${protocol}//${window.location.host}/api/websocket`
 
+      console.log(`[WebSocket] Connecting to ${wsUrl}...`)
       const ws = new WebSocket(wsUrl)
       wsRef.current = ws
       isAuthenticatedRef.current = false
 
       ws.onopen = () => {
-        // WebSocket connection opened, waiting for authentication
+        console.log('[WebSocket] Connection opened')
       }
 
       ws.onmessage = (event) => {
@@ -90,11 +99,25 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
           }
           
           if (message.type === 'auth_ok') {
+            console.log('[WebSocket] Authenticated successfully')
             isAuthenticatedRef.current = true
             setIsConnected(true)
             setError(null)
             reconnectAttempts.current = 0
             options.onConnect?.()
+            
+            // Start keepalive ping every 30 seconds
+            if (pingIntervalRef.current) {
+              clearInterval(pingIntervalRef.current)
+            }
+            pingIntervalRef.current = setInterval(() => {
+              if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                  id: messageIdRef.current++,
+                  type: 'ping'
+                }))
+              }
+            }, 30000)
             
             // Now subscribe to our custom events
             ws.send(JSON.stringify({
@@ -144,6 +167,10 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
           
           // Legacy message handling (for backward compatibility)
           switch (message.type) {
+            case 'pong':
+              // Keepalive response
+              break
+              
             case 'areas_updated':
               if (message.data?.areas) {
                 options.onZonesUpdate?.(message.data.areas)
@@ -168,25 +195,41 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
       }
 
       ws.onerror = (event) => {
-        console.error('WebSocket error:', event)
+        console.error('[WebSocket] Error:', event)
         setError('WebSocket connection error')
         options.onError?.('Connection error')
       }
 
       ws.onclose = () => {
+        console.log('[WebSocket] Connection closed')
         setIsConnected(false)
         wsRef.current = null
         options.onDisconnect?.()
+        
+        // Clear ping interval
+        if (pingIntervalRef.current) {
+          clearInterval(pingIntervalRef.current)
+          pingIntervalRef.current = undefined
+        }
+
+        // Don't reconnect if this was an intentional close
+        if (intentionalCloseRef.current) {
+          console.log('[WebSocket] Closed intentionally, not reconnecting')
+          intentionalCloseRef.current = false
+          return
+        }
 
         // Attempt to reconnect with exponential backoff
         if (reconnectAttempts.current < maxReconnectAttempts) {
           const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000)
+          console.log(`[WebSocket] Reconnecting in ${delay}ms (attempt ${reconnectAttempts.current + 1}/${maxReconnectAttempts})`)
           
           reconnectTimeoutRef.current = setTimeout(() => {
             reconnectAttempts.current++
             connect()
           }, delay)
         } else {
+          console.error('[WebSocket] Failed to connect after maximum attempts')
           setError('Failed to connect after multiple attempts')
           options.onError?.('Connection failed')
         }
@@ -198,8 +241,16 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
   }
 
   const disconnect = () => {
+    console.log('[WebSocket] Disconnecting')
+    intentionalCloseRef.current = true
+    
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current)
+    }
+    
+    if (pingIntervalRef.current) {
+      clearInterval(pingIntervalRef.current)
+      pingIntervalRef.current = undefined
     }
     
     if (wsRef.current) {
@@ -221,7 +272,36 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
   useEffect(() => {
     connect()
 
+    // Handle page visibility changes (critical for mobile browsers)
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        console.log('[WebSocket] Page hidden')
+      } else {
+        console.log('[WebSocket] Page visible - checking connection')
+        // Reconnect if connection was lost while page was hidden
+        if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+          console.log('[WebSocket] Reconnecting after page became visible')
+          reconnectAttempts.current = 0
+          connect()
+        }
+      }
+    }
+
+    // Handle window focus (iOS Safari specific)
+    const handleFocus = () => {
+      console.log('[WebSocket] Window focused - verifying connection')
+      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+        reconnectAttempts.current = 0
+        connect()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('focus', handleFocus)
+
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', handleFocus)
       disconnect()
     }
   }, [])

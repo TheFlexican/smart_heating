@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### 📱 Mobile Improvements
+
+**WebSocket Mobile Reconnection (v0.5.8)**
+- **Enhanced mobile browser support**: Improved WebSocket reliability on iOS and Android
+  - Increased max reconnection attempts from 5 to 10 for mobile scenarios
+  - Added `visibilitychange` event handler to reconnect when app becomes visible
+  - Added `focus` event handler for iOS Safari-specific reconnection
+  - Implemented keepalive ping every 30 seconds to prevent connection timeout
+  - Reset reconnection attempts when page becomes visible for faster recovery
+- **Better connection management**:
+  - Prevents duplicate connections when already connected/connecting
+  - Intentional close flag prevents unwanted reconnections
+  - Comprehensive console logging with `[WebSocket]` prefix for debugging
+- **Mobile browser behavior**:
+  - Mobile browsers often close WebSocket connections when app goes to background
+  - Auto-reconnects when user returns to app
+  - Handles iOS Safari's aggressive connection management
+
 ### ⚡ Performance
 
 **Device Discovery Optimization (v0.5.8)**

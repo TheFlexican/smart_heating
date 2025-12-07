@@ -7,6 +7,24 @@ en dit project volgt [Semantic Versioning](https://semver.org/).
 
 ## [Niet Uitgebracht]
 
+### 📱 Mobiele Verbeteringen
+
+**WebSocket Mobiele Herverbinding (v0.5.8)**
+- **Verbeterde ondersteuning voor mobiele browsers**: Verbeterde WebSocket betrouwbaarheid op iOS en Android
+  - Maximale herverbindingspogingen verhoogd van 5 naar 10 voor mobiele scenario's
+  - `visibilitychange` event handler toegevoegd om te herverbinden wanneer app zichtbaar wordt
+  - `focus` event handler toegevoegd voor iOS Safari-specifieke herverbinding
+  - Keepalive ping geïmplementeerd elke 30 seconden om time-out te voorkomen
+  - Herverbindingspogingen gereset wanneer pagina zichtbaar wordt voor sneller herstel
+- **Betere verbindingsbeheer**:
+  - Voorkomt dubbele verbindingen wanneer al verbonden/bezig met verbinden
+  - Intentionele close vlag voorkomt ongewenste herverbindingen
+  - Uitgebreide console logging met `[WebSocket]` prefix voor debugging
+- **Mobiele browser gedrag**:
+  - Mobiele browsers sluiten vaak WebSocket verbindingen wanneer app naar achtergrond gaat
+  - Automatisch herverbinden wanneer gebruiker terugkeert naar app
+  - Behandelt iOS Safari's agressieve verbindingsbeheer
+
 ### ⚡ Prestaties
 
 **Apparaat Discovery Optimalisatie (v0.5.8)**
