@@ -712,12 +712,18 @@ class SmartHeatingAPIView(HomeAssistantView):
         Returns:
             JSON response
         """
-        temperature = data.get("temperature")
+        from .utils import validate_temperature, validate_area_id
         
-        if temperature is None:
-            return web.json_response(
-                {"error": "temperature is required"}, status=400
-            )
+        # Validate area_id
+        is_valid, error_msg = validate_area_id(area_id)
+        if not is_valid:
+            return web.json_response({"error": error_msg}, status=400)
+        
+        # Validate temperature
+        temperature = data.get("temperature")
+        is_valid, error_msg = validate_temperature(temperature)
+        if not is_valid:
+            return web.json_response({"error": error_msg}, status=400)
         
         try:
             area = self.area_manager.get_area(area_id)
@@ -1666,6 +1672,12 @@ class SmartHeatingAPIView(HomeAssistantView):
             JSON response
         """
         import uuid
+        from .utils import validate_area_id, validate_temperature
+        
+        # Validate area_id
+        is_valid, error_msg = validate_area_id(area_id)
+        if not is_valid:
+            return web.json_response({"error": error_msg}, status=400)
         
         schedule_id = data.get("id") or str(uuid.uuid4())
         temperature = data.get("temperature")
@@ -1677,6 +1689,12 @@ class SmartHeatingAPIView(HomeAssistantView):
                 {"error": "Either temperature or preset_mode is required"}, status=400
             )
         
+        # Validate temperature if provided
+        if temperature is not None:
+            is_valid, error_msg = validate_temperature(temperature)
+            if not is_valid:
+                return web.json_response({"error": error_msg}, status=400)
+        
         try:
             # Ensure area exists in storage
             if self.area_manager.get_area(area_id) is None:
@@ -1685,6 +1703,7 @@ class SmartHeatingAPIView(HomeAssistantView):
                 ha_area = area_registry.async_get_area(area_id)
                 if ha_area:
                     # Create internal storage for this HA area
+                    from .models import Area
                     area = Area(area_id, ha_area.name)
                     area.area_manager = self.area_manager
                     self.area_manager.areas[area_id] = area
