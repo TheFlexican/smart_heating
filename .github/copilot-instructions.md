@@ -22,6 +22,16 @@ Home Assistant integration for zone-based heating control with learning capabili
 - After implementing features: Deploy → Let user test → Wait for approval → THEN commit/tag/push
 - Workflow: Code → Deploy → Test → Approve → Git operations
 
+**RULE #3.1: Version Synchronization**
+- App version MUST match git tag version
+- When creating a git tag (e.g., v0.4.3), update these files FIRST:
+  - `smart_heating/manifest.json` - `"version": "0.4.3"`
+  - `smart_heating/frontend/package.json` - `"version": "0.4.3"`
+  - `smart_heating/frontend/src/components/Header.tsx` - `label="v0.4.3"`
+- Then commit version changes: `git commit -m "chore: Update version to v0.4.3"`
+- Then create tag: `git tag v0.4.3`
+- Keep versions in sync: manifest.json = package.json = Header.tsx = git tag
+
 **RULE #4: Update Documentation & Translations**
 - **ALWAYS** update documentation in BOTH languages (EN + NL) when making changes
 - **ALWAYS** update translations when adding/modifying UI text
