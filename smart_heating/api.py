@@ -39,6 +39,8 @@ class SmartHeatingAPIView(HomeAssistantView):
         """
         self.hass = hass
         self.area_manager = area_manager
+        self._devices_cache = None  # Cache for discovered devices
+        self._cache_timestamp = None  # When cache was last updated
 
     async def get(self, request: web.Request, endpoint: str) -> web.Response:
         """Handle GET requests.
@@ -331,13 +333,31 @@ class SmartHeatingAPIView(HomeAssistantView):
     async def get_devices(self, request: web.Request) -> web.Response:
         """Get available devices from Home Assistant.
         
+        Returns cached device list if available. Use /devices/refresh for fresh discovery.
+        
         Args:
             request: Request object
             
         Returns:
             JSON response with available devices
         """
+        # Return cached devices if available
+        if self._devices_cache is not None:
+            _LOGGER.debug("Returning cached device list (%d devices)", len(self._devices_cache))
+            return web.json_response({"devices": self._devices_cache})
+        
+        # No cache, perform discovery
+        _LOGGER.info("No device cache available, performing initial discovery")
+        return await self._discover_devices()
+    
+    async def _discover_devices(self) -> web.Response:
+        """Perform device discovery and cache results.
+        
+        Returns:
+            JSON response with discovered devices
+        """
         from .utils import DeviceRegistry, build_device_dict
+        from datetime import datetime
         
         devices = []
         device_reg = DeviceRegistry(self.hass)
@@ -396,7 +416,11 @@ class SmartHeatingAPIView(HomeAssistantView):
                 
                 devices.append(build_device_dict(entity, state, device_type, subtype, ha_area, assigned_areas))
         
-        _LOGGER.warning("=== SMART HEATING: Discovery complete - found %d devices ===", len(devices))
+        # Cache the results
+        self._devices_cache = devices
+        self._cache_timestamp = datetime.now()
+        
+        _LOGGER.warning("=== SMART HEATING: Discovery complete - found %d devices (cached) ===", len(devices))
         return web.json_response({"devices": devices})
 
     def _determine_mqtt_device_type(self, entity: Any, state: Any) -> Optional[str]:
@@ -453,8 +477,8 @@ class SmartHeatingAPIView(HomeAssistantView):
     async def refresh_devices(self, request: web.Request) -> web.Response:
         """Refresh all devices from Home Assistant and update area assignments.
         
-        This will re-discover all MQTT devices and overwrite existing device
-        configurations with current Home Assistant settings.
+        This will re-discover all devices, update device cache, and update existing
+        device configurations with current Home Assistant settings.
         
         Args:
             request: Request object
@@ -462,10 +486,15 @@ class SmartHeatingAPIView(HomeAssistantView):
         Returns:
             JSON response with refreshed device count
         """
-        _LOGGER.info("Refreshing devices from Home Assistant")
+        _LOGGER.info("Refreshing devices from Home Assistant - clearing cache and performing discovery")
         
         try:
-            # Get all MQTT entities from Home Assistant
+            # Clear the device cache and perform fresh discovery
+            self._devices_cache = None
+            self._cache_timestamp = None
+            await self._discover_devices()
+            
+            # Get all MQTT entities from Home Assistant for assignment updates
             entity_registry = er.async_get(self.hass)
             device_registry = dr.async_get(self.hass)
             area_registry = ar.async_get(self.hass)
@@ -514,7 +543,7 @@ class SmartHeatingAPIView(HomeAssistantView):
             await self.area_manager.async_save()
             
             _LOGGER.info(
-                "Device refresh complete: %d updated, %d available for assignment",
+                "Device refresh complete: %d updated, %d available for assignment, cache refreshed",
                 updated_count, added_count
             )
             
@@ -522,6 +551,7 @@ class SmartHeatingAPIView(HomeAssistantView):
                 "success": True,
                 "updated": updated_count,
                 "available": added_count,
+                "cached_devices": len(self._devices_cache) if self._devices_cache else 0,
                 "message": f"Refreshed {updated_count} devices, {added_count} available for assignment"
             })
             

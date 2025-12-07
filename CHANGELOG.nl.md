@@ -7,6 +7,20 @@ en dit project volgt [Semantic Versioning](https://semver.org/).
 
 ## [Niet Uitgebracht]
 
+### ⚡ Prestaties
+
+**Apparaat Discovery Optimalisatie (v0.5.8)**
+- **Apparaat discovery caching geïmplementeerd**: Redundante discovery op elke API aanroep geëlimineerd
+  - Apparaat lijst nu gecached na initiële discovery
+  - Cache blijft behouden over API aanroepen naar `/api/smart_heating/devices`
+  - Gebruik `/api/smart_heating/devices/refresh` om opnieuw te discoveren
+  - Vermindert Home Assistant entity registry queries van ~elke 30 seconden naar alleen on-demand
+- **Prestatie impact**:
+  - Elimineert onnodige CPU gebruik door herhaalde entity registry scans
+  - Snellere API response tijden (gecachte lijst direct geretourneerd)
+  - Discovery gebeurt alleen bij opstarten en handmatige refresh
+- **Gebruikerscontrole**: Gebruikers kunnen apparaat lijst verversen via zones overzicht wanneer nodig
+
 ### 🐛 Opgelost
 
 **Kritieke Schakelaar Controle Bug Fix (v0.4.3)**

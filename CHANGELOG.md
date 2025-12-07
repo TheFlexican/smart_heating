@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### ⚡ Performance
+
+**Device Discovery Optimization (v0.5.8)**
+- **Implemented device discovery caching**: Eliminated redundant discovery on every API call
+  - Device list now cached after initial discovery
+  - Cache persists across API calls to `/api/smart_heating/devices`
+  - Use `/api/smart_heating/devices/refresh` to force re-discovery
+  - Reduces Home Assistant entity registry queries from ~every 30 seconds to on-demand only
+- **Performance impact**: 
+  - Eliminates unnecessary CPU usage from repeated entity registry scans
+  - Faster API response times (cached list returned instantly)
+  - Discovery only happens on startup and manual refresh
+- **User control**: Users can refresh device list via zones overview when needed
+
 ### 🐛 Fixed
 
 **Critical Switch Control Bug Fix (v0.4.3)**
