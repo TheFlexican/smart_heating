@@ -372,3 +372,16 @@ export const getAreaLogs = async (
   const response = await axios.get(`${API_BASE}/areas/${areaId}/logs?${params.toString()}`)
   return response.data.logs
 }
+
+// Hysteresis settings
+export const getHysteresis = async (): Promise<number> => {
+  const response = await axios.get(`${API_BASE}/hysteresis`)
+  return response.data.hysteresis
+}
+
+export const setHysteresis = async (hysteresis: number): Promise<void> => {
+  await axios.post(`${API_BASE}/call_service`, {
+    service: 'set_hysteresis',
+    hysteresis
+  })
+}

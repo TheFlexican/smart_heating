@@ -160,6 +160,12 @@ const ZoneDetail = () => {
         return
       }
       
+      console.log('Loaded zone data:', {
+        id: currentZone.id,
+        name: currentZone.name,
+        hysteresis_override: currentZone.hysteresis_override
+      })
+      
       setZone(currentZone)
       // If preset is active, show effective temperature, otherwise base target
       const displayTemp = (currentZone.preset_mode && currentZone.preset_mode !== 'none' && currentZone.effective_target_temperature != null)
@@ -1114,39 +1120,117 @@ const ZoneDetail = () => {
             <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
               {t('settingsCards.temperatureHysteresisDescription')}
             </Typography>
-            <Alert severity="info" sx={{ mb: 2 }}>
-              {t('settingsCards.globalHysteresisInfo')}
-            </Alert>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4 }}>
-              <Slider
-                defaultValue={0.5}
-                onChange={async (_e, value) => {
-                  try {
-                    await fetch('/api/smart_heating/call_service', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        service: 'set_hysteresis',
-                        hysteresis: value
+            
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={area.hysteresis_override === null || area.hysteresis_override === undefined}
+                  onChange={async (e) => {
+                    const useGlobal = e.target.checked
+                    console.log('Toggle changed:', { useGlobal, areaId: area.id })
+                    
+                    // Optimistic update
+                    const updatedArea = {
+                      ...area,
+                      hysteresis_override: useGlobal ? null : 0.5
+                    }
+                    setZone(updatedArea)
+                    
+                    try {
+                      console.log('Sending API request to:', `/api/smart_heating/areas/${area.id}/hysteresis`)
+                      const response = await fetch(`/api/smart_heating/areas/${area.id}/hysteresis`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          use_global: useGlobal,
+                          hysteresis: useGlobal ? null : 0.5
+                        })
                       })
-                    })
-                  } catch (error) {
-                    console.error('Failed to update hysteresis:', error)
-                  }
-                }}
-                min={0.1}
-                max={2.0}
-                step={0.1}
-                marks={[
-                  { value: 0.1, label: '0.1°C' },
-                  { value: 1.0, label: '1.0°C' },
-                  { value: 2.0, label: '2.0°C' }
-                ]}
-                valueLabelDisplay="auto"
-                valueLabelFormat={(value) => `${value}°C`}
-                sx={{ flexGrow: 1 }}
-              />
-            </Box>
+                      console.log('Response:', response.status, response.ok)
+                      if (!response.ok) {
+                        const errorText = await response.text()
+                        console.error('Failed to update hysteresis setting:', errorText)
+                        // Revert on error
+                        setZone(area)
+                      } else {
+                        const result = await response.json()
+                        console.log('Success:', result)
+                      }
+                    } catch (error) {
+                      console.error('Failed to update hysteresis setting:', error)
+                      // Revert on error
+                      setZone(area)
+                    }
+                  }}
+                />
+              }
+              label={t('settingsCards.useGlobalHysteresis')}
+              sx={{ mb: 2 }}
+            />
+            
+            {(area.hysteresis_override === null || area.hysteresis_override === undefined) ? (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                {t('settingsCards.usingGlobalHysteresis')}
+              </Alert>
+            ) : (
+              <>
+                <Alert severity="warning" sx={{ mb: 2 }}>
+                  {t('settingsCards.usingAreaHysteresis')}
+                </Alert>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4 }}>
+                  <Slider
+                    value={area.hysteresis_override || 0.5}
+                    onChange={async (_e, value) => {
+                      console.log('Slider changed:', { value, areaId: area.id })
+                      
+                      // Optimistic update
+                      const updatedArea = {
+                        ...area,
+                        hysteresis_override: typeof value === 'number' ? value : 0.5
+                      }
+                      setZone(updatedArea)
+                      
+                      try {
+                        console.log('Sending API request to:', `/api/smart_heating/areas/${area.id}/hysteresis`)
+                        const response = await fetch(`/api/smart_heating/areas/${area.id}/hysteresis`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            use_global: false,
+                            hysteresis: value
+                          })
+                        })
+                        console.log('Response:', response.status, response.ok)
+                        if (!response.ok) {
+                          const errorText = await response.text()
+                          console.error('Failed to update hysteresis:', errorText)
+                          // Revert on error
+                          setZone(area)
+                        } else {
+                          const result = await response.json()
+                          console.log('Success:', result)
+                        }
+                      } catch (error) {
+                        console.error('Failed to update hysteresis:', error)
+                        // Revert on error
+                        setZone(area)
+                      }
+                    }}
+                    min={0.1}
+                    max={2.0}
+                    step={0.1}
+                    marks={[
+                      { value: 0.1, label: '0.1°C' },
+                      { value: 1.0, label: '1.0°C' },
+                      { value: 2.0, label: '2.0°C' }
+                    ]}
+                    valueLabelDisplay="on"
+                    valueLabelFormat={(value) => `${value}°C`}
+                    sx={{ flexGrow: 1 }}
+                  />
+                </Box>
+              </>
+            )}
 
             <Typography variant="body2" color="text.secondary" gutterBottom>
               {t('settingsCards.temperatureLimits')}

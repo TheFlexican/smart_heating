@@ -434,9 +434,29 @@ class ClimateController:
                 _LOGGER.warning("No temperature data for area %s", area_id)
                 continue
             
+            # Get hysteresis for this area (use area-specific or global)
+            hysteresis = area.hysteresis_override if area.hysteresis_override is not None else self._hysteresis
+            
             # Determine if heating is needed (with hysteresis)
-            should_heat = current_temp < (target_temp - self._hysteresis)
+            should_heat = current_temp < (target_temp - hysteresis)
             should_stop = current_temp >= target_temp
+            
+            # Log hysteresis decision for area logger
+            if hasattr(self, 'area_logger') and self.area_logger:
+                if not should_heat and current_temp < target_temp:
+                    # Temperature is below target but within hysteresis band
+                    self.area_logger.log_event(
+                        area_id,
+                        "climate_control",
+                        f"Waiting for hysteresis ({hysteresis:.1f}°C) - not heating yet",
+                        {
+                            "current_temp": current_temp,
+                            "target_temp": target_temp,
+                            "hysteresis": hysteresis,
+                            "threshold": target_temp - hysteresis,
+                            "reason": "Within hysteresis band - prevents short cycling"
+                        }
+                    )
             
             if should_heat:
                 # Start heating event if not already active and learning engine available

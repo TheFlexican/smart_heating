@@ -92,6 +92,9 @@ export interface Zone {
   presence_sensors?: PresenceSensorConfig[]
   presence_detected?: boolean
   use_global_presence?: boolean  // Use global presence sensors instead of area-specific
+  
+  // Hysteresis override (null = use global setting)
+  hysteresis_override?: number | null
 }
 
 // Window sensor configuration

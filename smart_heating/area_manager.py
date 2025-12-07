@@ -256,6 +256,9 @@ class Area:
         
         # Switch/pump control setting
         self.shutdown_switches_when_idle: bool = True  # Turn off switches/pumps when area not heating
+        
+        # Hysteresis override - None means use global setting
+        self.hysteresis_override: float | None = None  # Area-specific hysteresis in °C (0.1-2.0)
 
     def add_device(self, device_id: str, device_type: str, mqtt_topic: str | None = None) -> None:
         """Add a device to the area.
@@ -778,6 +781,8 @@ class Area:
             # Presence sensors (new structure)
             "presence_sensors": self.presence_sensors,
             "use_global_presence": self.use_global_presence,
+            # Hysteresis override
+            "hysteresis_override": self.hysteresis_override,
         }
 
     @classmethod
@@ -840,6 +845,9 @@ class Area:
         
         # HVAC mode
         area.hvac_mode = data.get("hvac_mode", HVAC_MODE_HEAT)
+        
+        # Hysteresis override
+        area.hysteresis_override = data.get("hysteresis_override")
         
         # Window sensors - support both old string format and new dict format
         window_sensors_data = data.get("window_sensors", [])

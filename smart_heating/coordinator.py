@@ -311,6 +311,8 @@ class SmartHeatingCoordinator(DataUpdateCoordinator):
                     "boost_duration": area.boost_duration,
                     # HVAC mode
                     "hvac_mode": area.hvac_mode,
+                    # Hysteresis override
+                    "hysteresis_override": area.hysteresis_override,
                     # Manual override
                     "manual_override": getattr(area, 'manual_override', False),
                     # Hidden state (frontend-only, but persisted in backend)

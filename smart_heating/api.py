@@ -74,6 +74,8 @@ class SmartHeatingAPIView(HomeAssistantView):
                 return await self.get_global_presets(request)
             elif endpoint == "global_presence":
                 return await self.get_global_presence(request)
+            elif endpoint == "hysteresis":
+                return await self.get_hysteresis(request)
             elif endpoint == "vacation_mode":
                 return await self.get_vacation_mode(request)
             elif endpoint.startswith("areas/"):
@@ -153,6 +155,9 @@ class SmartHeatingAPIView(HomeAssistantView):
             elif endpoint.startswith("areas/") and endpoint.endswith("/switch_shutdown"):
                 area_id = endpoint.split("/")[1]
                 return await self.set_switch_shutdown(request, area_id, data)
+            elif endpoint.startswith("areas/") and endpoint.endswith("/hysteresis"):
+                area_id = endpoint.split("/")[1]
+                return await self.set_area_hysteresis(request, area_id, data)
             elif endpoint == "frost_protection":
                 return await self.set_frost_protection(request, data)
             elif endpoint == "history/config":
@@ -161,6 +166,8 @@ class SmartHeatingAPIView(HomeAssistantView):
                 return await self.set_global_presets(request, data)
             elif endpoint == "global_presence":
                 return await self.set_global_presence(request, data)
+            elif endpoint == "hysteresis":
+                return await self.set_hysteresis_value(request, data)
             elif endpoint == "vacation_mode":
                 return await self.enable_vacation_mode(request, data)
             elif endpoint.startswith("areas/") and endpoint.endswith("/preset_config"):
@@ -326,6 +333,8 @@ class SmartHeatingAPIView(HomeAssistantView):
                     "boost_duration": stored_area.boost_duration,
                     # HVAC mode
                     "hvac_mode": stored_area.hvac_mode,
+                    # Hysteresis override
+                    "hysteresis_override": stored_area.hysteresis_override,
                     # Manual override
                     "manual_override": getattr(stored_area, 'manual_override', False),
                     # Sensors
@@ -1162,6 +1171,77 @@ class SmartHeatingAPIView(HomeAssistantView):
                 {"error": str(err)}, status=500
             )
     
+    async def set_area_hysteresis(self, request: web.Request, area_id: str, data: dict) -> web.Response:
+        """Set area-specific hysteresis or use global setting.
+        
+        Args:
+            request: Request object
+            area_id: Area identifier
+            data: {"use_global": true/false, "hysteresis": float (optional)}
+            
+        Returns:
+            JSON response
+        """
+        try:
+            area = self.area_manager.get_area(area_id)
+            if not area:
+                return web.json_response(
+                    {"error": f"Area {area_id} not found"}, status=404
+                )
+            
+            use_global = data.get("use_global", False)
+            
+            if use_global:
+                # Use global hysteresis setting
+                area.hysteresis_override = None
+                _LOGGER.info("Area %s: Setting hysteresis_override to None (global)", area_id)
+            else:
+                # Use area-specific hysteresis
+                hysteresis = data.get("hysteresis")
+                if hysteresis is None:
+                    return web.json_response(
+                        {"error": "hysteresis value required when use_global is false"}, 
+                        status=400
+                    )
+                
+                # Validate range
+                if hysteresis < 0.1 or hysteresis > 2.0:
+                    return web.json_response(
+                        {"error": "Hysteresis must be between 0.1 and 2.0°C"}, 
+                        status=400
+                    )
+                
+                area.hysteresis_override = float(hysteresis)
+                _LOGGER.info(
+                    "Area %s: Setting hysteresis_override to %.1f°C",
+                    area_id, hysteresis
+                )
+            
+            _LOGGER.info("Area %s: hysteresis_override value before save: %s", area_id, area.hysteresis_override)
+            await self.area_manager.async_save()
+            _LOGGER.info("Area %s: Save completed, verifying value: %s", area_id, area.hysteresis_override)
+            
+            # Update climate controller if it exists
+            if hasattr(area, 'climate_controller') and area.climate_controller:
+                # Climate controller will use area.hysteresis_override on next update
+                pass
+            
+            # Refresh coordinator
+            entry_ids = [
+                key for key in self.hass.data[DOMAIN].keys()
+                if key not in ["history", "climate_controller", "schedule_executor", "climate_unsub", "learning_engine", "area_logger", "vacation_manager"]
+            ]
+            if entry_ids:
+                coordinator = self.hass.data[DOMAIN][entry_ids[0]]
+                await coordinator.async_request_refresh()
+            
+            return web.json_response({"success": True})
+        except Exception as err:
+            _LOGGER.error("Error setting hysteresis for area %s: %s", area_id, err)
+            return web.json_response(
+                {"error": str(err)}, status=500
+            )
+    
     async def call_service(self, request: web.Request, data: dict) -> web.Response:
         """Call a Home Assistant service.
         
@@ -1344,6 +1424,60 @@ class SmartHeatingAPIView(HomeAssistantView):
         _LOGGER.warning("✓ Global presets saved")
         
         return web.json_response({"success": True})
+
+    async def get_hysteresis(self, request: web.Request) -> web.Response:
+        """Get global hysteresis value.
+        
+        Args:
+            request: Request object
+            
+        Returns:
+            JSON response with hysteresis value
+        """
+        return web.json_response({
+            "hysteresis": self.area_manager.hysteresis
+        })
+
+    async def set_hysteresis_value(self, request: web.Request, data: dict) -> web.Response:
+        """Set global hysteresis value.
+        
+        Args:
+            request: Request object
+            data: Dictionary with hysteresis value
+            
+        Returns:
+            JSON response
+        """
+        _LOGGER.info("🌡️ API: SET HYSTERESIS: %s", data)
+        
+        if "hysteresis" in data:
+            hysteresis = float(data["hysteresis"])
+            # Validate range
+            if hysteresis < 0.1 or hysteresis > 2.0:
+                return web.json_response(
+                    {"error": "Hysteresis must be between 0.1 and 2.0°C"}, 
+                    status=400
+                )
+            
+            # Update area manager
+            self.area_manager.hysteresis = hysteresis
+            await self.area_manager.async_save()
+            
+            # Update all climate controllers
+            for area in self.area_manager.areas.values():
+                if hasattr(area, 'climate_controller') and area.climate_controller:
+                    area.climate_controller._hysteresis = hysteresis
+            
+            # Request coordinator update
+            await self.coordinator.async_request_refresh()
+            
+            _LOGGER.info("✅ Hysteresis updated to %.1f°C", hysteresis)
+            return web.json_response({"success": True})
+        
+        return web.json_response(
+            {"error": "Missing hysteresis value"}, 
+            status=400
+        )
 
     async def get_global_presence(self, request: web.Request) -> web.Response:
         """Get global presence sensors.
