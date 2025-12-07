@@ -39,9 +39,16 @@ const ZoneList = ({ areas, loading, onUpdate, showHidden, onToggleShowHidden }: 
 
   return (
     <Box>
-      <Box mb={3} display="flex" justifyContent="space-between" alignItems="center">
-        <Box display="flex" alignItems="center" gap={2}>
-          <Typography variant="h4">
+      <Box 
+        mb={{ xs: 2, sm: 3 }} 
+        display="flex" 
+        justifyContent="space-between" 
+        alignItems="center"
+        flexWrap="wrap"
+        gap={1}
+      >
+        <Box display="flex" alignItems="center" gap={{ xs: 1, sm: 2 }} flexWrap="wrap">
+          <Typography variant="h4" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
             {t('dashboard.zones')}
           </Typography>
           {hiddenCount > 0 && !showHidden && (
@@ -50,6 +57,7 @@ const ZoneList = ({ areas, loading, onUpdate, showHidden, onToggleShowHidden }: 
               size="small" 
               color="default"
               variant="outlined"
+              sx={{ fontSize: { xs: '0.7rem', sm: '0.8125rem' } }}
             />
           )}
         </Box>
@@ -59,6 +67,7 @@ const ZoneList = ({ areas, loading, onUpdate, showHidden, onToggleShowHidden }: 
             onClick={onToggleShowHidden}
             variant="outlined"
             size="small"
+            sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
           >
             {showHidden ? t('dashboard.hideHiddenAreas') : t('dashboard.showHiddenAreas')}
           </Button>
@@ -70,7 +79,7 @@ const ZoneList = ({ areas, loading, onUpdate, showHidden, onToggleShowHidden }: 
           {t('dashboard.noAreasFound')}
         </Alert>
       ) : (
-        <Grid container spacing={3}>
+        <Grid container spacing={{ xs: 2, sm: 2, md: 3 }}>
           {visibleAreas.map((area) => (
             <Grid item xs={12} md={6} lg={4} key={area.id}>
               <ZoneCard area={area} onUpdate={onUpdate} />

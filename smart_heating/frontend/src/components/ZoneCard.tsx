@@ -240,10 +240,10 @@ const ZoneCard = ({ area, onUpdate }: ZoneCardProps) => {
             },
           }}
         >
-      <CardContent>
+      <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
         <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
-          <Box>
-            <Typography variant="h6" gutterBottom>
+          <Box flex={1}>
+            <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
               {area.name}
             </Typography>
             <Box display="flex" gap={1} flexWrap="wrap">
@@ -252,6 +252,7 @@ const ZoneCard = ({ area, onUpdate }: ZoneCardProps) => {
                 label={area.manual_override ? t('area.manual') : area.state.toUpperCase()}
                 color={getStateColor()}
                 size="small"
+                sx={{ fontSize: { xs: '0.7rem', sm: '0.8125rem' } }}
               />
               {area.presence_sensors && area.presence_sensors.length > 0 && presenceState && (
                 <Chip
@@ -259,31 +260,32 @@ const ZoneCard = ({ area, onUpdate }: ZoneCardProps) => {
                   label={presenceState.toUpperCase()}
                   color={presenceState === 'home' ? 'success' : 'default'}
                   size="small"
+                  sx={{ fontSize: { xs: '0.7rem', sm: '0.8125rem' } }}
                 />
               )}
             </Box>
           </Box>
           <Box onClick={(e) => e.stopPropagation()}>
-            <IconButton size="small" onClick={handleMenuOpen}>
+            <IconButton size="small" onClick={handleMenuOpen} sx={{ p: { xs: 0.5, sm: 1 } }}>
               <MoreVertIcon />
             </IconButton>
           </Box>
         </Box>
 
-        <Box my={3} onClick={handleSliderClick}>
+        <Box my={{ xs: 2, sm: 3 }} onClick={handleSliderClick}>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
               {t('area.targetTemperature')}
               {area.preset_mode && area.preset_mode !== 'none' && (
                 <Chip 
                   label={area.preset_mode.toUpperCase()} 
                   size="small" 
                   color="secondary"
-                  sx={{ ml: 1, fontSize: '0.7rem', height: '20px' }}
+                  sx={{ ml: 1, fontSize: { xs: '0.65rem', sm: '0.7rem' }, height: '20px' }}
                 />
               )}
             </Typography>
-            <Typography variant="h5" color="primary">
+            <Typography variant="h5" color="primary" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
               {temperature}°C
             </Typography>
           </Box>
@@ -300,11 +302,23 @@ const ZoneCard = ({ area, onUpdate }: ZoneCardProps) => {
             ]}
             valueLabelDisplay="auto"
             disabled={!area.enabled || area.devices.length === 0 || !area.manual_override}
+            sx={{
+              '& .MuiSlider-thumb': {
+                width: { xs: 24, sm: 20 },
+                height: { xs: 24, sm: 20 },
+              },
+              '& .MuiSlider-track': {
+                height: { xs: 6, sm: 4 },
+              },
+              '& .MuiSlider-rail': {
+                height: { xs: 6, sm: 4 },
+              },
+            }}
           />
           {area.devices.length === 0 && (
             <Box display="flex" alignItems="center" gap={1} mt={1} sx={{ color: 'warning.main' }}>
               <InfoOutlinedIcon fontSize="small" />
-              <Typography variant="caption">
+              <Typography variant="caption" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
                 {t('area.addDevicesPrompt')}
               </Typography>
             </Box>
@@ -313,10 +327,10 @@ const ZoneCard = ({ area, onUpdate }: ZoneCardProps) => {
 
         {area.current_temperature !== undefined && area.current_temperature !== null && (
           <Box display="flex" justifyContent="space-between" mb={2}>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
               {t('area.currentTemperature')}
             </Typography>
-            <Typography variant="body1">
+            <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
               {area.current_temperature.toFixed(1)}°C
             </Typography>
           </Box>
@@ -343,7 +357,7 @@ const ZoneCard = ({ area, onUpdate }: ZoneCardProps) => {
             label={
               <Box display="flex" alignItems="center" gap={1}>
                 <BookmarkIcon fontSize="small" />
-                <Typography variant="body2">
+                <Typography variant="body2" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
                   {area.manual_override ? t('area.usePresetMode') : t('area.usingPresetMode')}
                 </Typography>
               </Box>
@@ -353,7 +367,7 @@ const ZoneCard = ({ area, onUpdate }: ZoneCardProps) => {
 
         <Box display="flex" alignItems="center" gap={1} mb={area.devices.length > 0 ? 2 : 0}>
           <SensorsIcon fontSize="small" color="action" />
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
             {t('area.deviceCount', { count: area.devices.length })}
             {snapshot.isDraggingOver && ` - ${t('area.dropToAdd')}`}
           </Typography>
@@ -372,20 +386,33 @@ const ZoneCard = ({ area, onUpdate }: ZoneCardProps) => {
                       e.stopPropagation()
                       handleRemoveDevice(device.id)
                     }}
-                    sx={{ color: 'text.secondary' }}
+                    sx={{ 
+                      color: 'text.secondary',
+                      p: { xs: 0.5, sm: 1 }
+                    }}
                   >
                     <RemoveCircleOutlineIcon fontSize="small" />
                   </IconButton>
                 }
-                sx={{ py: 0.5 }}
+                sx={{ 
+                  py: { xs: 0.5, sm: 1 },
+                  pr: { xs: 5, sm: 6 }
+                }}
               >
-                <Box sx={{ mr: 1, display: 'flex', alignItems: 'center', minWidth: 24 }}>
+                <Box sx={{ mr: { xs: 0.5, sm: 1 }, display: 'flex', alignItems: 'center', minWidth: 24 }}>
                   {getDeviceStatusIcon(device)}
                 </Box>
                 <ListItemText
                   primary={
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <Typography variant="body2" color="text.primary">
+                    <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
+                      <Typography 
+                        variant="body2" 
+                        color="text.primary"
+                        sx={{ 
+                          fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                          wordBreak: 'break-word'
+                        }}
+                      >
                         {device.name || device.id}
                       </Typography>
                       {device.type === 'thermostat' && device.hvac_action && (
@@ -393,8 +420,8 @@ const ZoneCard = ({ area, onUpdate }: ZoneCardProps) => {
                           label={device.hvac_action} 
                           size="small" 
                           sx={{ 
-                            height: 18, 
-                            fontSize: '0.65rem',
+                            height: { xs: 16, sm: 18 }, 
+                            fontSize: { xs: '0.6rem', sm: '0.65rem' },
                             bgcolor: device.hvac_action === 'heating' ? 'error.main' : 'info.main'
                           }} 
                         />
@@ -404,7 +431,8 @@ const ZoneCard = ({ area, onUpdate }: ZoneCardProps) => {
                   secondary={getDeviceStatusText(device)}
                   secondaryTypographyProps={{
                     variant: 'caption',
-                    color: 'text.secondary'
+                    color: 'text.secondary',
+                    sx: { fontSize: { xs: '0.7rem', sm: '0.75rem' } }
                   }}
                 />
               </ListItem>

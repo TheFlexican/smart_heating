@@ -42,21 +42,28 @@ const Header = ({ wsConnected = false }: HeaderProps) => {
         borderColor: 'divider'
       }}
     >
-      <Toolbar>
-        <ThermostatIcon sx={{ mr: 2, color: 'text.secondary' }} />
+      <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }}>
+        <ThermostatIcon sx={{ mr: { xs: 1, sm: 2 }, color: 'text.secondary' }} />
         <Typography 
           variant="h6" 
           component="div" 
-          sx={{ flexGrow: 1, color: 'text.primary' }}
+          sx={{ 
+            flexGrow: 1, 
+            color: 'text.primary',
+            fontSize: { xs: '1rem', sm: '1.25rem' }
+          }}
         >
           {t('header.title')}
         </Typography>
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', gap: { xs: 0.5, sm: 1 }, alignItems: 'center' }}>
           {!isGlobalSettings && (
             <Tooltip title={t('header.globalSettings')}>
               <IconButton 
                 onClick={() => navigate('/settings/global')}
-                sx={{ color: 'text.secondary' }}
+                sx={{ 
+                  color: 'text.secondary',
+                  p: { xs: 0.5, sm: 1 }
+                }}
               >
                 <SettingsIcon />
               </IconButton>
@@ -65,7 +72,10 @@ const Header = ({ wsConnected = false }: HeaderProps) => {
           <Tooltip title={t('header.changeLanguage')}>
             <IconButton 
               onClick={handleLanguageMenuOpen}
-              sx={{ color: 'text.secondary' }}
+              sx={{ 
+                color: 'text.secondary',
+                p: { xs: 0.5, sm: 1 }
+              }}
             >
               <LanguageIcon />
             </IconButton>
@@ -83,17 +93,23 @@ const Header = ({ wsConnected = false }: HeaderProps) => {
             </MenuItem>
           </Menu>
           <Tooltip title={wsConnected ? t('header.realtimeActive') : t('header.realtimeInactive')}>
-            <Chip
-              icon={wsConnected ? <WifiIcon /> : <WifiOffIcon />}
-              label={wsConnected ? t('header.connected') : t('header.disconnected')}
-              size="small"
-              color={wsConnected ? 'success' : 'default'}
-              variant="outlined"
-              sx={{
-                borderColor: wsConnected ? 'success.main' : 'divider',
-                color: wsConnected ? 'success.main' : 'text.secondary'
-              }}
-            />
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Chip
+                icon={wsConnected ? <WifiIcon /> : <WifiOffIcon />}
+                label={wsConnected ? t('header.connected') : t('header.disconnected')}
+                size="small"
+                color={wsConnected ? 'success' : 'default'}
+                variant="outlined"
+                sx={{
+                  borderColor: wsConnected ? 'success.main' : 'divider',
+                  color: wsConnected ? 'success.main' : 'text.secondary',
+                  display: { xs: 'none', sm: 'flex' }
+                }}
+              />
+              <Box sx={{ display: { xs: 'flex', sm: 'none' } }}>
+                {wsConnected ? <WifiIcon color="success" /> : <WifiOffIcon color="disabled" />}
+              </Box>
+            </Box>
           </Tooltip>
           <Chip 
             label="v0.1.0" 
@@ -101,7 +117,8 @@ const Header = ({ wsConnected = false }: HeaderProps) => {
             variant="outlined"
             sx={{ 
               borderColor: 'divider',
-              color: 'text.secondary'
+              color: 'text.secondary',
+              display: { xs: 'none', sm: 'flex' }
             }}
           />
         </Box>

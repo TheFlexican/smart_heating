@@ -209,8 +209,18 @@ function App() {
         bgcolor: 'background.default'
       }}>
         <Header wsConnected={wsConnected} />
-        <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-          <Box sx={{ flex: 1, overflow: 'auto', p: 3, bgcolor: 'background.default' }}>
+        <Box sx={{ 
+          display: 'flex', 
+          flex: 1, 
+          overflow: 'hidden',
+          flexDirection: { xs: 'column', md: 'row' }
+        }}>
+          <Box sx={{ 
+            flex: 1, 
+            overflow: 'auto', 
+            p: { xs: 1.5, sm: 2, md: 3 },
+            bgcolor: 'background.default' 
+          }}>
             {safetyAlertActive && (
               <Alert 
                 severity="error" 
@@ -234,10 +244,12 @@ function App() {
               onToggleShowHidden={() => setShowHidden(!showHidden)}
             />
           </Box>
-          <DevicePanel 
-            devices={availableDevices}
-            onUpdate={handleZonesUpdate}
-          />
+          <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+            <DevicePanel 
+              devices={availableDevices}
+              onUpdate={handleZonesUpdate}
+            />
+          </Box>
         </Box>
       </Box>
     </DragDropContext>

@@ -93,7 +93,7 @@ function TabPanel(props: TabPanelProps) {
       aria-labelledby={`area-tab-${index}`}
       {...other}
     >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+      {value === index && <Box sx={{ p: { xs: 2, sm: 3 } }}>{children}</Box>}
     </div>
   )
 }
@@ -1434,37 +1434,39 @@ const ZoneDetail = () => {
       <Paper
         elevation={0}
         sx={{
-          p: 2,
+          p: { xs: 1.5, sm: 2 },
           borderBottom: 1,
           borderColor: 'divider',
           bgcolor: 'background.paper',
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <IconButton onClick={() => navigate('/')} edge="start">
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 } }}>
+            <IconButton onClick={() => navigate('/')} edge="start" sx={{ p: { xs: 0.5, sm: 1 } }}>
               <ArrowBackIcon />
             </IconButton>
             <Box>
-              <Typography variant="h5" color="text.primary">
+              <Typography variant="h5" color="text.primary" sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
                 {area.name}
               </Typography>
-              <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
+              <Box sx={{ display: 'flex', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
                 <Chip
                   label={area.state.toUpperCase()}
                   color={getStateColor(area.state)}
                   size="small"
+                  sx={{ fontSize: { xs: '0.7rem', sm: '0.8125rem' } }}
                 />
                 <Chip
                   label={area.enabled ? 'ENABLED' : 'DISABLED'}
                   color={area.enabled ? 'success' : 'default'}
                   size="small"
+                  sx={{ fontSize: { xs: '0.7rem', sm: '0.8125rem' } }}
                 />
               </Box>
             </Box>
           </Box>
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mr: 2 }}>
-            <Box sx={{ textAlign: 'right' }}>
+          <Box sx={{ display: 'flex', gap: { xs: 1, sm: 2 }, alignItems: 'center', mr: { xs: 0, sm: 2 } }}>
+            <Box sx={{ textAlign: 'right', display: { xs: 'none', sm: 'block' } }}>
               <Typography variant="body2" color="text.primary">
                 {area.enabled ? 'Heating Active' : 'Heating Disabled'}
               </Typography>
@@ -1486,7 +1488,19 @@ const ZoneDetail = () => {
           bgcolor: 'background.paper',
         }}
       >
-        <Tabs value={tabValue} onChange={handleTabChange}>
+        <Tabs 
+          value={tabValue} 
+          onChange={handleTabChange}
+          variant="scrollable"
+          scrollButtons="auto"
+          sx={{
+            '& .MuiTab-root': {
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+              minWidth: { xs: 'auto', sm: 160 },
+              px: { xs: 1, sm: 2 }
+            }
+          }}
+        >
           <Tab label={t('tabs.overview')} />
           <Tab label={t('tabs.devices')} />
           <Tab label={t('tabs.schedule')} />
@@ -1501,21 +1515,34 @@ const ZoneDetail = () => {
       <Box sx={{ flex: 1, overflow: 'auto' }}>
         {/* Overview Tab */}
         <TabPanel value={tabValue} index={0}>
-          <Box sx={{ maxWidth: 800, mx: 'auto' }}>
-            <Paper sx={{ p: 3, mb: 3 }}>
-              <Typography variant="h6" gutterBottom color="text.primary">
+          <Box sx={{ maxWidth: 800, mx: 'auto', px: { xs: 0, sm: 0 } }}>
+            <Paper sx={{ p: { xs: 2, sm: 3 }, mb: 3 }}>
+              <Typography variant="h6" gutterBottom color="text.primary" sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
                 {t('areaDetail.temperatureControl')}
               </Typography>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
                   {t('areaDetail.targetTemperature')}
                 </Typography>
-                <Typography variant="h4" color="primary">
+                <Typography variant="h4" color="primary" sx={{ fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
                   {temperature}°C
                 </Typography>
               </Box>
               <Slider
                 value={temperature}
+                sx={{
+                  '& .MuiSlider-thumb': {
+                    width: { xs: 24, sm: 20 },
+                    height: { xs: 24, sm: 20 },
+                  },
+                  '& .MuiSlider-track': {
+                    height: { xs: 6, sm: 4 },
+                  },
+                  '& .MuiSlider-rail': {
+                    height: { xs: 6, sm: 4 },
+                  },
+                }}
+
                 onChange={handleTemperatureChange}
                 onChangeCommitted={handleTemperatureCommit}
                 min={5}
