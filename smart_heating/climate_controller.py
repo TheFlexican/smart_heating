@@ -764,6 +764,13 @@ class ClimateController:
                                     "reason": "Decimal temperature difference or thermostat lag"
                                 }
                             )
+                        # Ensure switch stays on
+                        await self.hass.services.async_call(
+                            "switch",
+                            SERVICE_TURN_ON,
+                            {"entity_id": switch_id},
+                            blocking=False,
+                        )
                     # Turn off switch only if area setting allows it AND thermostats are not heating
                     elif area.shutdown_switches_when_idle:
                         await self.hass.services.async_call(

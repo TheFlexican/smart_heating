@@ -186,37 +186,82 @@ const ZoneCard = ({ area, onUpdate }: ZoneCardProps) => {
     }
   }
 
-  const getDeviceStatusText = (device: any) => {
+  const formatTemperature = (temp: number | undefined | null): string | null => {
+    if (temp === undefined || temp === null) return null
+    return `${temp.toFixed(1)}°C`
+  }
+
+  const isValidState = (state: string | undefined): boolean => {
+    return state !== undefined && state !== 'unavailable' && state !== 'unknown'
+  }
+
+  const getThermostatStatus = (device: any): string[] => {
     const parts = []
     
+    const currentTemp = formatTemperature(device.current_temperature)
+    if (currentTemp) {
+      parts.push(currentTemp)
+    }
+    
+    if (device.target_temperature !== undefined && device.target_temperature !== null && 
+        device.current_temperature !== undefined && device.current_temperature !== null &&
+        device.target_temperature > device.current_temperature) {
+      parts.push(`→ ${device.target_temperature.toFixed(1)}°C`)
+    }
+    
+    if (parts.length === 0 && device.state) {
+      parts.push(device.state)
+    }
+    
+    return parts
+  }
+
+  const getTemperatureSensorStatus = (device: any): string[] => {
+    const parts = []
+    
+    const temp = formatTemperature(device.temperature)
+    if (temp) {
+      parts.push(temp)
+    } else if (isValidState(device.state)) {
+      parts.push(`${device.state}°C`)
+    }
+    
+    return parts
+  }
+
+  const getValveStatus = (device: any): string[] => {
+    const parts = []
+    
+    if (device.position !== undefined && device.position !== null) {
+      parts.push(`${device.position}%`)
+    } else if (isValidState(device.state)) {
+      parts.push(`${device.state}%`)
+    }
+    
+    return parts
+  }
+
+  const getGenericDeviceStatus = (device: any): string[] => {
+    const parts = []
+    
+    if (isValidState(device.state)) {
+      parts.push(device.state)
+    }
+    
+    return parts
+  }
+
+  const getDeviceStatusText = (device: any): string => {
+    let parts: string[] = []
+    
     if (device.type === 'thermostat') {
-      if (device.current_temperature !== undefined && device.current_temperature !== null) {
-        parts.push(`${device.current_temperature.toFixed(1)}°C`)
-      }
-      if (device.target_temperature !== undefined && device.target_temperature !== null && 
-          device.current_temperature !== undefined && device.current_temperature !== null &&
-          device.target_temperature > device.current_temperature) {
-        parts.push(`→ ${device.target_temperature.toFixed(1)}°C`)
-      }
-      if (parts.length === 0 && device.state) {
-        parts.push(device.state)
-      }
+      parts = getThermostatStatus(device)
     } else if (device.type === 'temperature_sensor') {
-      if (device.temperature !== undefined && device.temperature !== null) {
-        parts.push(`${device.temperature.toFixed(1)}°C`)
-      } else if (device.state && device.state !== 'unavailable' && device.state !== 'unknown') {
-        parts.push(`${device.state}°C`)
-      }
+      parts = getTemperatureSensorStatus(device)
     } else if (device.type === 'valve') {
-      if (device.position !== undefined && device.position !== null) {
-        parts.push(`${device.position}%`)
-      } else if (device.state && device.state !== 'unavailable' && device.state !== 'unknown') {
-        parts.push(`${device.state}%`)
-      }
+      parts = getValveStatus(device)
     } else {
-      if (device.state && device.state !== 'unavailable' && device.state !== 'unknown') {
-        parts.push(device.state)
-      }
+      parts = getGenericDeviceStatus(device)
     }
     
     return parts.length > 0 ? parts.join(' · ') : 'unavailable'
@@ -429,10 +474,12 @@ const ZoneCard = ({ area, onUpdate }: ZoneCardProps) => {
                     </Box>
                   }
                   secondary={getDeviceStatusText(device)}
-                  secondaryTypographyProps={{
-                    variant: 'caption',
-                    color: 'text.secondary',
-                    sx: { fontSize: { xs: '0.7rem', sm: '0.75rem' } }
+                  slotProps={{
+                    secondary: {
+                      variant: 'caption',
+                      color: 'text.secondary',
+                      sx: { fontSize: { xs: '0.7rem', sm: '0.75rem' } }
+                    }
                   }}
                 />
               </ListItem>

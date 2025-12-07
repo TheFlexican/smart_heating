@@ -7,6 +7,56 @@ en dit project volgt [Semantic Versioning](https://semver.org/).
 
 ## [Niet Uitgebracht]
 
+### 🐛 Opgelost
+
+**Kritieke Schakelaar Controle Bug Fix (v0.4.3)**
+- **Onvolledige schakelaar controle logica opgelost**: Schakelaars blijven nu expliciet AAN wanneer thermostaten actief verwarmen
+  - Vorige code logde alleen de intentie om schakelaars aan te houden maar voerde de actie niet uit
+  - Expliciete `SERVICE_TURN_ON` aanroep toegevoegd wanneer `hvac_action == "heating"` gedetecteerd
+  - Voorkomt dat warmtepompen/circulatiepompen voortijdig uitschakelen
+  - Kritiek voor systemen met decimale temperatuur precisie (bijv. Google Nest thermostaten)
+  - Voorbeeld: Thermostaat verwarmt naar 19.2°C terwijl zone doel 19.2°C is → schakelaar blijft nu correct AAN
+- **Hoofdoorzaak**: Controle flow stond toe dat schakelaar uitschakelt ondanks dat thermostaten nog verwarmen
+  - Oude flow: Log bericht → doorvallen naar `elif shutdown_switches_when_idle` → schakelaar UIT
+  - Nieuwe flow: Log bericht → expliciete `SERVICE_TURN_ON` → voorkom doorvallen
+
+### 🔧 Codekwaliteit
+
+**Frontend Code Kwaliteit Verbeteringen (v0.4.3)**
+- **App.tsx** - 5/5 SonarQube problemen opgelost:
+  - Material-UI imports geconsolideerd
+  - State variabele hernoemd `zones` → `areas` voor consistentie
+  - `ZonesOverview` component geëxtraheerd om cognitieve complexiteit te verminderen
+  - `.flatMap()` vervangen door expliciete `for...of` loops voor betere leesbaarheid
+  - Alle problemen opgelost (100%)
+  
+- **ZoneCard.tsx** - 3/3 SonarQube problemen opgelost:
+  - Cognitieve complexiteit verminderd door helper functies te extraheren:
+    - `formatTemperature()` - Temperatuur formattering met null veiligheid
+    - `isValidState()` - Status validatie
+    - `getThermostatStatus()` - Thermostaat-specifieke status logica
+    - `getTemperatureSensorStatus()` - Temperatuur sensor status logica
+    - `getValveStatus()` - Klep status logica
+    - `getGenericDeviceStatus()` - Generieke apparaat status logica
+  - Verouderde `secondaryTypographyProps` vervangen door `slotProps.secondary`
+  - Alle problemen opgelost (100%)
+  
+- **AreaDetail.tsx** - 32/42 SonarQube problemen opgelost (76% oplossing):
+  - Alle component props `Readonly<>` gemaakt voor onveranderlijkheid
+  - Verouderde `inputProps` / `InputLabelProps` vervangen door `slotProps`
+  - Null-veilige optional chaining toegevoegd (`area?.target_temperature`)
+  - Geneste ternaries vervangen door IIFE voor complexe conditionele rendering
+  - Conflicterende `setHistoryRetention` variabelen hernoemd voor duidelijkheid
+  - `String.replaceAll()` gebruikt voor schonere string vervangingen
+  - `paragraph` prop vervangen door `sx={{ mb: 1 }}` voor consistentie
+  - `Number.parseFloat()` / `Number.parseInt()` gebruikt i.p.v. globale functies
+  - Resterende 10 problemen: Geavanceerde patronen die bredere refactoring vereisen
+
+- **TypeScript Library Upgrade**:
+  - Geüpgraded van ES2020 naar ES2021 in `tsconfig.json`
+  - Maakt native `String.replaceAll()` ondersteuning mogelijk
+  - Verwijdert noodzaak voor regex-gebaseerde string vervanging workarounds
+
 ### ✨ Toegevoegd
 
 **Automatische Preset Modus Wisseling (v0.4.2)**

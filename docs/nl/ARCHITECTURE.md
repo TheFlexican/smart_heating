@@ -234,10 +234,13 @@ Geautomatiseerde verwarmings controle engine met multi-apparaat ondersteuning.
    - Zet `climate.*` entiteiten naar doel temperatuur
    - Werkt met traditionele TRV's en slimme thermostaten
 
-2. **_async_control_switches()** - Binaire schakelaar controle
-   - Schakelt `switch.*` entiteiten AAN wanneer zone verwarmt
-   - Schakelt UIT wanneer zone inactief
+2. **_async_control_switches()** - Intelligente binaire schakelaar controle
+   - Monitort thermostaat `hvac_action` attribuut om werkelijke verwarmingsstatus te detecteren
+   - Houdt schakelaars AAN wanneer thermostaten actief verwarmen (zelfs wanneer zone doel bereikt)
+   - Behandelt randgevallen: decimale temperatuur verschillen, thermostaat vertraging
+   - Respecteert `shutdown_switches_when_idle` instelling per zone
    - Perfect voor circulatie pompen, zone kleppen, relais
+   - Voorbeeld: Google Nest thermostaat verwarmt naar 19.2°C terwijl zone doel 19.2°C is → schakelaar blijft AAN tot hvac_action verandert naar "idle"
 
 3. **_async_control_valves()** - Intelligente klep controle met dynamische capability detectie
    

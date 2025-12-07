@@ -1,7 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import { ThemeProvider, createTheme, CssBaseline } from '@mui/material'
-import { Box, Snackbar, Alert } from '@mui/material'
+import { 
+  ThemeProvider, 
+  createTheme, 
+  CssBaseline, 
+  Box, 
+  Snackbar, 
+  Alert 
+} from '@mui/material'
 import { DragDropContext, DropResult } from 'react-beautiful-dnd'
 import Header from './components/Header'
 import ZoneList from './components/ZoneList'
@@ -71,8 +77,87 @@ const theme = createTheme({
   },
 })
 
+interface ZonesOverviewProps {
+  wsConnected: boolean
+  safetyAlertActive: boolean
+  openthermConfig: { gateway_id?: string; enabled?: boolean }
+  areas: Zone[]
+  loading: boolean
+  showHidden: boolean
+  availableDevices: Device[]
+  handleDragEnd: (result: DropResult) => void
+  handleZonesUpdate: () => void
+  setShowHidden: (value: boolean) => void
+}
+
+const ZonesOverview = ({
+  wsConnected,
+  safetyAlertActive,
+  openthermConfig,
+  areas,
+  loading,
+  showHidden,
+  availableDevices,
+  handleDragEnd,
+  handleZonesUpdate,
+  setShowHidden,
+}: ZonesOverviewProps) => (
+  <DragDropContext onDragEnd={handleDragEnd}>
+    <Box sx={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      height: '100vh',
+      bgcolor: 'background.default'
+    }}>
+      <Header wsConnected={wsConnected} />
+      <Box sx={{ 
+        display: 'flex', 
+        flex: 1, 
+        overflow: 'hidden',
+        flexDirection: { xs: 'column', md: 'row' }
+      }}>
+        <Box sx={{ 
+          flex: 1, 
+          overflow: 'auto', 
+          p: { xs: 1.5, sm: 2, md: 3 },
+          bgcolor: 'background.default' 
+        }}>
+          {safetyAlertActive && (
+            <Alert 
+              severity="error" 
+              sx={{ mb: 2 }}
+              icon={<span style={{ fontSize: '24px' }}>🚨</span>}
+            >
+              <strong>SAFETY ALERT ACTIVE!</strong> All heating has been shut down due to a safety sensor alert. 
+              Please resolve the safety issue and manually re-enable areas in Settings.
+            </Alert>
+          )}
+          <VacationModeBanner />
+          <OpenThermStatus 
+            openthermGatewayId={openthermConfig.gateway_id}
+            enabled={openthermConfig.enabled}
+          />
+          <ZoneList 
+            areas={areas} 
+            loading={loading}
+            onUpdate={handleZonesUpdate}
+            showHidden={showHidden}
+            onToggleShowHidden={() => setShowHidden(!showHidden)}
+          />
+        </Box>
+        <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+          <DevicePanel 
+            devices={availableDevices}
+            onUpdate={handleZonesUpdate}
+          />
+        </Box>
+      </Box>
+    </Box>
+  </DragDropContext>
+)
+
 function App() {
-  const [areas, setZones] = useState<Zone[]>([])
+  const [areas, setAreas] = useState<Zone[]>([])
   const [availableDevices, setAvailableDevices] = useState<Device[]>([])
   const [loading, setLoading] = useState(true)
   const [wsConnected, setWsConnected] = useState(false)
@@ -93,7 +178,7 @@ function App() {
         getConfig(),
         getSafetySensor().catch(() => null)
       ])
-      setZones(areasData)
+      setAreas(areasData)
       
       // Check if safety alert is active
       if (safetySensorData?.alert_active) {
@@ -138,12 +223,15 @@ function App() {
     },
     onZonesUpdate: (updatedZones) => {
       // Backend now includes hidden property, no need to preserve from previous state
-      setZones(updatedZones)
+      setAreas(updatedZones)
       // Reload devices to update available list
+      const assignedDeviceIds = new Set<string>()
+      for (const area of updatedZones) {
+        for (const d of area.devices) {
+          assignedDeviceIds.add(d.id)
+        }
+      }
       getDevices().then(devicesData => {
-        const assignedDeviceIds = new Set(
-          updatedZones.flatMap(area => area.devices.map(d => d.id))
-        )
         setAvailableDevices(
           devicesData.filter(device => !assignedDeviceIds.has(device.id))
         )
@@ -154,12 +242,12 @@ function App() {
         .catch(() => setSafetyAlertActive(false))
     },
     onZoneUpdate: (updatedZone) => {
-      setZones(prevZones => 
-        prevZones.map(z => z.id === updatedZone.id ? updatedZone : z)
+      setAreas(prevAreas => 
+        prevAreas.map(z => z.id === updatedZone.id ? updatedZone : z)
       )
     },
     onZoneDelete: (areaId) => {
-      setZones(prevZones => prevZones.filter(z => z.id !== areaId))
+      setAreas(prevAreas => prevAreas.filter(z => z.id !== areaId))
       // Reload data to update available devices
       loadData()
     },
@@ -200,67 +288,25 @@ function App() {
     }
   }
 
-  const ZonesOverview = () => (
-    <DragDropContext onDragEnd={handleDragEnd}>
-      <Box sx={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        height: '100vh',
-        bgcolor: 'background.default'
-      }}>
-        <Header wsConnected={wsConnected} />
-        <Box sx={{ 
-          display: 'flex', 
-          flex: 1, 
-          overflow: 'hidden',
-          flexDirection: { xs: 'column', md: 'row' }
-        }}>
-          <Box sx={{ 
-            flex: 1, 
-            overflow: 'auto', 
-            p: { xs: 1.5, sm: 2, md: 3 },
-            bgcolor: 'background.default' 
-          }}>
-            {safetyAlertActive && (
-              <Alert 
-                severity="error" 
-                sx={{ mb: 2 }}
-                icon={<span style={{ fontSize: '24px' }}>🚨</span>}
-              >
-                <strong>SAFETY ALERT ACTIVE!</strong> All heating has been shut down due to a safety sensor alert. 
-                Please resolve the safety issue and manually re-enable areas in Settings.
-              </Alert>
-            )}
-            <VacationModeBanner />
-            <OpenThermStatus 
-              openthermGatewayId={openthermConfig.gateway_id}
-              enabled={openthermConfig.enabled}
-            />
-            <ZoneList 
-              areas={areas} 
-              loading={loading}
-              onUpdate={handleZonesUpdate}
-              showHidden={showHidden}
-              onToggleShowHidden={() => setShowHidden(!showHidden)}
-            />
-          </Box>
-          <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-            <DevicePanel 
-              devices={availableDevices}
-              onUpdate={handleZonesUpdate}
-            />
-          </Box>
-        </Box>
-      </Box>
-    </DragDropContext>
-  )
-
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router basename="/smart_heating_ui">
         <Routes>
-          <Route path="/" element={<ZonesOverview />} />
+          <Route path="/" element={
+            <ZonesOverview 
+              wsConnected={wsConnected}
+              safetyAlertActive={safetyAlertActive}
+              openthermConfig={openthermConfig}
+              areas={areas}
+              loading={loading}
+              showHidden={showHidden}
+              availableDevices={availableDevices}
+              handleDragEnd={handleDragEnd}
+              handleZonesUpdate={handleZonesUpdate}
+              setShowHidden={setShowHidden}
+            />
+          } />
           <Route path="/area/:areaId" element={<ZoneDetail />} />
           <Route path="/settings/global" element={<GlobalSettings />} />
         </Routes>

@@ -234,10 +234,13 @@ Automated heating control engine with multi-device support.
    - Sets `climate.*` entities to target temperature
    - Works with traditional TRVs and smart thermostats
 
-2. **_async_control_switches()** - Binary switch control
-   - Turns `switch.*` entities ON when area is heating
-   - Turns OFF when area is idle
+2. **_async_control_switches()** - Intelligent binary switch control
+   - Monitors thermostat `hvac_action` attribute to detect actual heating state
+   - Keeps switches ON when thermostats are actively heating (even when area target reached)
+   - Handles edge cases: decimal temperature differences, thermostat lag
+   - Respects `shutdown_switches_when_idle` setting per area
    - Perfect for circulation pumps, zone valves, relays
+   - Example: Google Nest thermostat heating to 19.2°C while area target is 19.2°C → switch stays ON until hvac_action changes to "idle"
 
 3. **_async_control_valves()** - Intelligent valve control with dynamic capability detection
    

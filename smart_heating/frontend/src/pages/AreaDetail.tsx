@@ -59,7 +59,7 @@ import {
   addPresenceSensor,
   removePresenceSensor,
   getHistoryConfig,
-  setHistoryRetention,
+  setHistoryRetention as updateHistoryRetention,
   getDevices,
   addDeviceToZone,
   removeDeviceFromZone,
@@ -82,7 +82,7 @@ interface TabPanelProps {
   value: number
 }
 
-function TabPanel(props: TabPanelProps) {
+function TabPanel(props: Readonly<TabPanelProps>) {
   const { children, value, index, ...other } = props
 
   return (
@@ -102,7 +102,7 @@ const ZoneDetail = () => {
   const { t } = useTranslation()
   const { areaId } = useParams<{ areaId: string }>()
   const navigate = useNavigate()
-  const [area, setZone] = useState<Zone | null>(null)
+  const [area, setArea] = useState<Zone | null>(null)
   const [availableDevices, setAvailableDevices] = useState<Device[]>([])
   const [showOnlyHeating, setShowOnlyHeating] = useState(true)
   const [deviceSearch, setDeviceSearch] = useState('')
@@ -111,7 +111,7 @@ const ZoneDetail = () => {
   const [loading, setLoading] = useState(true)
   const [tabValue, setTabValue] = useState(0)
   const [temperature, setTemperature] = useState(21)
-  const [historyRetention, setHistoryRetentionState] = useState(30)
+  const [historyRetention, setHistoryRetention] = useState(30)
   const [recordInterval, setRecordInterval] = useState(5)
   const [sensorDialogOpen, setSensorDialogOpen] = useState(false)
   const [sensorDialogType, setSensorDialogType] = useState<'window' | 'presence'>('window')
@@ -124,7 +124,7 @@ const ZoneDetail = () => {
   useWebSocket({
     onZoneUpdate: (updatedZone) => {
       if (updatedZone.id === areaId) {
-        setZone(updatedZone)
+        setArea(updatedZone)
         const displayTemp = (updatedZone.preset_mode && updatedZone.preset_mode !== 'none' && updatedZone.effective_target_temperature != null)
           ? updatedZone.effective_target_temperature
           : updatedZone.target_temperature
@@ -134,7 +134,7 @@ const ZoneDetail = () => {
     onZonesUpdate: (areas) => {
       const currentZone = areas.find(z => z.id === areaId)
       if (currentZone) {
-        setZone(currentZone)
+        setArea(currentZone)
         const displayTemp = (currentZone.preset_mode && currentZone.preset_mode !== 'none' && currentZone.effective_target_temperature != null)
           ? currentZone.effective_target_temperature
           : currentZone.target_temperature
@@ -161,7 +161,7 @@ const ZoneDetail = () => {
         return
       }
       
-      setZone(currentZone)
+      setArea(currentZone)
       // If preset is active, show effective temperature, otherwise base target
       const displayTemp = (currentZone.preset_mode && currentZone.preset_mode !== 'none' && currentZone.effective_target_temperature != null)
         ? currentZone.effective_target_temperature
@@ -263,7 +263,7 @@ const ZoneDetail = () => {
   const loadHistoryConfig = async () => {
     try {
       const config = await getHistoryConfig()
-      setHistoryRetentionState(config.retention_days)
+      setHistoryRetention(config.retention_days)
       setRecordInterval(config.record_interval_minutes)
     } catch (error) {
       console.error('Failed to load history config:', error)
@@ -332,7 +332,7 @@ const ZoneDetail = () => {
   const getDeviceStatusIcon = (device: any) => {
     if (device.type === 'thermostat') {
       // Check if should be heating based on area target temperature (not device's stale target)
-      const shouldHeat = area && area.target_temperature !== undefined && 
+      const shouldHeat = area?.target_temperature !== undefined && 
                         device.current_temperature !== undefined && 
                         area.target_temperature > device.current_temperature
       
@@ -359,7 +359,7 @@ const ZoneDetail = () => {
         parts.push(`${device.current_temperature.toFixed(1)}°C`)
       }
       // Use area target temperature instead of device's stale target
-      if (area && area.target_temperature !== undefined && area.target_temperature !== null && 
+      if (area?.target_temperature !== undefined && area.target_temperature !== null && 
           device.current_temperature !== undefined && device.current_temperature !== null &&
           area.target_temperature > device.current_temperature) {
         parts.push(`→ ${area.target_temperature.toFixed(1)}°C`)
@@ -420,7 +420,7 @@ const ZoneDetail = () => {
         title: t('settingsCards.presetModesTitle'),
         description: t('settingsCards.presetModesDescription'),
         icon: <BookmarkIcon />,
-        badge: area.preset_mode !== 'none' ? area.preset_mode : undefined,
+        badge: area.preset_mode === 'none' ? undefined : area.preset_mode,
         defaultExpanded: false,
         content: (
           <>
@@ -556,7 +556,7 @@ const ZoneDetail = () => {
               label="Boost Temperature"
               type="number"
               defaultValue={25}
-              inputProps={{ min: 15, max: 30, step: 0.5 }}
+              slotProps={{ htmlInput: { min: 15, max: 30, step: 0.5 } }}
               sx={{ flex: 1 }}
               id="boost-temp-input"
             />
@@ -564,7 +564,7 @@ const ZoneDetail = () => {
               label="Duration (minutes)"
               type="number"
               defaultValue={60}
-              inputProps={{ min: 5, max: 180, step: 5 }}
+              slotProps={{ htmlInput: { min: 5, max: 180, step: 5 } }}
               sx={{ flex: 1 }}
               id="boost-duration-input"
             />
@@ -575,8 +575,8 @@ const ZoneDetail = () => {
                 try {
                   const tempInput = document.getElementById('boost-temp-input') as HTMLInputElement
                   const durationInput = document.getElementById('boost-duration-input') as HTMLInputElement
-                  const temp = parseFloat(tempInput.value)
-                  const duration = parseInt(durationInput.value)
+                  const temp = Number.parseFloat(tempInput.value)
+                  const duration = Number.parseInt(durationInput.value)
                   await setBoostMode(area.id, duration, temp)
                   loadData()
                 } catch (error) {
@@ -1029,8 +1029,7 @@ const ZoneDetail = () => {
                   }
                 }}
                 disabled={!area.night_boost_enabled}
-                InputLabelProps={{ shrink: true }}
-                inputProps={{ step: 300 }}
+                slotProps={{ inputLabel: { shrink: true }, htmlInput: { step: 300 } }}
                 sx={{ flex: 1 }}
               />
               <TextField
@@ -1054,8 +1053,7 @@ const ZoneDetail = () => {
                   }
                 }}
                 disabled={!area.night_boost_enabled}
-                InputLabelProps={{ shrink: true }}
-                inputProps={{ step: 300 }}
+                slotProps={{ inputLabel: { shrink: true }, htmlInput: { step: 300 } }}
                 sx={{ flex: 1 }}
               />
             </Box>
@@ -1111,7 +1109,7 @@ const ZoneDetail = () => {
         defaultExpanded: false,
         content: (
           <>
-            <Typography variant="body2" color="text.secondary" paragraph>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               {t('settingsCards.smartNightBoostIntro')}
             </Typography>
 
@@ -1168,8 +1166,7 @@ const ZoneDetail = () => {
               disabled={!area.smart_night_boost_enabled}
               fullWidth
               helperText={t('settingsCards.targetWakeupTimeHelper')}
-              InputLabelProps={{ shrink: true }}
-              inputProps={{ step: 300 }}
+              slotProps={{ inputLabel: { shrink: true }, htmlInput: { step: 300 } }}
               sx={{ mb: 3 }}
             />
 
@@ -1241,7 +1238,7 @@ const ZoneDetail = () => {
                       ...area,
                       hysteresis_override: useGlobal ? null : 0.5
                     }
-                    setZone(updatedArea)
+                    setArea(updatedArea)
                     
                     try {
                       const response = await fetch(`/api/smart_heating/areas/${area.id}/hysteresis`, {
@@ -1256,12 +1253,12 @@ const ZoneDetail = () => {
                         const errorText = await response.text()
                         console.error('Failed to update hysteresis setting:', errorText)
                         // Revert on error
-                        setZone(area)
+                        setArea(area)
                       }
                     } catch (error) {
                       console.error('Failed to update hysteresis setting:', error)
                       // Revert on error
-                      setZone(area)
+                      setArea(area)
                     }
                   }}
                 />
@@ -1288,7 +1285,7 @@ const ZoneDetail = () => {
                         ...area,
                         hysteresis_override: typeof value === 'number' ? value : 0.5
                       }
-                      setZone(updatedArea)
+                      setArea(updatedArea)
                       
                       try {
                         const response = await fetch(`/api/smart_heating/areas/${area.id}/hysteresis`, {
@@ -1303,21 +1300,21 @@ const ZoneDetail = () => {
                           const errorText = await response.text()
                           console.error('Failed to update hysteresis:', errorText)
                           // Revert on error
-                          setZone(area)
+                          setArea(area)
                         }
                       } catch (error) {
                         console.error('Failed to update hysteresis:', error)
                         // Revert on error
-                        setZone(area)
+                        setArea(area)
                       }
                     }}
                     min={0.1}
-                    max={2.0}
+                    max={2}
                     step={0.1}
                     marks={[
                       { value: 0.1, label: '0.1°C' },
-                      { value: 1.0, label: '1.0°C' },
-                      { value: 2.0, label: '2.0°C' }
+                      { value: 1, label: '1.0°C' },
+                      { value: 2, label: '2.0°C' }
                     ]}
                     valueLabelDisplay="on"
                     valueLabelFormat={(value) => `${value}°C`}
@@ -1362,7 +1359,7 @@ const ZoneDetail = () => {
         defaultExpanded: false,
         content: (
           <>
-            <Typography variant="body2" color="text.secondary" paragraph>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               {t('settingsCards.dataRetentionDescription', { interval: recordInterval })}
             </Typography>
             
@@ -1372,7 +1369,7 @@ const ZoneDetail = () => {
             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mt: 2, mb: 3 }}>
               <Slider
                 value={historyRetention}
-                onChange={(_, value) => setHistoryRetentionState(value as number)}
+                onChange={(_, value) => setHistoryRetention(value as number)}
                 min={1}
                 max={30}
                 step={1}
@@ -1389,7 +1386,7 @@ const ZoneDetail = () => {
                 size="small"
                 onClick={async () => {
                   try {
-                    await setHistoryRetention(historyRetention)
+                    await updateHistoryRetention(historyRetention)
                     await loadHistoryConfig()
                   } catch (error) {
                     console.error('Failed to update history retention:', error)
@@ -1618,7 +1615,7 @@ const ZoneDetail = () => {
               <Typography variant="h6" gutterBottom color="text.primary">
                 {t('areaDetail.assignedDevices', { count: area.devices.length })}
               </Typography>
-              <Typography variant="body2" color="text.secondary" paragraph>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                 {t('areaDetail.devicesDescription')}
               </Typography>
 
@@ -1663,8 +1660,7 @@ const ZoneDetail = () => {
                             <Typography variant="body1" color="text.primary">
                               {device.name || device.id}
                             </Typography>
-                            {device.type === 'thermostat' && area && 
-                             area.target_temperature !== undefined && 
+                            {device.type === 'thermostat' && area?.target_temperature !== undefined && 
                              device.current_temperature !== undefined && 
                              area.target_temperature > device.current_temperature && (
                               <Chip 
@@ -1679,7 +1675,7 @@ const ZoneDetail = () => {
                         secondary={
                           <Box>
                             <Typography variant="caption" color="text.secondary" display="block">
-                              {device.type.replace(/_/g, ' ')}
+                              {String(device.type).replaceAll('_', ' ')}
                             </Typography>
                             <Typography variant="body2" color="text.primary" sx={{ mt: 0.5 }}>
                               {getDeviceStatus(device)}
@@ -1718,7 +1714,7 @@ const ZoneDetail = () => {
                   label={t('areaDetail.showOnlyClimate')}
                 />
               </Box>
-              <Typography variant="body2" color="text.secondary" paragraph>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                 {t('areaDetail.availableDevicesDescription', { area: area.name })}
               </Typography>
 
@@ -1742,11 +1738,11 @@ const ZoneDetail = () => {
                 return typeMatch && (nameMatch || entityMatch || areaMatch)
               }).length === 0 ? (
                 <Alert severity="info">
-                  {deviceSearch
-                    ? t('areaDetail.noDevicesMatch', { search: deviceSearch })
-                    : showOnlyHeating 
-                      ? t('areaDetail.noClimateDevices')
-                      : t('areaDetail.noAdditionalDevices')}
+                  {(() => {
+                    if (deviceSearch) return t('areaDetail.noDevicesMatch', { search: deviceSearch })
+                    if (showOnlyHeating) return t('areaDetail.noClimateDevices')
+                    return t('areaDetail.noAdditionalDevices')
+                  })()}
                 </Alert>
               ) : (
                 <List>
@@ -1801,7 +1797,7 @@ const ZoneDetail = () => {
                         }
                         secondary={
                           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 0.5 }}>
-                            <Chip label={device.type.replace(/_/g, ' ')} size="small" />
+                            <Chip label={String(device.type).replaceAll('_', ' ')} size="small" />
                             {device.subtype && (
                               <Chip label={device.subtype} size="small" color="primary" variant="outlined" />
                             )}
@@ -1833,7 +1829,7 @@ const ZoneDetail = () => {
               <Typography variant="h6" gutterBottom color="text.primary">
                 {t('areaDetail.temperatureHistory')}
               </Typography>
-              <Typography variant="body2" color="text.secondary" paragraph>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                 {t('areaDetail.historyDescription')}
               </Typography>
               
@@ -1886,7 +1882,7 @@ const ZoneDetail = () => {
               <Typography variant="h6" gutterBottom color="text.primary">
                 {t('areaDetail.adaptiveLearning')}
               </Typography>
-              <Typography variant="body2" color="text.secondary" paragraph>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                 {t('areaDetail.learningDescription')}
               </Typography>
 
@@ -1953,7 +1949,7 @@ const ZoneDetail = () => {
                   <Typography variant="body1" color="text.secondary" gutterBottom>
                     {t('settingsCards.smartNightBoostNotEnabled')}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" paragraph>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                     {t('settingsCards.enableSmartNightBoostInfo')}
                   </Typography>
                   <Box sx={{ mt: 2 }}>
@@ -1985,7 +1981,7 @@ const ZoneDetail = () => {
                 </Button>
               </Box>
 
-              <Typography variant="body2" color="text.secondary" paragraph>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                 {t('areaDetail.logsDescription')}
               </Typography>
 
@@ -2041,19 +2037,28 @@ const ZoneDetail = () => {
                 />
               </Box>
 
-              {logsLoading ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                  <CircularProgress />
-                </Box>
-              ) : logs.length === 0 ? (
-                <Box sx={{ textAlign: 'center', py: 4 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    {t('settingsCards.noLogsYet')}
-                  </Typography>
-                </Box>
-              ) : (
-                <List sx={{ bgcolor: 'background.paper' }}>
-                  {logs.map((log, index) => {
+              {(() => {
+                if (logsLoading) {
+                  return (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                      <CircularProgress />
+                    </Box>
+                  )
+                }
+                
+                if (logs.length === 0) {
+                  return (
+                    <Box sx={{ textAlign: 'center', py: 4 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        {t('settingsCards.noLogsYet')}
+                      </Typography>
+                    </Box>
+                  )
+                }
+                
+                return (
+                  <List sx={{ bgcolor: 'background.paper' }}>
+                    {logs.map((log, index) => {
                     const timestamp = new Date(log.timestamp)
                     const timeStr = timestamp.toLocaleTimeString('nl-NL', { 
                       hour: '2-digit', 
@@ -2076,7 +2081,7 @@ const ZoneDetail = () => {
                     }
                     
                     return (
-                      <Box key={index}>
+                      <Box key={`${log.timestamp}-${index}`}>
                         {index > 0 && <Divider />}
                         <ListItem alignItems="flex-start" sx={{ py: 2 }}>
                           <ListItemIcon sx={{ minWidth: 40, mt: 0.5 }}>
@@ -2122,7 +2127,8 @@ const ZoneDetail = () => {
                     )
                   })}
                 </List>
-              )}
+                )
+              })()}
             </Paper>
           </Box>
         </TabPanel>

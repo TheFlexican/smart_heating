@@ -7,6 +7,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### 🐛 Fixed
+
+**Critical Switch Control Bug Fix (v0.4.3)**
+- **Fixed incomplete switch control logic**: Switches now explicitly stay ON when thermostats are actively heating
+  - Previous code only logged intent to keep switches on but didn't execute the action
+  - Added explicit `SERVICE_TURN_ON` call when `hvac_action == "heating"` detected
+  - Prevents heat pumps/circulation pumps from turning off prematurely
+  - Critical for systems with decimal temperature precision (e.g., Google Nest thermostats)
+  - Example: Thermostat heating to 19.2°C while area target is 19.2°C → switch now correctly stays ON
+- **Root cause**: Control flow allowed switch to turn off despite thermostats still heating
+  - Old flow: Log message → fall through to `elif shutdown_switches_when_idle` → switch OFF
+  - New flow: Log message → explicit `SERVICE_TURN_ON` → prevent fall-through
+
+### 🔧 Code Quality
+
+**Frontend Code Quality Improvements (v0.4.3)**
+- **App.tsx** - Fixed 5/5 SonarQube issues:
+  - Consolidated Material-UI imports
+  - Renamed state variable `zones` → `areas` for consistency
+  - Extracted `ZonesOverview` component to reduce cognitive complexity
+  - Replaced `.flatMap()` with explicit `for...of` loops for better readability
+  - All issues resolved (100%)
+  
+- **ZoneCard.tsx** - Fixed 3/3 SonarQube issues:
+  - Reduced cognitive complexity by extracting helper functions:
+    - `formatTemperature()` - Temperature formatting with null safety
+    - `isValidState()` - State validation
+    - `getThermostatStatus()` - Thermostat-specific status logic
+    - `getTemperatureSensorStatus()` - Temperature sensor status logic
+    - `getValveStatus()` - Valve status logic
+    - `getGenericDeviceStatus()` - Generic device status logic
+  - Replaced deprecated `secondaryTypographyProps` with `slotProps.secondary`
+  - All issues resolved (100%)
+  
+- **AreaDetail.tsx** - Fixed 32/42 SonarQube issues (76% resolution):
+  - Made all component props `Readonly<>` for immutability
+  - Replaced deprecated `inputProps` / `InputLabelProps` with `slotProps`
+  - Added null-safe optional chaining (`area?.target_temperature`)
+  - Replaced nested ternaries with IIFE for complex conditional rendering
+  - Renamed conflicting `setHistoryRetention` variables for clarity
+  - Used `String.replaceAll()` for cleaner string replacements
+  - Replaced `paragraph` prop with `sx={{ mb: 1 }}` for consistency
+  - Used `Number.parseFloat()` / `Number.parseInt()` instead of global functions
+  - Remaining 10 issues: Advanced patterns requiring broader refactoring
+
+- **TypeScript Library Upgrade**:
+  - Upgraded from ES2020 to ES2021 in `tsconfig.json`
+  - Enables native `String.replaceAll()` support
+  - Removes need for regex-based string replacement workarounds
+
 ### ✨ Added
 
 **Automatic Preset Mode Switching (v0.4.2)**
