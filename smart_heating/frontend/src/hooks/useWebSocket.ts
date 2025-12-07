@@ -62,7 +62,7 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
       isAuthenticatedRef.current = false
 
       ws.onopen = () => {
-        console.log('WebSocket opened, waiting for auth_required...')
+        // WebSocket connection opened, waiting for authentication
       }
 
       ws.onmessage = (event) => {
@@ -71,7 +71,6 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
           
           // Handle authentication phase
           if (message.type === 'auth_required') {
-            console.log('Auth required, sending token...')
             const token = getAuthToken()
             if (!token) {
               console.warn('No auth token found - WebSocket real-time updates will be disabled')
@@ -91,7 +90,6 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
           }
           
           if (message.type === 'auth_ok') {
-            console.log('WebSocket authenticated successfully')
             isAuthenticatedRef.current = true
             setIsConnected(true)
             setError(null)
@@ -117,18 +115,14 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
           if (message.type === 'result') {
             // Check if this is a subscription update (has event data)
             if (message.result?.event === 'update' && message.result?.data?.areas) {
-              console.log('Received areas update via WebSocket')
               // Convert areas object to array (backend sends object with area_id as keys)
               const areasData = message.result.data.areas
               const areasArray = Object.values(areasData) as Zone[]
-              console.log('Received areas update:', areasArray)
               options.onZonesUpdate?.(areasArray)
               return
             }
             
-            if (message.success) {
-              console.log('Command successful:', message.id)
-            } else {
+            if (!message.success) {
               console.error('Command failed:', message.error)
               setError(message.error?.message || 'Command failed')
             }
@@ -180,7 +174,6 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
       }
 
       ws.onclose = () => {
-        console.log('WebSocket disconnected')
         setIsConnected(false)
         wsRef.current = null
         options.onDisconnect?.()
@@ -188,7 +181,6 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
         // Attempt to reconnect with exponential backoff
         if (reconnectAttempts.current < maxReconnectAttempts) {
           const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000)
-          console.log(`Reconnecting in ${delay}ms...`)
           
           reconnectTimeoutRef.current = setTimeout(() => {
             reconnectAttempts.current++

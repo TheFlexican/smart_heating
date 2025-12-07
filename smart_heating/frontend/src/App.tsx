@@ -116,17 +116,14 @@ function App() {
   // WebSocket connection for real-time updates
   useWebSocket({
     onConnect: () => {
-      console.log('WebSocket connected')
       setWsConnected(true)
       setShowConnectionAlert(false)
     },
     onDisconnect: () => {
-      console.log('WebSocket disconnected')
       setWsConnected(false)
       setShowConnectionAlert(true)
     },
     onZonesUpdate: (updatedZones) => {
-      console.log('Received areas update:', updatedZones)
       // Backend now includes hidden property, no need to preserve from previous state
       setZones(updatedZones)
       // Reload devices to update available list
@@ -140,13 +137,11 @@ function App() {
       })
     },
     onZoneUpdate: (updatedZone) => {
-      console.log('Received area update:', updatedZone)
       setZones(prevZones => 
         prevZones.map(z => z.id === updatedZone.id ? updatedZone : z)
       )
     },
     onZoneDelete: (areaId) => {
-      console.log('Received area delete:', areaId)
       setZones(prevZones => prevZones.filter(z => z.id !== areaId))
       // Reload data to update available devices
       loadData()

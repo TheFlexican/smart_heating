@@ -160,12 +160,6 @@ const ZoneDetail = () => {
         return
       }
       
-      console.log('Loaded zone data:', {
-        id: currentZone.id,
-        name: currentZone.name,
-        hysteresis_override: currentZone.hysteresis_override
-      })
-      
       setZone(currentZone)
       // If preset is active, show effective temperature, otherwise base target
       const displayTemp = (currentZone.preset_mode && currentZone.preset_mode !== 'none' && currentZone.effective_target_temperature != null)
@@ -744,7 +738,6 @@ const ZoneDetail = () => {
                     console.log('Setting use_global_presence to:', newValue)
                     try {
                       await setAreaPresenceConfig(area.id, newValue)
-                      console.log('Successfully updated presence config')
                       // Force reload to get updated data
                       await loadData()
                     } catch (error) {
@@ -1127,7 +1120,6 @@ const ZoneDetail = () => {
                   checked={area.hysteresis_override === null || area.hysteresis_override === undefined}
                   onChange={async (e) => {
                     const useGlobal = e.target.checked
-                    console.log('Toggle changed:', { useGlobal, areaId: area.id })
                     
                     // Optimistic update
                     const updatedArea = {
@@ -1137,7 +1129,6 @@ const ZoneDetail = () => {
                     setZone(updatedArea)
                     
                     try {
-                      console.log('Sending API request to:', `/api/smart_heating/areas/${area.id}/hysteresis`)
                       const response = await fetch(`/api/smart_heating/areas/${area.id}/hysteresis`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -1146,15 +1137,11 @@ const ZoneDetail = () => {
                           hysteresis: useGlobal ? null : 0.5
                         })
                       })
-                      console.log('Response:', response.status, response.ok)
                       if (!response.ok) {
                         const errorText = await response.text()
                         console.error('Failed to update hysteresis setting:', errorText)
                         // Revert on error
                         setZone(area)
-                      } else {
-                        const result = await response.json()
-                        console.log('Success:', result)
                       }
                     } catch (error) {
                       console.error('Failed to update hysteresis setting:', error)
@@ -1181,8 +1168,6 @@ const ZoneDetail = () => {
                   <Slider
                     value={area.hysteresis_override || 0.5}
                     onChange={async (_e, value) => {
-                      console.log('Slider changed:', { value, areaId: area.id })
-                      
                       // Optimistic update
                       const updatedArea = {
                         ...area,
@@ -1191,7 +1176,6 @@ const ZoneDetail = () => {
                       setZone(updatedArea)
                       
                       try {
-                        console.log('Sending API request to:', `/api/smart_heating/areas/${area.id}/hysteresis`)
                         const response = await fetch(`/api/smart_heating/areas/${area.id}/hysteresis`, {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
@@ -1200,15 +1184,11 @@ const ZoneDetail = () => {
                             hysteresis: value
                           })
                         })
-                        console.log('Response:', response.status, response.ok)
                         if (!response.ok) {
                           const errorText = await response.text()
                           console.error('Failed to update hysteresis:', errorText)
                           // Revert on error
                           setZone(area)
-                        } else {
-                          const result = await response.json()
-                          console.log('Success:', result)
                         }
                       } catch (error) {
                         console.error('Failed to update hysteresis:', error)

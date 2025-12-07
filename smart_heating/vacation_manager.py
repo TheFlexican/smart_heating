@@ -42,9 +42,13 @@ class VacationManager:
             return
         
         try:
-            with open(self._storage_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                self._data.update(data)
+            # Use executor to avoid blocking
+            def _read():
+                with open(self._storage_file, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            
+            data = await self.hass.async_add_executor_job(_read)
+            self._data.update(data)
             
             # Check if vacation mode should auto-expire
             if self._data["enabled"]:
