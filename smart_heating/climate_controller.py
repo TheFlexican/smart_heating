@@ -46,6 +46,26 @@ class ClimateController:
         self._area_heating_events = {}  # Track active heating events per area
         self._last_set_temperatures = {}  # Cache last set temperature per thermostat to avoid unnecessary API calls
 
+    def _is_any_thermostat_actively_heating(self, area: Area) -> bool:
+        """Check if any thermostat in the area is actively heating.
+        
+        This checks the hvac_action attribute to determine actual heating state,
+        not just whether heating is requested. Useful for detecting when thermostats
+        are still heating due to decimal temperature differences or lag.
+        
+        Args:
+            area: Area instance
+            
+        Returns:
+            True if any thermostat reports hvac_action == "heating"
+        """
+        thermostats = area.get_thermostats()
+        for thermostat_id in thermostats:
+            state = self.hass.states.get(thermostat_id)
+            if state and state.attributes.get("hvac_action") == "heating":
+                return True
+        return False
+
     def _get_valve_capability(self, entity_id: str) -> dict[str, Any]:
         """Get valve control capabilities from HA entity.
         
@@ -518,6 +538,28 @@ class ClimateController:
                         }
                     )
             elif should_stop:
+                # Check if thermostats are still actively heating before going idle
+                thermostats_still_heating = self._is_any_thermostat_actively_heating(area)
+                
+                if thermostats_still_heating:
+                    # Target reached but thermostat still heating - log this state
+                    _LOGGER.info(
+                        "Area %s: Target reached (%.1f°C/%.1f°C) but thermostat still heating - waiting for idle",
+                        area_id, current_temp, target_temp
+                    )
+                    if hasattr(self, 'area_logger') and self.area_logger:
+                        self.area_logger.log_event(
+                            area_id,
+                            "heating",
+                            f"Target reached but thermostat still heating - waiting for idle",
+                            {
+                                "current_temp": current_temp,
+                                "target_temp": target_temp,
+                                "state": "idle_pending",
+                                "reason": "Thermostat hvac_action still reports heating (decimal difference or lag)"
+                            }
+                        )
+                
                 # End heating event if active and learning engine available
                 if self.learning_engine and area_id in self._area_heating_events:
                     del self._area_heating_events[area_id]
@@ -532,6 +574,7 @@ class ClimateController:
                     )
                 
                 # Turn off heating but update target temperature to schedule value
+                # Switches will stay on if thermostats are still heating (handled in _async_control_switches)
                 await self._async_set_area_heating(area, False, target_temp)
                 area.state = "idle"  # Update area state
                 _LOGGER.debug(
@@ -539,16 +582,18 @@ class ClimateController:
                     area_id, current_temp, target_temp
                 )
                 if hasattr(self, 'area_logger') and self.area_logger:
-                    self.area_logger.log_event(
-                        area_id,
-                        "heating",
-                        f"Heating stopped - target {target_temp:.1f}°C reached",
-                        {
-                            "current_temp": current_temp,
-                            "target_temp": target_temp,
-                            "state": "idle"
-                        }
-                    )
+                    # Only log normal idle if thermostats are not still heating (avoid duplicate logs)
+                    if not thermostats_still_heating:
+                        self.area_logger.log_event(
+                            area_id,
+                            "heating",
+                            f"Heating stopped - target {target_temp:.1f}°C reached",
+                            {
+                                "current_temp": current_temp,
+                                "target_temp": target_temp,
+                                "state": "idle"
+                            }
+                        )
         
         # Control OpenTherm gateway (boiler) based on aggregated demand
         await self._async_control_opentherm_gateway(len(heating_areas) > 0, max_target_temp)
@@ -677,8 +722,17 @@ class ClimateController:
                 )
 
     async def _async_control_switches(self, area: Area, heating: bool) -> None:
-        """Control switches (pumps, relays) in an area."""
+        """Control switches (pumps, relays) in an area.
+        
+        When heating=False but thermostats are still actively heating (hvac_action=="heating"),
+        switches will remain on to support the thermostat until it reaches idle state.
+        This handles the case where target temperature is reached but the thermostat
+        is still heating due to decimal differences or lag.
+        """
         switches = area.get_switches()
+        
+        # Check if any thermostat is still actively heating
+        thermostats_still_heating = self._is_any_thermostat_actively_heating(area)
         
         for switch_id in switches:
             try:
@@ -692,8 +746,26 @@ class ClimateController:
                     )
                     _LOGGER.debug("Turned on switch %s", switch_id)
                 else:
-                    # Turn off switch only if area setting allows it
-                    if area.shutdown_switches_when_idle:
+                    # Check if thermostats are still heating before turning off
+                    if thermostats_still_heating:
+                        # Keep switch on because thermostat is still actively heating
+                        _LOGGER.info(
+                            "Area %s: Target reached but thermostat still heating - keeping switch %s ON",
+                            area.area_id, switch_id
+                        )
+                        if hasattr(self, 'area_logger') and self.area_logger:
+                            self.area_logger.log_event(
+                                area.area_id,
+                                "switch",
+                                f"Target reached but thermostat still heating - keeping {switch_id} ON",
+                                {
+                                    "switch_id": switch_id,
+                                    "state": "idle_but_thermostat_heating",
+                                    "reason": "Decimal temperature difference or thermostat lag"
+                                }
+                            )
+                    # Turn off switch only if area setting allows it AND thermostats are not heating
+                    elif area.shutdown_switches_when_idle:
                         await self.hass.services.async_call(
                             "switch",
                             SERVICE_TURN_OFF,
