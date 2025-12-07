@@ -11,7 +11,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er, area_registry as ar, device_registry as dr
 
 from .const import DOMAIN
-from .area_manager import AreaManager, Area
+from .area_manager import AreaManager
+from .models import Area, Schedule
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -1058,7 +1059,7 @@ class SmartHeatingAPIView(HomeAssistantView):
                     )
                 
                 # Import Area class
-                from .area_manager import Area
+                from .models import Area
                 
                 # Create area with default settings
                 area = Area(
@@ -1111,7 +1112,7 @@ class SmartHeatingAPIView(HomeAssistantView):
                     )
                 
                 # Import Area class
-                from .area_manager import Area
+                from .models import Area
                 
                 # Create area with default settings
                 area = Area(
@@ -1883,7 +1884,7 @@ class SmartHeatingAPIView(HomeAssistantView):
                     )
             
             # Create schedule from frontend data
-            from .area_manager import Schedule
+            from .models import Schedule
             
             # Validate required fields - accept either 'time' (legacy) or 'start_time' (new)
             time_str = data.get("time") or data.get("start_time")

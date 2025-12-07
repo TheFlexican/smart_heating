@@ -14,7 +14,8 @@ from homeassistant.components.climate.const import (
     SERVICE_SET_TEMPERATURE,
 )
 
-from .area_manager import AreaManager, Area
+from .area_manager import AreaManager
+from .models import Area
 from .const import (
     DEVICE_TYPE_THERMOSTAT,
     DEVICE_TYPE_TEMPERATURE_SENSOR,

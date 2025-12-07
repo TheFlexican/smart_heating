@@ -9,7 +9,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import SmartHeatingCoordinator
-from .area_manager import Area
+from .models import Area
 
 _LOGGER = logging.getLogger(__name__)
 
