@@ -447,7 +447,6 @@ class AreaManager:
         
         # No sensors in alert state
         return False, None
-        return False
     
     def is_safety_alert_active(self) -> bool:
         """Check if safety alert is currently active.

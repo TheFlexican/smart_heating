@@ -7,6 +7,26 @@ en dit project volgt [Semantic Versioning](https://semver.org/).
 
 ## [Niet Uitgebracht]
 
+### 🔧 Codekwaliteit
+
+**SonarQube Analyse & Code Opschoning (v0.4.1)**
+- **Opgeloste Kritieke Problemen**:
+  - Onbereikbare code verwijderd in `area_manager.py`
+  - Ongebruikte variabelen verwijderd in hele codebase
+  - Blanco `except` clausule opgelost (vangt nu specifieke `Exception`)
+  - Dubbele conditionele branches verwijderd
+  - Python 3.9 compatibiliteit hersteld (Optional type hints)
+- **Code Organisatie**:
+  - Constanten geëxtraheerd voor dubbele string literals
+  - `ERROR_UNKNOWN_ENDPOINT`, `ERROR_HISTORY_NOT_AVAILABLE`, `ERROR_VACATION_NOT_INITIALIZED` toegevoegd in `api.py`
+  - `ERROR_AREA_NOT_FOUND` toegevoegd in service handlers
+  - `ENDPOINT_PREFIX_AREAS` constante voor consistente endpoint afhandeling
+- **Verminderde Cognitieve Complexiteit**:
+  - `validate_schedule_data()` gerefactored met hulpmethoden `_validate_time_format()` en `_validate_days_list()`
+  - Device detectie helpers geëxtraheerd in `api.py`: `_determine_mqtt_device_type()` en `_get_ha_area_name()`
+  - Verbeterde code leesbaarheid zonder functionaliteit op te offeren
+- **Onderhoudbaarheid**: Alle oplosbare SonarQube problemen verholpen, resterende waarschuwingen zijn ontwerpkeuzes of false positives
+
 ### ✨ Toegevoegd
 
 **Verbeterde Schema UI met Datumkiezers & Meerdaagse Selectie (v0.4.0)**

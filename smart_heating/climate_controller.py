@@ -1,7 +1,7 @@
 """Climate controller for Smart Heating."""
 import logging
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.const import (
@@ -421,13 +421,12 @@ class ClimateController:
                     target_temp = vacation_min_temp
             
             # Apply HVAC mode (off/heat/cool/auto)
-            if hasattr(area, 'hvac_mode'):
-                if area.hvac_mode == "off":
-                    # HVAC mode is off - disable heating for this area
-                    await self._async_set_area_heating(area, False)
-                    area.state = "off"
-                    _LOGGER.debug("Area %s: HVAC mode is OFF - skipping", area_id)
-                    continue
+            if hasattr(area, 'hvac_mode') and area.hvac_mode == "off":
+                # HVAC mode is off - disable heating for this area
+                await self._async_set_area_heating(area, False)
+                area.state = "off"
+                _LOGGER.debug("Area %s: HVAC mode is OFF - skipping", area_id)
+                continue
             
             current_temp = area.current_temperature
             
@@ -532,7 +531,7 @@ class ClimateController:
             await history_tracker.async_save()
 
     async def _async_set_area_heating(
-        self, area: Area, heating: bool, target_temp: float | None = None
+        self, area: Area, heating: bool, target_temp: Optional[float] = None
     ) -> None:
         """Set heating state for an area.
         
@@ -556,7 +555,7 @@ class ClimateController:
         await self._async_control_valves(area, heating, target_temp)
 
     async def _async_control_thermostats(
-        self, area: Area, heating: bool, target_temp: float | None
+        self, area: Area, heating: bool, target_temp: Optional[float]
     ) -> None:
         """Control thermostats in an area."""
         thermostats = area.get_thermostats()
@@ -625,7 +624,7 @@ class ClimateController:
                             blocking=False,
                         )
                         _LOGGER.debug("Turned off thermostat %s", thermostat_id)
-                    except Exception as turn_off_err:
+                    except Exception:
                         # If turn_off not supported, set to frost protection or minimum temperature
                         min_temp = 5.0  # Frost protection minimum
                         if self.area_manager.frost_protection_enabled:
@@ -684,7 +683,7 @@ class ClimateController:
                 )
 
     async def _async_control_valves(
-        self, area: Area, heating: bool, target_temp: float | None
+        self, area: Area, heating: bool, target_temp: Optional[float]
     ) -> None:
         """Control valves/TRVs in an area.
         
@@ -820,7 +819,7 @@ class ClimateController:
                     valve_id, err
                 )
 
-    async def _async_get_outdoor_temperature(self, area: Area) -> float | None:
+    async def _async_get_outdoor_temperature(self, area: Area) -> Optional[float]:
         """Get outdoor temperature for learning.
         
         Args:

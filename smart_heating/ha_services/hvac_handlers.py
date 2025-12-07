@@ -15,6 +15,9 @@ from ..coordinator import SmartHeatingCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
+# Error message constants
+ERROR_AREA_NOT_FOUND = "Area %s not found"
+
 
 async def async_handle_set_preset_mode(
     call: ServiceCall, 
@@ -35,7 +38,7 @@ async def async_handle_set_preset_mode(
     
     area = area_manager.get_area(area_id)
     if not area:
-        _LOGGER.error("Area %s not found", area_id)
+        _LOGGER.error(ERROR_AREA_NOT_FOUND, area_id)
         return
     
     try:
@@ -67,7 +70,7 @@ async def async_handle_set_boost_mode(
     
     area = area_manager.get_area(area_id)
     if not area:
-        _LOGGER.error("Area %s not found", area_id)
+        _LOGGER.error(ERROR_AREA_NOT_FOUND, area_id)
         return
     
     try:
@@ -98,7 +101,7 @@ async def async_handle_cancel_boost(
     
     area = area_manager.get_area(area_id)
     if not area:
-        _LOGGER.error("Area %s not found", area_id)
+        _LOGGER.error(ERROR_AREA_NOT_FOUND, area_id)
         return
     
     try:
@@ -129,7 +132,7 @@ async def async_handle_set_hvac_mode(
     
     area = area_manager.get_area(area_id)
     if not area:
-        _LOGGER.error("Area %s not found", area_id)
+        _LOGGER.error(ERROR_AREA_NOT_FOUND, area_id)
         return
     
     try:

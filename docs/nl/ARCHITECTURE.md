@@ -2,6 +2,24 @@
 
 Smart Heating is een Home Assistant integratie met een moderne web-gebaseerde interface voor het beheren van multi-zone verwarmingssystemen.
 
+## Codekwaliteit & Standaarden
+
+**SonarQube Analyse** (v0.4.1+)
+
+De codebase ondergaat regelmatige SonarQube analyse om hoge codekwaliteitsnormen te handhaven:
+
+- **Alle kritieke problemen opgelost**: Geen onbereikbare code, ongebruikte variabelen of blanco except clausules
+- **Constanten geëxtraheerd**: Dubbele string literals vervangen door benoemde constanten voor onderhoudbaarheid
+- **Hulpmethoden**: Complexe functies gerefactored met geëxtraheerde hulpmethoden om cognitieve complexiteit te verminderen
+- **Type veiligheid**: Python 3.9+ compatibele type hints met `Optional[]` syntax
+- **Resterende waarschuwingen**: Ontwerpkeuzes (async interfaces) of false positives (Home Assistant imports)
+
+**Belangrijke Code Patronen:**
+- `ERROR_*` constanten voor consistente foutmeldingen over API endpoints
+- `ENDPOINT_PREFIX_*` constanten voor onderhoudbare routing
+- Hulpmethoden zoals `_validate_time_format()`, `_determine_mqtt_device_type()` voor code hergebruik
+- Uitgebreide validatie met duidelijke foutmeldingen
+
 ## Architectuur op Hoog Niveau
 
 ```
@@ -435,6 +453,118 @@ Geautomatiseerde verwarmingscontrole tijdens afwezigheid.
 - API endpoints: GET/POST/DELETE `/api/smart_heating/vacation`
 - WebSocket events: `vacation_changed`, `smart_heating_vacation_started`, `smart_heating_vacation_ended`
 
+### 8. Platforms
+
+#### Climate Platform (`climate.py`)
+Creëert één `climate.area_<naam>` entiteit per zone.
+
+**Kenmerken:**
+- HVAC modi: HEAT, OFF
+- Temperatuur controle (5-30°C, 0.5° stappen)
+- Huidige zone status
+- Zone attributen (apparaten, ingeschakeld)
+
+#### Switch Platform (`switch.py`)
+Creëert één `switch.area_<naam>_control` entiteit per zone.
+
+**Kenmerken:**
+- Eenvoudige aan/uit controle
+- Gekoppeld aan area.enabled eigenschap
+
+#### Sensor Platform (`sensor.py`)
+Creëert `sensor.smart_heating_status` entiteit.
+
+**Kenmerken:**
+- Algemene systeem status
+- Zone aantal
+- Actieve zones aantal
+
+### 9. REST API (`api.py`)
+
+HTTP API gebruikt `HomeAssistantView` voor frontend communicatie.
+
+**Endpoints:**
+
+| Methode | Endpoint | Beschrijving |
+|---------|----------|--------------|
+| GET | `/api/smart_heating/areas` | Haal alle zones op met nacht boost data |
+| GET | `/api/smart_heating/areas/{id}` | Haal specifieke zone op |
+| POST | `/api/smart_heating/areas` | Creëer zone |
+| DELETE | `/api/smart_heating/areas/{id}` | Verwijder zone |
+| POST | `/api/smart_heating/areas/{id}/devices` | Voeg apparaat toe aan zone |
+| DELETE | `/api/smart_heating/areas/{id}/devices/{device_id}` | Verwijder apparaat |
+| POST | `/api/smart_heating/areas/{id}/schedules` | Voeg schema toe aan zone |
+| DELETE | `/api/smart_heating/areas/{id}/schedules/{schedule_id}` | Verwijder schema |
+| POST | `/api/smart_heating/areas/{id}/temperature` | Stel temperatuur in |
+| POST | `/api/smart_heating/areas/{id}/enable` | Schakel zone in |
+| POST | `/api/smart_heating/areas/{id}/disable` | Schakel zone uit |
+| GET | `/api/smart_heating/areas/{id}/history?hours=24` | Haal temperatuur geschiedenis op |
+| GET | `/api/smart_heating/devices` | Haal beschikbare apparaten op (ALLE platforms) |
+| GET | `/api/smart_heating/devices/refresh` | Vernieuw apparaat ontdekking |
+| GET | `/api/smart_heating/status` | Haal systeem status op |
+| POST | `/api/smart_heating/call_service` | Roep HA service aan (proxy) |
+| GET | `/api/smart_heating/vacation` | Haal vakantie modus configuratie op |
+| POST | `/api/smart_heating/vacation` | Stel vakantie modus datums in |
+| DELETE | `/api/smart_heating/vacation` | Annuleer vakantie modus |
+| GET | `/api/smart_heating/safety_sensor` | Haal veiligheids sensor configuratie op |
+| POST | `/api/smart_heating/safety_sensor` | Stel veiligheids sensor configuratie in |
+| DELETE | `/api/smart_heating/safety_sensor` | Verwijder veiligheids sensor |
+
+**Apparaat Ontdekking** (`GET /devices`):
+- Ontdekt ALLE Home Assistant climate, sensor, switch, en number entiteiten
+- Platform-onafhankelijk: Werkt met ELKE integratie (Nest, Ecobee, MQTT, Z-Wave, etc.)
+- Slimme filtering:
+  - Climate entiteiten: Alle climate domeinen
+  - Temperatuur sensoren: device_class, unit_of_measurement, of entiteit naming
+  - Schakelaars: Alleen verwarmings-gerelateerd (pompen, relais, vloerverwarming)
+  - Nummers: Klep/TRV positie controles
+- Retourneert apparaat metadata: entity_id, naam, type, HA zone toewijzing
+- Filtert apparaten uit verborgen zones (3-methoden filtering)
+
+### 10. WebSocket API (`websocket.py`)
+
+Real-time communicatie gebruikt HA WebSocket API.
+
+**Commando's:**
+- `smart_heating/subscribe_updates` - Abonneer op zone updates
+- `smart_heating/get_areas` - Haal zones op via WebSocket
+
+### 11. Service Calls
+
+Uitgebreide service API voor automatisering/script integratie:
+
+**Zone Beheer:**
+1. `smart_heating.enable_area` - Schakel zone in
+2. `smart_heating.disable_area` - Schakel zone uit
+3. `smart_heating.set_area_temperature` - Stel doel temperatuur in
+
+**Apparaat Beheer:**
+4. `smart_heating.add_device_to_area` - Voeg apparaat toe aan zone
+5. `smart_heating.remove_device_from_area` - Verwijder apparaat
+
+**Schema Beheer:**
+6. `smart_heating.add_schedule` - Voeg tijd-gebaseerd schema toe
+7. `smart_heating.remove_schedule` - Verwijder schema
+8. `smart_heating.enable_schedule` - Schakel schema in
+9. `smart_heating.disable_schedule` - Schakel schema uit
+
+**Geavanceerde Instellingen:**
+10. `smart_heating.set_night_boost` - Configureer nacht boost
+11. `smart_heating.set_opentherm_gateway` - Configureer globale OpenTherm gateway
+12. `smart_heating.set_trv_temperatures` - Stel TRV verwarmings/inactieve temperaturen in
+13. `smart_heating.set_hysteresis` - Stel globale hysterese in
+
+**Vakantie Modus:**
+14. `smart_heating.set_vacation_mode` - Configureer vakantie datums
+15. `smart_heating.cancel_vacation_mode` - Annuleer vakantie
+
+**Veiligheid:**
+16. `smart_heating.set_safety_sensor` - Configureer veiligheids sensor
+17. `smart_heating.remove_safety_sensor` - Verwijder veiligheids sensor
+
+**Systeem:**
+18. `smart_heating.refresh` - Handmatige refresh
+
 ## Frontend Componenten
 
 ### Technology Stack
@@ -531,7 +661,191 @@ src/
    - OpenTherm gateway configuratie
    - Logging en debug instellingen
 
-*Voor volledige component details en data flows, zie de Engelse versie van dit document in `docs/en/ARCHITECTURE.md`*
+**Apparaat Beheer Functies:**
+- **Locatie Filter Dropdown** - Filter apparaten op HA zone
+  - "Alle Locaties" - Toon alle beschikbare apparaten
+  - "Geen Locatie Toegewezen" - Alleen niet-toegewezen apparaten
+  - Specifieke zones (Badkamer, Woonkamer, etc.) met apparaat aantallen
+- **Directe Apparaat Toewijzing** - Apparaten toevoegen/verwijderen vanaf zone detail pagina
+- **Toevoeg Knop** (AddCircleOutlineIcon) - Enkele klik om apparaat toe te wijzen
+- **Verwijder Knop** (RemoveCircleOutlineIcon) - Enkele klik om apparaat te verwijderen
+- **Locatie Chips** - Visuele indicatoren die HA zone van apparaat tonen
+- **Real-time Updates** - Apparaten lijst vernieuwt na toevoeg/verwijder operaties
+
+**ScheduleEditor Component (v0.4.0 - Verbeterde UI):**
+- **Moderne Datum/Tijd Selectie:**
+  - Material-UI DatePicker voor datumselectie (kalender weergave)
+  - Tijd invoer voor start/eind tijden
+  - Schakel tussen "Wekelijks Terugkerend" en "Specifieke Datum" schema's
+- **Meerdaagse Selectie:**
+  - Checkbox interface voor selecteren van meerdere dagen
+  - Snelkeuze knoppen: Weekdagen, Weekend, Alle Dagen, Wissen
+  - Visuele preview van geselecteerde dagen met chips
+  - Teller indicator die aantal geselecteerde dagen toont
+- **Kaart-Gebaseerde Lay-out:**
+  - Aparte secties voor Wekelijkse en Datumspecifieke schema's
+  - Inklapbare kaarten per dag (uitvouwen/inklappen voor schonere weergave)
+  - Visuele iconen (🔁 Herhaal voor wekelijks, 📅 Evenement voor datumspecifiek)
+  - Schema aantal badges per dag
+  - Geformatteerde datums voor datumspecifieke schema's (bijv. "29 Apr, 2024")
+- **Schema Types:**
+  - Wekelijks Terugkerend: Creëer schema's voor meerdere dagen tegelijk
+  - Datumspecifiek: Eenmalige schema's voor feestdagen, evenementen, tijdelijke wijzigingen
+  - Temperatuur of Preset Modus: Schakel tussen vaste temperatuur en preset modi
+- Toevoegen/verwijderen schema's met enkele klik
+- Bewerk schema's door op chips te klikken
+- In/uitschakelen individuele schema's
+- Visuele schema chips die tijdsbereik en temperatuur/preset tonen
+
+**HistoryChart Component:**
+- Recharts lijn grafiek
+- Blauwe lijn: Huidige temperatuur
+- Gele streepjes: Doel temperatuur
+- Rode stippen: Verwarmen actieve periodes
+- Tijdsbereik selector (6u, 12u, 24u, 3d, 7d)
+- Auto-refresh elke 5 minuten
+- Responsief ontwerp
+
+**DevicePanel Component:**
+- **Universele Apparaat Ontdekking** - Toont ALLE Home Assistant apparaten
+  - Climate entiteiten van ELKE integratie (Nest, Ecobee, MQTT, Z-Wave, etc.)
+  - Temperatuur sensoren van ELK platform
+  - Verwarmings-gerelateerde schakelaars (pompen, relais, vloerverwarming)
+  - Klep/TRV positie controles
+- Platform-onafhankelijke apparaat detectie
+- Real-time beschikbaarheid updates
+- Apparaat vernieuw knop voor handmatige ontdekking
+- Filter op apparaat type iconen
+- Toont HA zone toewijzing voor elk apparaat
+
+**CreateZoneDialog Component:**
+- Zone naam invoer
+- Auto-gegenereerde area_id
+- Initiële temperatuur instelling
+- Formulier validatie
+
+### API Integratie
+
+Alle API calls gaan via `src/api.ts`:
+
+```typescript
+// Zones ophalen
+const areas = await getZones()
+
+// Zone creëren
+await createZone('woonkamer', 'Woonkamer', 21.0)
+
+// Temperatuur instellen
+await setZoneTemperature('woonkamer', 22.5)
+
+// Apparaat toevoegen
+await addDeviceToZone('woonkamer', 'device_id')
+```
+
+### Real-time Updates
+
+WebSocket verbinding voor live updates:
+- Zone status wijzigingen
+- Temperatuur updates
+- Apparaat toevoegingen/verwijderingen
+- Systeem status
+
+## Data Flow
+
+### Zone Creatie Flow
+
+```
+Gebruiker klikt "Zone Creëren"
+    ↓
+CreateZoneDialog verzamelt invoer
+    ↓
+api.createZone() roept POST /api/smart_heating/areas aan
+    ↓
+ZoneHeaterAPIView.post() routeert naar create_area()
+    ↓
+area_manager.add_area()
+    ↓
+Zone opgeslagen in opslag
+    ↓
+Coordinator haalt bijgewerkte data op
+    ↓
+WebSocket pusht update naar frontend
+    ↓
+ZoneList toont nieuwe zone kaart
+```
+
+### Temperatuur Controle Flow
+
+```
+Gebruiker versleept temperatuur slider
+    ↓
+ZoneCard onChange handler
+    ↓
+api.setZoneTemperature() roept POST /api/.../temperature aan
+    ↓
+ZoneHeaterAPIView.post() routeert naar set_temperature()
+    ↓
+area_manager.set_area_target_temperature()
+    ↓
+Zone bijgewerkt in opslag
+    ↓
+Climate controller (30s interval) detecteert wijziging
+    ↓
+Climate controller verwerkt zone:
+    │
+    ├──→ Thermostaten: climate.set_temperature naar doel
+    │
+    ├──→ Schakelaars: switch.turn_on als verwarmen, switch.turn_off als inactief
+    │
+    ├──→ Kleppen:
+    │    ├──→ Positie modus (number.*): Stel in op 100% als verwarmen, 0% als inactief
+    │    └──→ Temperatuur modus (climate.*): Stel in op heating_temp als verwarmen, idle_temp als inactief
+    │
+    └──→ Volgt verwarmings status + doel voor deze zone
+    ↓
+Na alle zones verwerkt:
+    ↓
+Climate controller aggregeert eisen:
+    - heating_areas = zones die momenteel warmte nodig hebben
+    - max_target_temp = hoogste doel over verwarmende zones
+    ↓
+OpenTherm Gateway Controle:
+    - Als any_heating: Ketel AAN, setpoint = max_target_temp + 20°C
+    - Als geen verwarming: Ketel UIT
+    ↓
+Apparaten reageren (thermostaten, schakelaars, kleppen, ketel)
+    ↓
+Coordinator haalt bijgewerkte status op (30s interval)
+    ↓
+[F°→C° conversie toegepast indien nodig]
+    ↓
+WebSocket pusht update naar frontend
+    ↓
+ZoneCard toont bijgewerkte apparaat status
+```
+
+**Multi-Apparaat Coördinatie Voorbeeld:**
+
+Woonkamer zone met doel 23°C, huidig 20°C (heeft verwarming nodig):
+1. **Thermostaat** → Stel in op 23°C
+2. **Pomp Schakelaar** → Schakel AAN
+3. **TRV (positie modus)** → Stel in op 100% open
+4. **TRV (temp modus)** → Stel in op 25°C (heating_temp)
+5. Zone gevolgd als verwarmend met doel 23°C
+
+Keuken zone met doel 19°C, huidig 21°C (geen verwarming nodig):
+1. **Thermostaat** → Stel in op 19°C (blijft gesynchroniseerd)
+2. **Pomp Schakelaar** → Schakel UIT
+3. **TRV (positie modus)** → Stel in op 0% gesloten
+4. **TRV (temp modus)** → Stel in op 10°C (idle_temp)
+5. Zone gevolgd als inactief
+
+OpenTherm Gateway (globaal):
+- Woonkamer heeft warmte nodig (doel 23°C), Keuken niet
+- Ketel AAN, setpoint = 23 + 20 = 43°C
+
+**Opmerking over Mock Apparaten:**
+Met mock MQTT apparaten reageren klep posities niet op commando's omdat er geen fysieke hardware is. Echte TRV's zouden automatisch hun klep positie aanpassen op basis van temperatuur commando's en terugrapporteren via MQTT.
 
 ## Opslag
 
@@ -563,6 +877,27 @@ Zones en configuratie worden opgeslagen met Home Assistant's storage API:
 }
 ```
 
+## Zigbee2MQTT Integratie
+
+### Apparaat Ontdekking
+
+Apparaten worden ontdekt via MQTT topics:
+- `zigbee2mqtt/bridge/devices` - Lijst van alle apparaten
+- `zigbee2mqtt/<friendly_name>` - Apparaat status
+
+### Apparaat Controle
+
+Controle berichten verzonden naar:
+- `zigbee2mqtt/<friendly_name>/set` - Verzend commando's
+
+Voorbeeld:
+```json
+{
+  "temperature": 22.5,
+  "system_mode": "heat"
+}
+```
+
 ## Beveiliging
 
 - **Authenticatie**: Alle API endpoints vereisen HA authenticatie
@@ -574,7 +909,7 @@ Zones en configuratie worden opgeslagen met Home Assistant's storage API:
 
 - **Coordinator Poll**: 30-seconden interval (configureerbaar)
 - **API Response Tijd**: < 100ms voor typische operaties
-- **Frontend Bundle**: ~1.4MB (421KB gzipped)
+- **Frontend Bundle**: ~500KB gzipped
 - **WebSocket**: Minimale overhead voor real-time updates
 
 ## Uitbreidbaarheid
@@ -597,6 +932,13 @@ Zones en configuratie worden opgeslagen met Home Assistant's storage API:
 2. Voeg client functie toe aan `frontend/src/api.ts`
 3. Gebruik in React componenten
 
----
+## Toekomstige Verbeteringen
 
-**Opmerking**: Dit is een verkorte Nederlandse versie. Voor volledige technische details, API endpoints, en code voorbeelden, raadpleeg de Engelse versie in `docs/en/ARCHITECTURE.md`.
+- [ ] Drag-and-drop apparaat toewijzing
+- [ ] Zone planning/programma's
+- [ ] Analytics dashboard
+- [ ] Slimme verwarmings algoritmes
+- [ ] Energie monitoring
+- [ ] Meertalige ondersteuning
+- [ ] Mobiele app integratie
+- [ ] Spraakbesturing optimalisatie

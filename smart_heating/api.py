@@ -1,6 +1,6 @@
 """Flask API server for Smart Heating."""
 import logging
-from typing import Any
+from typing import Any, Optional
 
 from aiohttp import web
 import aiohttp_cors
@@ -15,6 +15,12 @@ from .area_manager import AreaManager
 from .models import Area, Schedule
 
 _LOGGER = logging.getLogger(__name__)
+
+# Constants for error messages and endpoints
+ERROR_UNKNOWN_ENDPOINT = "Unknown endpoint"
+ERROR_HISTORY_NOT_AVAILABLE = "History not available"
+ERROR_VACATION_NOT_INITIALIZED = "Vacation manager not initialized"
+ENDPOINT_PREFIX_AREAS = "areas/"
 
 
 class SmartHeatingAPIView(HomeAssistantView):
@@ -62,13 +68,13 @@ class SmartHeatingAPIView(HomeAssistantView):
             elif endpoint.startswith("entity_state/"):
                 entity_id = endpoint.replace("entity_state/", "")
                 return await self.get_entity_state(request, entity_id)
-            elif endpoint.startswith("areas/") and "/history" in endpoint:
+            elif endpoint.startswith(ENDPOINT_PREFIX_AREAS) and "/history" in endpoint:
                 area_id = endpoint.split("/")[1]
                 return await self.get_history(request, area_id)
-            elif endpoint.startswith("areas/") and "/learning" in endpoint:
+            elif endpoint.startswith(ENDPOINT_PREFIX_AREAS) and "/learning" in endpoint:
                 area_id = endpoint.split("/")[1]
                 return await self.get_learning_stats(request, area_id)
-            elif endpoint.startswith("areas/") and "/logs" in endpoint:
+            elif endpoint.startswith(ENDPOINT_PREFIX_AREAS) and "/logs" in endpoint:
                 area_id = endpoint.split("/")[1]
                 return await self.get_area_logs(request, area_id)
             elif endpoint == "global_presets":
@@ -81,12 +87,12 @@ class SmartHeatingAPIView(HomeAssistantView):
                 return await self.get_vacation_mode(request)
             elif endpoint == "safety_sensor":
                 return await self.get_safety_sensor(request)
-            elif endpoint.startswith("areas/"):
+            elif endpoint.startswith(ENDPOINT_PREFIX_AREAS):
                 area_id = endpoint.split("/")[1]
                 return await self.get_area(request, area_id)
             else:
                 return web.json_response(
-                    {"error": "Unknown endpoint"}, status=404
+                    {"error": ERROR_UNKNOWN_ENDPOINT}, status=404
                 )
         except Exception as err:
             _LOGGER.error("Error handling GET %s: %s", endpoint, err)
@@ -108,19 +114,19 @@ class SmartHeatingAPIView(HomeAssistantView):
             _LOGGER.debug("POST request to endpoint: %s", endpoint)
             
             # Handle endpoints that don't require a body first
-            if endpoint.startswith("areas/") and endpoint.endswith("/enable"):
+            if endpoint.startswith(ENDPOINT_PREFIX_AREAS) and endpoint.endswith("/enable"):
                 area_id = endpoint.split("/")[1]
                 return await self.enable_area(request, area_id)
-            elif endpoint.startswith("areas/") and endpoint.endswith("/disable"):
+            elif endpoint.startswith(ENDPOINT_PREFIX_AREAS) and endpoint.endswith("/disable"):
                 area_id = endpoint.split("/")[1]
                 return await self.disable_area(request, area_id)
-            elif endpoint.startswith("areas/") and endpoint.endswith("/hide"):
+            elif endpoint.startswith(ENDPOINT_PREFIX_AREAS) and endpoint.endswith("/hide"):
                 area_id = endpoint.split("/")[1]
                 return await self.hide_area(request, area_id)
-            elif endpoint.startswith("areas/") and endpoint.endswith("/unhide"):
+            elif endpoint.startswith(ENDPOINT_PREFIX_AREAS) and endpoint.endswith("/unhide"):
                 area_id = endpoint.split("/")[1]
                 return await self.unhide_area(request, area_id)
-            elif endpoint.startswith("areas/") and endpoint.endswith("/cancel_boost"):
+            elif endpoint.startswith(ENDPOINT_PREFIX_AREAS) and endpoint.endswith("/cancel_boost"):
                 area_id = endpoint.split("/")[1]
                 return await self.cancel_boost(request, area_id)
             
@@ -128,37 +134,34 @@ class SmartHeatingAPIView(HomeAssistantView):
             data = await request.json()
             _LOGGER.debug("POST data: %s", data)
             
-            if endpoint.startswith("areas/") and endpoint.endswith("/devices"):
+            if endpoint.startswith(ENDPOINT_PREFIX_AREAS) and endpoint.endswith("/devices"):
                 area_id = endpoint.split("/")[1]
                 return await self.add_device(request, area_id, data)
-            elif endpoint.startswith("areas/") and endpoint.endswith("/schedules"):
+            elif endpoint.startswith(ENDPOINT_PREFIX_AREAS) and endpoint.endswith("/schedules"):
                 area_id = endpoint.split("/")[1]
                 return await self.add_schedule(request, area_id, data)
-            elif endpoint.startswith("areas/") and endpoint.endswith("/temperature"):
+            elif endpoint.startswith(ENDPOINT_PREFIX_AREAS) and endpoint.endswith("/temperature"):
                 area_id = endpoint.split("/")[1]
                 return await self.set_temperature(request, area_id, data)
-            elif endpoint.startswith("areas/") and endpoint.endswith("/preset_mode"):
+            elif endpoint.startswith(ENDPOINT_PREFIX_AREAS) and endpoint.endswith("/preset_mode"):
                 area_id = endpoint.split("/")[1]
                 return await self.set_preset_mode(request, area_id, data)
-            elif endpoint.startswith("areas/") and endpoint.endswith("/boost"):
+            elif endpoint.startswith(ENDPOINT_PREFIX_AREAS) and endpoint.endswith("/boost"):
                 area_id = endpoint.split("/")[1]
                 return await self.set_boost_mode(request, area_id, data)
-            elif endpoint.startswith("areas/") and endpoint.endswith("/boost"):
-                area_id = endpoint.split("/")[1]
-                return await self.set_boost_mode(request, area_id, data)
-            elif endpoint.startswith("areas/") and endpoint.endswith("/window_sensors"):
+            elif endpoint.startswith(ENDPOINT_PREFIX_AREAS) and endpoint.endswith("/window_sensors"):
                 area_id = endpoint.split("/")[1]
                 return await self.add_window_sensor(request, area_id, data)
-            elif endpoint.startswith("areas/") and endpoint.endswith("/presence_sensors"):
+            elif endpoint.startswith(ENDPOINT_PREFIX_AREAS) and endpoint.endswith("/presence_sensors"):
                 area_id = endpoint.split("/")[1]
                 return await self.add_presence_sensor(request, area_id, data)
-            elif endpoint.startswith("areas/") and endpoint.endswith("/hvac_mode"):
+            elif endpoint.startswith(ENDPOINT_PREFIX_AREAS) and endpoint.endswith("/hvac_mode"):
                 area_id = endpoint.split("/")[1]
                 return await self.set_hvac_mode(request, area_id, data)
-            elif endpoint.startswith("areas/") and endpoint.endswith("/switch_shutdown"):
+            elif endpoint.startswith(ENDPOINT_PREFIX_AREAS) and endpoint.endswith("/switch_shutdown"):
                 area_id = endpoint.split("/")[1]
                 return await self.set_switch_shutdown(request, area_id, data)
-            elif endpoint.startswith("areas/") and endpoint.endswith("/hysteresis"):
+            elif endpoint.startswith(ENDPOINT_PREFIX_AREAS) and endpoint.endswith("/hysteresis"):
                 area_id = endpoint.split("/")[1]
                 return await self.set_area_hysteresis(request, area_id, data)
             elif endpoint == "frost_protection":
@@ -175,17 +178,17 @@ class SmartHeatingAPIView(HomeAssistantView):
                 return await self.enable_vacation_mode(request, data)
             elif endpoint == "safety_sensor":
                 return await self.set_safety_sensor(request, data)
-            elif endpoint.startswith("areas/") and endpoint.endswith("/preset_config"):
+            elif endpoint.startswith(ENDPOINT_PREFIX_AREAS) and endpoint.endswith("/preset_config"):
                 area_id = endpoint.split("/")[1]
                 return await self.set_area_preset_config(request, area_id, data)
-            elif endpoint.startswith("areas/") and endpoint.endswith("/manual_override"):
+            elif endpoint.startswith(ENDPOINT_PREFIX_AREAS) and endpoint.endswith("/manual_override"):
                 area_id = endpoint.split("/")[1]
                 return await self.set_manual_override(request, area_id, data)
             elif endpoint == "call_service":
                 return await self.call_service(request, data)
             else:
                 return web.json_response(
-                    {"error": "Unknown endpoint"}, status=404
+                    {"error": ERROR_UNKNOWN_ENDPOINT}, status=404
                 )
         except Exception as err:
             _LOGGER.error("Error handling POST %s: %s", endpoint, err)
@@ -208,29 +211,29 @@ class SmartHeatingAPIView(HomeAssistantView):
                 return await self.disable_vacation_mode(request)
             elif endpoint == "safety_sensor":
                 return await self.remove_safety_sensor(request)
-            elif endpoint.startswith("areas/") and "/devices/" in endpoint:
+            elif endpoint.startswith(ENDPOINT_PREFIX_AREAS) and "/devices/" in endpoint:
                 parts = endpoint.split("/")
                 area_id = parts[1]
                 device_id = parts[3]
                 return await self.remove_device(request, area_id, device_id)
-            elif endpoint.startswith("areas/") and "/schedules/" in endpoint:
+            elif endpoint.startswith(ENDPOINT_PREFIX_AREAS) and "/schedules/" in endpoint:
                 parts = endpoint.split("/")
                 area_id = parts[1]
                 schedule_id = parts[3]
                 return await self.remove_schedule(request, area_id, schedule_id)
-            elif endpoint.startswith("areas/") and "/window_sensors/" in endpoint:
+            elif endpoint.startswith(ENDPOINT_PREFIX_AREAS) and "/window_sensors/" in endpoint:
                 parts = endpoint.split("/")
                 area_id = parts[1]
                 entity_id = "/".join(parts[3:])  # Reconstruct entity_id
                 return await self.remove_window_sensor(request, area_id, entity_id)
-            elif endpoint.startswith("areas/") and "/presence_sensors/" in endpoint:
+            elif endpoint.startswith(ENDPOINT_PREFIX_AREAS) and "/presence_sensors/" in endpoint:
                 parts = endpoint.split("/")
                 area_id = parts[1]
                 entity_id = "/".join(parts[3:])  # Reconstruct entity_id
                 return await self.remove_presence_sensor(request, area_id, entity_id)
             else:
                 return web.json_response(
-                    {"error": "Unknown endpoint"}, status=404
+                    {"error": ERROR_UNKNOWN_ENDPOINT}, status=404
                 )
         except Exception as err:
             _LOGGER.error("Error handling DELETE %s: %s", endpoint, err)
@@ -393,6 +396,57 @@ class SmartHeatingAPIView(HomeAssistantView):
         _LOGGER.warning("=== SMART HEATING: Discovery complete - found %d devices ===", len(devices))
         return web.json_response({"devices": devices})
 
+    def _determine_mqtt_device_type(self, entity: Any, state: Any) -> Optional[str]:
+        """Determine device type for MQTT entity.
+        
+        Args:
+            entity: Entity registry entry
+            state: Entity state object
+            
+        Returns:
+            Device type string or None if not a heating device
+        """
+        device_class = state.attributes.get("device_class")
+        
+        if entity.domain == "climate":
+            return "thermostat"
+        elif entity.domain == "sensor":
+            if device_class == "temperature":
+                return "temperature_sensor"
+            unit = state.attributes.get("unit_of_measurement", "")
+            if "°C" in unit or "°F" in unit or "temperature" in entity.entity_id.lower():
+                return "temperature_sensor"
+        elif entity.domain == "switch":
+            if any(keyword in entity.entity_id.lower() 
+                   for keyword in ["thermostat", "heater", "radiator", "heating", "pump", "floor", "relay"]):
+                return "switch"
+        elif entity.domain == "number":
+            if "valve" in entity.entity_id.lower() or device_class == "valve":
+                return "valve"
+        
+        return None
+
+    def _get_ha_area_name(self, entity: Any, device_registry: Any, area_registry: Any) -> Optional[str]:
+        """Get Home Assistant area name for entity.
+        
+        Args:
+            entity: Entity registry entry
+            device_registry: Device registry
+            area_registry: Area registry
+            
+        Returns:
+            Area name or None
+        """
+        if not entity.device_id:
+            return None
+        
+        device_entry = device_registry.async_get(entity.device_id)
+        if not device_entry or not device_entry.area_id:
+            return None
+        
+        area_entry = area_registry.async_get_area(device_entry.area_id)
+        return area_entry.name if area_entry else None
+
     async def refresh_devices(self, request: web.Request) -> web.Response:
         """Refresh all devices from Home Assistant and update area assignments.
         
@@ -426,47 +480,12 @@ class SmartHeatingAPIView(HomeAssistantView):
                         continue
                     
                     # Determine device type based on entity domain
-                    device_type = None
-                    device_class = state.attributes.get("device_class")
-                    
-                    if entity.domain == "climate":
-                        device_type = "thermostat"
-                    elif entity.domain == "sensor":
-                        if device_class == "temperature":
-                            device_type = "temperature_sensor"
-                        else:
-                            unit = state.attributes.get("unit_of_measurement", "")
-                            if "°C" in unit or "°F" in unit or "temperature" in entity.entity_id.lower():
-                                device_type = "temperature_sensor"
-                            else:
-                                continue
-                    elif entity.domain == "switch":
-                        if any(keyword in entity.entity_id.lower() 
-                               for keyword in ["thermostat", "heater", "radiator", "heating", "pump", "floor", "relay"]):
-                            device_type = "switch"
-                        else:
-                            continue
-                    elif entity.domain == "number":
-                        if "valve" in entity.entity_id.lower() or device_class == "valve":
-                            device_type = "valve"
-                        else:
-                            continue
-                    else:
-                        continue
-                    
+                    device_type = self._determine_mqtt_device_type(entity, state)
                     if not device_type:
                         continue
                     
                     # Get HA area assignment
-                    ha_area_id = None
-                    ha_area_name = None
-                    if entity.device_id:
-                        device_entry = device_registry.async_get(entity.device_id)
-                        if device_entry and device_entry.area_id:
-                            area_entry = area_registry.async_get_area(device_entry.area_id)
-                            if area_entry:
-                                ha_area_id = area_entry.id
-                                ha_area_name = area_entry.name
+                    ha_area_name = self._get_ha_area_name(entity, device_registry, area_registry)
                     
                     # Update device in all areas that have it assigned
                     device_updated = False
@@ -1129,7 +1148,7 @@ class SmartHeatingAPIView(HomeAssistantView):
         history_tracker = self.hass.data.get(DOMAIN, {}).get("history")
         if not history_tracker:
             return web.json_response(
-                {"error": "History not available"}, status=503
+                {"error": ERROR_HISTORY_NOT_AVAILABLE}, status=503
             )
         
         try:
@@ -1357,7 +1376,7 @@ class SmartHeatingAPIView(HomeAssistantView):
         vacation_manager = self.hass.data[DOMAIN].get("vacation_manager")
         if not vacation_manager:
             return web.json_response(
-                {"error": "Vacation manager not initialized"}, status=500
+                {"error": ERROR_VACATION_NOT_INITIALIZED}, status=500
             )
         
         return web.json_response(vacation_manager.get_data())
@@ -1377,7 +1396,7 @@ class SmartHeatingAPIView(HomeAssistantView):
         vacation_manager = self.hass.data[DOMAIN].get("vacation_manager")
         if not vacation_manager:
             return web.json_response(
-                {"error": "Vacation manager not initialized"}, status=500
+                {"error": ERROR_VACATION_NOT_INITIALIZED}, status=500
             )
         
         try:
@@ -1414,7 +1433,7 @@ class SmartHeatingAPIView(HomeAssistantView):
         vacation_manager = self.hass.data[DOMAIN].get("vacation_manager")
         if not vacation_manager:
             return web.json_response(
-                {"error": "Vacation manager not initialized"}, status=500
+                {"error": ERROR_VACATION_NOT_INITIALIZED}, status=500
             )
         
         result = await vacation_manager.async_disable()
@@ -1513,7 +1532,7 @@ class SmartHeatingAPIView(HomeAssistantView):
             try:
                 data = await request.json()
                 sensor_id = data.get("sensor_id")
-            except:
+            except Exception:
                 pass
         
         if not sensor_id:
@@ -2142,7 +2161,7 @@ class SmartHeatingAPIView(HomeAssistantView):
         history_tracker = self.hass.data.get(DOMAIN, {}).get("history")
         if not history_tracker:
             return web.json_response(
-                {"error": "History not available"}, status=503
+                {"error": ERROR_HISTORY_NOT_AVAILABLE}, status=503
             )
         
         return web.json_response({
@@ -2173,7 +2192,7 @@ class SmartHeatingAPIView(HomeAssistantView):
             history_tracker = self.hass.data.get(DOMAIN, {}).get("history")
             if not history_tracker:
                 return web.json_response(
-                    {"error": "History not available"}, status=503
+                    {"error": ERROR_HISTORY_NOT_AVAILABLE}, status=503
                 )
             
             history_tracker.set_retention_days(int(retention_days))

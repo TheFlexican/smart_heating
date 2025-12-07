@@ -51,23 +51,25 @@ sync.sh / setup.sh     # Deploy to test container
 **Root-level files:**
 - `README.md` / `README.nl.md` - User documentation
 - `CHANGELOG.md` / `CHANGELOG.nl.md` - Version history
-- `ARCHITECTURE.md` / `DEVELOPER.md` - Quick access (English, match docs/en/)
 
-**Organized docs:**
-- `docs/en/` - English technical documentation
-- `docs/nl/` - Dutch technical documentation
+**Organized docs (PRIMARY SOURCE):**
+- `docs/en/` - English technical documentation (ARCHITECTURE.md, DEVELOPER.md)
+- `docs/nl/` - Dutch technical documentation (ARCHITECTURE.md, DEVELOPER.md)
+- **Always update docs/ versions first, they are the authoritative source**
 
 **Frontend translations:**
 - `smart_heating/frontend/src/locales/en/translation.json` - English UI text
 - `smart_heating/frontend/src/locales/nl/translation.json` - Dutch UI text
 
 **When updating documentation:**
-1. Update both EN and NL versions
-2. Keep root and docs/en/ versions in sync
+1. Update docs/en/ and docs/nl/ versions (primary source)
+2. Update both EN and NL versions
 3. Update frontend translation.json if UI text changed
 4. See `docs/README.md` for complete maintenance checklist
 
 ## Development Workflow
+
+**Note:** No time constraints - take time to ensure quality and completeness
 
 **Primary Script:** `./sync.sh` - builds frontend, syncs to container, restarts HA
 **Full Reset:** `./setup.sh` - complete container restart (use when sync.sh isn't enough)

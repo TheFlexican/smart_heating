@@ -27,6 +27,53 @@ def validate_temperature(temp: Any, min_temp: float = 5.0, max_temp: float = 35.
     return True, None
 
 
+def _validate_time_format(time_str: str) -> Tuple[bool, Optional[str]]:
+    """Validate time string in HH:MM format.
+    
+    Args:
+        time_str: Time string to validate
+        
+    Returns:
+        Tuple of (is_valid, error_message)
+    """
+    if not isinstance(time_str, str) or ":" not in time_str:
+        return False, "time must be in HH:MM format"
+    
+    try:
+        hours, minutes = time_str.split(":")
+        hours_int = int(hours)
+        minutes_int = int(minutes)
+        
+        if hours_int < 0 or hours_int > 23:
+            return False, "hours must be between 0 and 23"
+        if minutes_int < 0 or minutes_int > 59:
+            return False, "minutes must be between 0 and 59"
+    except (ValueError, AttributeError):
+        return False, "invalid time format"
+    
+    return True, None
+
+
+def _validate_days_list(days: Any) -> Tuple[bool, Optional[str]]:
+    """Validate days list.
+    
+    Args:
+        days: List of days to validate
+        
+    Returns:
+        Tuple of (is_valid, error_message)
+    """
+    if not isinstance(days, list) or len(days) == 0:
+        return False, "days must be a non-empty list"
+    
+    valid_days = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+    for day in days:
+        if day not in valid_days:
+            return False, f"invalid day: {day}. Must be one of {valid_days}"
+    
+    return True, None
+
+
 def validate_schedule_data(data: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
     """Validate schedule entry data.
     
@@ -47,21 +94,9 @@ def validate_schedule_data(data: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
         return False, "days is required"
     
     # Validate time format (HH:MM)
-    time_str = data["time"]
-    if not isinstance(time_str, str) or ":" not in time_str:
-        return False, "time must be in HH:MM format"
-    
-    try:
-        hours, minutes = time_str.split(":")
-        hours_int = int(hours)
-        minutes_int = int(minutes)
-        
-        if hours_int < 0 or hours_int > 23:
-            return False, "hours must be between 0 and 23"
-        if minutes_int < 0 or minutes_int > 59:
-            return False, "minutes must be between 0 and 59"
-    except (ValueError, AttributeError):
-        return False, "invalid time format"
+    is_valid, error_msg = _validate_time_format(data["time"])
+    if not is_valid:
+        return False, error_msg
     
     # Validate temperature
     is_valid, error_msg = validate_temperature(data["temperature"])
@@ -69,14 +104,9 @@ def validate_schedule_data(data: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
         return False, error_msg
     
     # Validate days
-    days = data["days"]
-    if not isinstance(days, list) or len(days) == 0:
-        return False, "days must be a non-empty list"
-    
-    valid_days = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
-    for day in days:
-        if day not in valid_days:
-            return False, f"invalid day: {day}. Must be one of {valid_days}"
+    is_valid, error_msg = _validate_days_list(data["days"])
+    if not is_valid:
+        return False, error_msg
     
     return True, None
 

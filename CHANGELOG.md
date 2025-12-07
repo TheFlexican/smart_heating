@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### 🔧 Code Quality
+
+**SonarQube Analysis & Code Cleanup (v0.4.1)**
+- **Fixed Critical Issues**:
+  - Removed unreachable code in `area_manager.py`
+  - Removed unused variables across codebase
+  - Fixed bare `except` clause (now catches specific `Exception`)
+  - Removed duplicate conditional branches
+  - Fixed Python 3.9 compatibility (Optional type hints)
+- **Code Organization**:
+  - Extracted constants for duplicate string literals
+  - Added `ERROR_UNKNOWN_ENDPOINT`, `ERROR_HISTORY_NOT_AVAILABLE`, `ERROR_VACATION_NOT_INITIALIZED` in `api.py`
+  - Added `ERROR_AREA_NOT_FOUND` in service handlers
+  - Added `ENDPOINT_PREFIX_AREAS` constant for consistent endpoint handling
+- **Reduced Cognitive Complexity**:
+  - Refactored `validate_schedule_data()` with helper methods `_validate_time_format()` and `_validate_days_list()`
+  - Extracted device detection helpers in `api.py`: `_determine_mqtt_device_type()` and `_get_ha_area_name()`
+  - Improved code readability without sacrificing functionality
+- **Maintainability**: All fixable SonarQube issues resolved, remaining warnings are design choices or false positives
+
 ### ✨ Added
 
 **Enhanced Schedule UI with Date Pickers & Multi-Day Selection (v0.4.0)**

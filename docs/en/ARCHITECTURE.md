@@ -2,6 +2,24 @@
 
 Smart Heating is a Home Assistant integration with a modern web-based interface for managing multi-area heating systems.
 
+## Code Quality & Standards
+
+**SonarQube Analysis** (v0.4.1+)
+
+The codebase undergoes regular SonarQube analysis to maintain high code quality standards:
+
+- **All critical issues resolved**: No unreachable code, unused variables, or bare except clauses
+- **Constants extracted**: Duplicate string literals replaced with named constants for maintainability
+- **Helper methods**: Complex functions refactored with extracted helper methods to reduce cognitive complexity
+- **Type safety**: Python 3.9+ compatible type hints using `Optional[]` syntax
+- **Remaining warnings**: Design choices (async interfaces) or false positives (Home Assistant imports)
+
+**Key Code Patterns:**
+- `ERROR_*` constants for consistent error messages across API endpoints
+- `ENDPOINT_PREFIX_*` constants for maintainable routing
+- Helper methods like `_validate_time_format()`, `_determine_mqtt_device_type()` for code reuse
+- Comprehensive validation with clear error messages
+
 ## High-Level Architecture
 
 ```
