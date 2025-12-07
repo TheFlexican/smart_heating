@@ -7,6 +7,71 @@ en dit project volgt [Semantic Versioning](https://semver.org/).
 
 ## [Niet Uitgebracht]
 
+### ✨ Toegevoegd
+
+**Gebied-Specifieke Hysterese Override (v0.3.18)**
+- **Hysterese Aanpassing**: Gebieden kunnen nu de globale hysterese instelling overschrijven
+  - Schakel tussen globale hysterese (standaard 0.5°C) of gebied-specifieke waarde
+  - Bereik: 0.1°C tot 2.0°C met 0.1°C stappen
+  - Bijzonder nuttig voor vloerverwarming systemen (kan 0.1-0.3°C gebruiken)
+  - Help modal met gedetailleerde uitleg over hysterese en verwarmingssysteem types
+  - Optimistische UI updates voor directe feedback
+  - Status blijft behouden bij pagina verversing
+
+**Globale Instellingen Herontwerp (v0.3.18)**
+- **Tabblad Navigatie**: Gereorganiseerde Globale Instellingen pagina met 4 tabbladen
+  - 🌡️ **Temperatuur Tabblad**: Globale voorinstellingstemperaturen (6 presets)
+  - 👥 **Sensoren Tabblad**: Globale aanwezigheidssensor configuratie
+  - 🏖️ **Vakantie Tabblad**: Vakantiemodus instellingen (verplaatst van boven)
+  - ⚙️ **Geavanceerd Tabblad**: Hysterese en toekomstige geavanceerde instellingen
+  - Material-UI tabbladen met iconen voor betere visuele navigatie
+  - Betere organisatie en schaalbaarheid voor toekomstige functies
+  - Mobiel-vriendelijk responsief ontwerp met minder scrollen
+
+**Backend Implementatie**
+- Toegevoegd `hysteresis_override` veld aan Area model (None = gebruik globaal, float = aangepast)
+- Climate controller gebruikt gebied-specifieke hysterese wanneer ingesteld
+- API endpoint: `POST /api/smart_heating/areas/{area_id}/hysteresis`
+- WebSocket broadcast hysterese wijzigingen in real-time
+- Coordinator bevat hysteresis_override in gebied data export
+- Area logger logt wanneer verwarming geblokkeerd is door hysterese
+
+**Frontend Implementatie**
+- Nieuwe **HysteresisSettings** component in Gebied Instellingen
+  - Toggle schakelaar: "Gebruik globale hysterese" vs "Aangepaste hysterese"
+  - Slider met visuele markers (0.1°C, 0.5°C, 1.0°C, 2.0°C)
+  - Help icoon opent **HysteresisHelpModal** met gedetailleerde uitleg
+  - Real-time status weergave: "Gebruikt globaal: X°C" of "Aangepast: X°C"
+- Bijgewerkte **GlobalSettings** met tabblad layout
+  - TabPanel component voor inhoudsorganisatie
+  - Toegankelijk met ARIA labels en toetsenbord navigatie
+  - Volledige EN/NL vertaling ondersteuning voor alle tabbladen
+- **HysteresisHelpModal** component legt uit:
+  - Wat hysterese is en waarom het belangrijk is
+  - Hoe verschillende verwarmingssystemen (radiator vs vloer) verschillende waarden nodig hebben
+  - Apparatuur bescherming (voorkomt kortcyclus schade)
+  - Aanbevelingen gebaseerd op verwarmingssysteem type
+
+### 📚 Documentatie
+- Aangemaakt `docs/GLOBAL_SETTINGS_REDESIGN.md` - Architectuur beslissing document
+  - Legt Home Assistant best practices uit: Config Flow vs Custom UI
+  - Documenteert tabblad UI ontwerp en toekomstige verbetering plannen
+  - Vertaling ondersteuning details
+- Bijgewerkte vertaalbestanden (EN/NL) met nieuwe sleutels:
+  - `globalSettings.tabs.*` - Tabblad labels
+  - `globalSettings.presets.*` - Preset tabblad inhoud
+  - `globalSettings.sensors.*` - Sensoren tabblad inhoud
+  - `globalSettings.hysteresis.*` - Geavanceerd tabblad inhoud
+  - `hysteresisHelp.*` - Help modal inhoud
+
+### 🐛 Opgelost
+- **WebSocket Fout**: Opgelost vacation_manager AttributeError in WebSocket coordinator lookup
+  - Toegevoegd "vacation_manager" aan uitsluitingslijst in `websocket.py`
+  - Voorkomt behandeling van VacationManager als coordinator
+- **Console Opschoning**: Verwijderd alle debug console.log statements uit productie
+  - Opgeschoond App.tsx, AreaDetail.tsx, useWebSocket.ts
+  - Productie-klare console output
+
 ## [0.6.0] - 2025-12-07
 
 ### ✨ Toegevoegd - Vakantiemodus & Internationalisatie

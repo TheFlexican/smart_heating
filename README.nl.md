@@ -74,6 +74,16 @@ Een Home Assistant custom integratie voor het beheren van verwarmingssystemen me
   - Volgt: temperatuur wijzigingen, verwarmingsstatus wijzigingen, schema activeringen, slimme nacht boost voorspellingen, sensor triggers, handmatige override modus
   - **Verbeterd Detail** - Temperatuur bron tracking (preset/schema/basis), nacht boost berekeningen met waarden (v0.5.6+)
 - ⚙️ **Geavanceerde Instellingen** - Hysterese controle, temperatuur limieten, en fine-tuning
+  - **Globale Hysterese** - Stel standaard temperatuur buffer in om snel aan/uit schakelen te voorkomen (0.1-2.0°C)
+  - **Zone-Specifieke Hysterese Override** - Pas hysterese per zone aan (NIEUW in v0.3.18)
+    - Nuttig voor vloerverwarmingssystemen (kan 0.1-0.3°C gebruiken)
+    - Help modal legt hysterese uit en geeft systeem-specifieke aanbevelingen
+    - Schakel tussen globale instelling of aangepaste waarde
+  - **Tabblad Globale Instellingen** - Georganiseerde interface met 4 categorieën (NIEUW in v0.3.18)
+    - 🌡️ Temperatuur: Globale voorinstellingstemperaturen
+    - 👥 Sensoren: Globale aanwezigheidssensor configuratie
+    - 🏖️ Vakantie: Vakantiemodus instellingen
+    - ⚙️ Geavanceerd: Hysterese en toekomstige geavanceerde functies
 - 🌐 **REST API** - Volledige API voor programmatische controle
 - 📡 **WebSocket ondersteuning** - Real-time updates en status synchronisatie
 - 🎛️ **Climate entiteiten** - Volledige thermostaat controle per zone

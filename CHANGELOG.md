@@ -7,6 +7,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### ✨ Added
+
+**Area-Specific Hysteresis Override (v0.3.18)**
+- **Hysteresis Customization**: Areas can now override the global hysteresis setting
+  - Toggle between global hysteresis (0.5°C default) or area-specific value
+  - Range: 0.1°C to 2.0°C with 0.1°C increments
+  - Particularly useful for floor heating systems (can use 0.1-0.3°C)
+  - Help modal with detailed explanation of hysteresis and heating system types
+  - Optimistic UI updates for instant feedback
+  - State persists across page refreshes
+
+**Global Settings Redesign (v0.3.18)**
+- **Tabbed Navigation**: Reorganized Global Settings page with 4 tabs
+  - 🌡️ **Temperature Tab**: Global preset temperatures (6 presets)
+  - 👥 **Sensors Tab**: Global presence sensor configuration
+  - 🏖️ **Vacation Tab**: Vacation mode settings (moved from top)
+  - ⚙️ **Advanced Tab**: Hysteresis and future advanced settings
+  - Material-UI tabs with icons for better visual navigation
+  - Better organization and scalability for future features
+  - Mobile-friendly responsive design with less scrolling
+
+**Backend Implementation**
+- Added `hysteresis_override` field to Area model (None = use global, float = custom)
+- Climate controller uses area-specific hysteresis when set
+- API endpoint: `POST /api/smart_heating/areas/{area_id}/hysteresis`
+- WebSocket broadcasts hysteresis changes in real-time
+- Coordinator includes hysteresis_override in area data export
+- Area logger logs when heating blocked due to hysteresis
+
+**Frontend Implementation**
+- New **HysteresisSettings** component in Area Settings
+  - Toggle switch: "Use global hysteresis" vs "Custom hysteresis"
+  - Slider with visual markers (0.1°C, 0.5°C, 1.0°C, 2.0°C)
+  - Help icon opens **HysteresisHelpModal** with detailed explanation
+  - Real-time status display: "Using global: X°C" or "Custom: X°C"
+- Updated **GlobalSettings** with tabbed layout
+  - TabPanel component for content organization
+  - Accessible with ARIA labels and keyboard navigation
+  - Full EN/NL translation support for all tabs
+- **HysteresisHelpModal** component explains:
+  - What hysteresis is and why it matters
+  - How different heating systems (radiator vs floor) need different values
+  - Equipment protection (prevents short cycling damage)
+  - Recommendations based on heating system type
+
+### 📚 Documentation
+- Created `docs/GLOBAL_SETTINGS_REDESIGN.md` - Architecture decision document
+  - Explains Home Assistant best practices: Config Flow vs Custom UI
+  - Documents tabbed UI design and future enhancement plans
+  - Translation support details
+- Updated translation files (EN/NL) with new keys:
+  - `globalSettings.tabs.*` - Tab labels
+  - `globalSettings.presets.*` - Preset tab content
+  - `globalSettings.sensors.*` - Sensors tab content
+  - `globalSettings.hysteresis.*` - Advanced tab content
+  - `hysteresisHelp.*` - Help modal content
+
+### 🐛 Fixed
+- **WebSocket Error**: Fixed vacation_manager AttributeError in WebSocket coordinator lookup
+  - Added "vacation_manager" to exclusion list in `websocket.py`
+  - Prevents treating VacationManager as a coordinator
+- **Console Cleanup**: Removed all debug console.log statements from production
+  - Cleaned up App.tsx, AreaDetail.tsx, useWebSocket.ts
+  - Production-ready console output
+
 ## [0.6.0] - 2025-12-07
 
 ### ✨ Added - Vacation Mode & Internationalization

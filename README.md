@@ -74,6 +74,16 @@ A Home Assistant custom integration for managing multi-area heating systems with
   - Tracks: temperature changes, heating state changes, schedule activations, smart night boost predictions, sensor triggers, manual override mode
   - **Enhanced Detail** - Temperature source tracking (preset/schedule/base), night boost calculations with values (v0.5.6+)
 - ⚙️ **Advanced Settings** - Hysteresis control, temperature limits, and fine-tuning
+  - **Global Hysteresis** - Set default temperature buffer to prevent rapid on/off cycling (0.1-2.0°C)
+  - **Area-Specific Hysteresis Override** - Customize hysteresis per area (NEW in v0.3.18)
+    - Useful for floor heating systems (can use 0.1-0.3°C)
+    - Help modal explains hysteresis and system-specific recommendations
+    - Toggle between global setting or custom value
+  - **Tabbed Global Settings** - Organized interface with 4 categories (NEW in v0.3.18)
+    - 🌡️ Temperature: Global preset temperatures
+    - 👥 Sensors: Global presence sensor configuration
+    - 🏖️ Vacation: Vacation mode settings
+    - ⚙️ Advanced: Hysteresis and future advanced features
 - 🌐 **REST API** - Full API for programmatic control
 - 📡 **WebSocket support** - Real-time updates and state synchronization
 - 🎛️ **Climate entities** - Full thermostat control per area
@@ -1302,7 +1312,20 @@ data:
 ```
 
 #### `smart_heating.set_hysteresis`
-Set global temperature hysteresis for heating control.
+Set global temperature hysteresis for heating control. This is the default value used by all areas unless they have a custom override set.
+
+**What is Hysteresis?**
+Hysteresis is a temperature buffer that prevents your heating system from constantly turning on and off (short cycling). This protects equipment like boilers, relays, and thermostatic valves from damage.
+
+**How it works:**
+- Heating turns ON when temperature falls below `(target - hysteresis)`
+- Heating turns OFF when temperature reaches the target
+- Example: Target 19.2°C, hysteresis 0.5°C → heating starts at 18.7°C, stops at 19.2°C
+
+**Recommendations:**
+- **0.5°C** - Balanced (default, recommended for most radiator systems)
+- **1.0°C** - Energy efficient, maximum equipment protection
+- **0.1-0.3°C** - Floor heating systems (thermal mass provides natural protection)
 
 **Parameters:**
 - `hysteresis` (required): Temperature difference in °C (0.1-2.0°C)
@@ -1313,6 +1336,12 @@ service: smart_heating.set_hysteresis
 data:
   hysteresis: 0.5  # Heating turns on at target-0.5°C
 ```
+
+**Area-Specific Override:**
+Each area can override the global hysteresis setting in its Settings tab under "Heating Control Settings". This is useful for:
+- Floor heating systems that can use lower values (0.1-0.3°C)
+- Rooms with specific requirements
+- Testing different values per room
 
 #### `smart_heating.set_opentherm_gateway`
 Configure the global OpenTherm gateway for boiler control. **This is completely optional** - only use if you have an OpenTherm gateway device.
