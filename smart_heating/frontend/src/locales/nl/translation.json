@@ -111,7 +111,8 @@
       "sensors": "Sensoren",
       "vacation": "Vakantie",
       "safety": "Veiligheid",
-      "advanced": "Geavanceerd"
+      "advanced": "Geavanceerd",
+      "importExport": "Importeren/Exporteren"
     },
     "saveSuccess": "Instellingen succesvol opgeslagen",
     "presets": {
@@ -545,5 +546,30 @@
     "highRange": "Maximale apparatuurbescherming, energie-efficiënt, geschikt voor traag reagerende systemen",
     "boostTip": "Pro Tip:",
     "boostTipText": "Onmiddellijke verwarming nodig? Gebruik Boostmodus in plaats van hysterese te verlagen. Boost overschrijft tijdelijk alle instellingen om snel te verwarmen zonder de levensduur van apparatuur in gevaar te brengen."
+  },
+  "importExport": {
+    "title": "Configuratie Importeren/Exporteren",
+    "description": "Maak een back-up en herstel je Smart Heating configuratie. Exporteren creëert een JSON-bestand met alle instellingen, die je later kunt importeren om te herstellen of over te zetten naar een ander systeem.",
+    "exportButton": "Configuratie Exporteren",
+    "importButton": "Configuratie Importeren",
+    "exportSuccess": "Configuratie succesvol geëxporteerd",
+    "importSuccess": "Configuratie succesvol geïmporteerd!",
+    "areasCreated": "zones aangemaakt",
+    "areasUpdated": "zones bijgewerkt",
+    "globalSettingsUpdated": "Globale instellingen bijgewerkt",
+    "vacationModeUpdated": "Vakantiemodus bijgewerkt",
+    "backupInfo": "Er wordt automatisch een back-up gemaakt voor elke import voor de veiligheid.",
+    "previewTitle": "Voorbeeld Import",
+    "previewDescription": "Bekijk de wijzigingen die worden toegepast:",
+    "version": "Configuratieversie",
+    "exportDate": "Exportdatum",
+    "areasToCreate": "Nieuwe Zones",
+    "areasToUpdate": "Bijgewerkte Zones",
+    "globalSettings": "Globale Instellingen",
+    "vacationMode": "Vakantiemodus",
+    "willBeUpdated": "Wordt bijgewerkt",
+    "backupWarning": "Dit vervangt je huidige configuratie. Er wordt eerst een automatische back-up gemaakt.",
+    "confirmImport": "Importeren",
+    "invalidConfig": "Ongeldig configuratiebestand"
   }
 }

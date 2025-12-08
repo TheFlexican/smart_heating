@@ -111,7 +111,8 @@
       "sensors": "Sensors",
       "vacation": "Vacation",
       "safety": "Safety",
-      "advanced": "Advanced"
+      "advanced": "Advanced",
+      "importExport": "Import/Export"
     },
     "saveSuccess": "Settings saved successfully",
     "presets": {
@@ -545,5 +546,30 @@
     "highRange": "Maximum equipment protection, energy efficient, suitable for slow-response systems",
     "boostTip": "Pro Tip:",
     "boostTipText": "Need immediate heating? Use Boost Mode instead of reducing hysteresis. Boost temporarily overrides all settings to heat quickly without compromising equipment longevity."
+  },
+  "importExport": {
+    "title": "Import/Export Configuration",
+    "description": "Backup and restore your Smart Heating configuration. Export creates a JSON file with all settings, which you can import later to restore or transfer to another system.",
+    "exportButton": "Export Configuration",
+    "importButton": "Import Configuration",
+    "exportSuccess": "Configuration exported successfully",
+    "importSuccess": "Configuration imported successfully!",
+    "areasCreated": "areas created",
+    "areasUpdated": "areas updated",
+    "globalSettingsUpdated": "Global settings updated",
+    "vacationModeUpdated": "Vacation mode updated",
+    "backupInfo": "A backup is automatically created before each import for safety.",
+    "previewTitle": "Preview Import",
+    "previewDescription": "Review the changes that will be applied:",
+    "version": "Configuration Version",
+    "exportDate": "Export Date",
+    "areasToCreate": "New Areas",
+    "areasToUpdate": "Updated Areas",
+    "globalSettings": "Global Settings",
+    "vacationMode": "Vacation Mode",
+    "willBeUpdated": "Will be updated",
+    "backupWarning": "This will replace your current configuration. An automatic backup will be created first.",
+    "confirmImport": "Import",
+    "invalidConfig": "Invalid configuration file"
   }
 }

@@ -20,6 +20,7 @@ from .api_handlers import (
     handle_disable_vacation_mode,
     handle_enable_area,
     handle_enable_vacation_mode,
+    handle_export_config,
     handle_get_area,
     # Logs
     handle_get_area_logs,
@@ -43,12 +44,15 @@ from .api_handlers import (
     handle_get_status,
     handle_get_vacation_mode,
     handle_hide_area,
+    handle_import_config,
+    handle_list_backups,
     handle_refresh_devices,
     handle_remove_device,
     handle_remove_presence_sensor,
     handle_remove_safety_sensor,
     handle_remove_schedule,
     handle_remove_window_sensor,
+    handle_restore_backup,
     handle_set_area_hysteresis,
     handle_set_area_preset_config,
     handle_set_auto_preset,
@@ -66,6 +70,7 @@ from .api_handlers import (
     handle_set_switch_shutdown,
     handle_set_temperature,
     handle_unhide_area,
+    handle_validate_config,
 )
 from .area_manager import AreaManager
 from .const import DOMAIN
@@ -155,6 +160,13 @@ class SmartHeatingAPIView(HomeAssistantView):
                 return await handle_get_safety_sensor(self.area_manager)
             elif endpoint == "history/config":
                 return await handle_get_history_config(self.hass)
+            # Import/Export endpoints
+            elif endpoint == "export":
+                config_manager = self.hass.data[DOMAIN]["config_manager"]
+                return await handle_export_config(self.hass, config_manager)
+            elif endpoint == "backups":
+                config_manager = self.hass.data[DOMAIN]["config_manager"]
+                return await handle_list_backups(self.hass, config_manager)
 
             else:
                 return web.json_response({"error": ERROR_UNKNOWN_ENDPOINT}, status=404)
@@ -290,6 +302,17 @@ class SmartHeatingAPIView(HomeAssistantView):
                 return await handle_set_safety_sensor(self.hass, self.area_manager, data)
             elif endpoint == "call_service":
                 return await handle_call_service(self.hass, data)
+            # Import/Export endpoints
+            elif endpoint == "import":
+                config_manager = self.hass.data[DOMAIN]["config_manager"]
+                return await handle_import_config(self.hass, config_manager, data)
+            elif endpoint == "validate":
+                config_manager = self.hass.data[DOMAIN]["config_manager"]
+                return await handle_validate_config(self.hass, config_manager, data)
+            elif endpoint.startswith("backups/") and endpoint.endswith("/restore"):
+                backup_filename = endpoint.split("/")[1]
+                config_manager = self.hass.data[DOMAIN]["config_manager"]
+                return await handle_restore_backup(self.hass, config_manager, backup_filename)
             else:
                 return web.json_response({"error": ERROR_UNKNOWN_ENDPOINT}, status=404)
         except Exception as err:

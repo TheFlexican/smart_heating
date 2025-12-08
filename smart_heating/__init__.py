@@ -158,6 +158,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data[DOMAIN]["learning_engine"] = learning_engine
     _LOGGER.info("Learning engine initialized")
 
+    # Create config manager for import/export
+    from .config_manager import ConfigManager
+
+    config_manager = ConfigManager(hass, area_manager, storage_path)
+    hass.data[DOMAIN]["config_manager"] = config_manager
+    _LOGGER.info("Config manager initialized")
+
     # Create coordinator instance
     coordinator = SmartHeatingCoordinator(hass, entry, area_manager)
 

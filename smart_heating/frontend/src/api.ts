@@ -253,7 +253,7 @@ export const getHistory = async (
   if (options?.endTime) {
     params.append('end_time', options.endTime)
   }
-  
+
   const response = await axios.get(`${API_BASE}/areas/${areaId}/history?${params.toString()}`)
   return response.data
 }
@@ -381,7 +381,7 @@ export const getAreaLogs = async (
   if (options?.type) {
     params.append('type', options.type)
   }
-  
+
   const response = await axios.get(`${API_BASE}/areas/${areaId}/logs?${params.toString()}`)
   return response.data.logs
 }
@@ -428,4 +428,63 @@ export const setSafetySensor = async (config: {
 
 export const removeSafetySensor = async (sensorId: string): Promise<void> => {
   await axios.delete(`${API_BASE}/safety_sensor?sensor_id=${encodeURIComponent(sensorId)}`)
+}
+
+// Import/Export Configuration
+export const exportConfig = async (): Promise<Blob> => {
+  const response = await axios.get(`${API_BASE}/export`, {
+    responseType: 'blob'
+  })
+  return response.data
+}
+
+export const importConfig = async (configData: any): Promise<{
+  success: boolean
+  message: string
+  changes?: {
+    areas_created: number
+    areas_updated: number
+    areas_deleted: number
+    global_settings_updated: boolean
+    vacation_mode_updated: boolean
+  }
+  error?: string
+}> => {
+  const response = await axios.post(`${API_BASE}/import`, configData)
+  return response.data
+}
+
+export const validateConfig = async (configData: any): Promise<{
+  valid: boolean
+  version?: string
+  export_date?: string
+  areas_to_create?: number
+  areas_to_update?: number
+  global_settings_included?: boolean
+  vacation_mode_included?: boolean
+  error?: string
+}> => {
+  const response = await axios.post(`${API_BASE}/validate`, configData)
+  return response.data
+}
+
+export const listBackups = async (): Promise<{
+  backups: Array<{
+    filename: string
+    size: number
+    created: number
+  }>
+}> => {
+  const response = await axios.get(`${API_BASE}/backups`)
+  return response.data
+}
+
+export const restoreBackup = async (filename: string): Promise<{
+  success: boolean
+  message: string
+  changes?: any
+  error?: string
+}> => {
+  const response = await axios.post(`${API_BASE}/backups/${filename}/restore`)
+  return response.data
 }

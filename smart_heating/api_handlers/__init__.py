@@ -44,6 +44,13 @@ from .history import (
     handle_get_learning_stats,
     handle_set_history_config,
 )
+from .import_export import (
+    handle_export_config,
+    handle_import_config,
+    handle_list_backups,
+    handle_restore_backup,
+    handle_validate_config,
+)
 from .logs import (
     handle_get_area_logs,
 )
@@ -119,10 +126,17 @@ __all__ = [
     "handle_get_learning_stats",
     "handle_get_history_config",
     "handle_set_history_config",
+    # Import/Export
+    "handle_export_config",
+    "handle_import_config",
+    "handle_validate_config",
+    "handle_list_backups",
+    "handle_restore_backup",
     # Logs
     "handle_get_area_logs",
     # System
     "handle_get_status",
     "handle_get_entity_state",
     "handle_call_service",
+    "handle_set_primary_temperature_sensor",
 ]

@@ -23,6 +23,7 @@ import PeopleIcon from '@mui/icons-material/People'
 import BeachAccessIcon from '@mui/icons-material/BeachAccess'
 import TuneIcon from '@mui/icons-material/Tune'
 import SecurityIcon from '@mui/icons-material/Security'
+import BackupIcon from '@mui/icons-material/Backup'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getGlobalPresets, setGlobalPresets, getGlobalPresence, setGlobalPresence, getHysteresis, setHysteresis, getSafetySensor, setSafetySensor, removeSafetySensor, type SafetySensorResponse } from '../api'
@@ -31,6 +32,7 @@ import SensorConfigDialog from '../components/SensorConfigDialog'
 import SafetySensorConfigDialog from '../components/SafetySensorConfigDialog'
 import { VacationModeSettings } from '../components/VacationModeSettings'
 import HysteresisHelpModal from '../components/HysteresisHelpModal'
+import ImportExport from '../components/ImportExport'
 
 interface TabPanelProps {
   children?: React.ReactNode
@@ -295,35 +297,40 @@ export default function GlobalSettings() {
       </Paper>
 
       <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 2 }}>
-        <Tabs 
-          value={activeTab} 
+        <Tabs
+          value={activeTab}
           onChange={(_, newValue) => setActiveTab(newValue)}
           aria-label="global settings tabs"
         >
-          <Tab 
-            icon={<ThermostatIcon />} 
-            iconPosition="start" 
-            label={t('globalSettings.tabs.temperature', 'Temperature')} 
+          <Tab
+            icon={<ThermostatIcon />}
+            iconPosition="start"
+            label={t('globalSettings.tabs.temperature', 'Temperature')}
           />
-          <Tab 
-            icon={<PeopleIcon />} 
-            iconPosition="start" 
-            label={t('globalSettings.tabs.sensors', 'Sensors')} 
+          <Tab
+            icon={<PeopleIcon />}
+            iconPosition="start"
+            label={t('globalSettings.tabs.sensors', 'Sensors')}
           />
-          <Tab 
-            icon={<BeachAccessIcon />} 
-            iconPosition="start" 
-            label={t('globalSettings.tabs.vacation', 'Vacation')} 
+          <Tab
+            icon={<BeachAccessIcon />}
+            iconPosition="start"
+            label={t('globalSettings.tabs.vacation', 'Vacation')}
           />
-          <Tab 
-            icon={<SecurityIcon />} 
-            iconPosition="start" 
-            label={t('globalSettings.tabs.safety', 'Safety')} 
+          <Tab
+            icon={<SecurityIcon />}
+            iconPosition="start"
+            label={t('globalSettings.tabs.safety', 'Safety')}
           />
-          <Tab 
-            icon={<TuneIcon />} 
-            iconPosition="start" 
-            label={t('globalSettings.tabs.advanced', 'Advanced')} 
+          <Tab
+            icon={<TuneIcon />}
+            iconPosition="start"
+            label={t('globalSettings.tabs.advanced', 'Advanced')}
+          />
+          <Tab
+            icon={<BackupIcon />}
+            iconPosition="start"
+            label={t('globalSettings.tabs.importExport', 'Import/Export')}
           />
         </Tabs>
       </Box>
@@ -557,7 +564,7 @@ export default function GlobalSettings() {
               <Typography variant="h6">
                 {t('globalSettings.hysteresis.title', 'Temperature Hysteresis')}
               </Typography>
-              <IconButton 
+              <IconButton
                 onClick={() => setHysteresisHelpOpen(true)}
                 color="primary"
                 size="small"
@@ -620,6 +627,16 @@ export default function GlobalSettings() {
                 />
               </Box>
             </Box>
+          </Paper>
+        </TabPanel>
+
+        {/* Import/Export Tab */}
+        <TabPanel value={activeTab} index={5}>
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" sx={{ mb: 1 }}>
+              {t('importExport.title', 'Import/Export Configuration')}
+            </Typography>
+            <ImportExport />
           </Paper>
         </TabPanel>
       </Box>
