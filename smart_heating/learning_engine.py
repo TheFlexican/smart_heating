@@ -10,7 +10,7 @@ from homeassistant.components.recorder.statistics import (
     StatisticData,
     StatisticMetaData,
     async_add_external_statistics,
-    get_last_statistics,
+    statistics_during_period,
 )
 from homeassistant.const import UnitOfTemperature
 from homeassistant.core import HomeAssistant
@@ -230,35 +230,47 @@ class LearningEngine:
         Args:
             event: HeatingEvent instance
         """
-        # Ensure metadata is registered
-        await self._async_ensure_statistic_metadata(
-            event.area_id, "heating_rate", f"Heating Rate - {event.area_id}", "°C/min"
-        )
-
-        # Record heating rate
-        statistic_id = self._get_statistic_id("heating_rate", event.area_id)
-        statistics_data = [
-            StatisticData(
-                start=event.start_time,
-                mean=event.heating_rate,
-                state=event.heating_rate,
+        try:
+            # Ensure metadata is registered
+            await self._async_ensure_statistic_metadata(
+                event.area_id, "heating_rate", f"Heating Rate - {event.area_id}", "°C/min"
             )
-        ]
 
-        metadata = StatisticMetaData(
-            has_mean=True,
-            has_sum=False,
-            name=f"Heating Rate - {event.area_id}",
-            source="smart_heating",
-            statistic_id=statistic_id,
-            unit_of_measurement="°C/min",
-        )
+            # Record heating rate
+            statistic_id = self._get_statistic_id("heating_rate", event.area_id)
+            statistics_data = [
+                StatisticData(
+                    start=event.start_time,
+                    mean=event.heating_rate,
+                    state=event.heating_rate,
+                )
+            ]
 
-        async_add_external_statistics(self.hass, metadata, statistics_data)
+            metadata = StatisticMetaData(
+                has_mean=True,
+                has_sum=False,
+                name=f"Heating Rate - {event.area_id}",
+                source="smart_heating",
+                statistic_id=statistic_id,
+                unit_of_measurement="°C/min",
+            )
 
-        # Record outdoor correlation if available
-        if event.outdoor_temp is not None:
-            await self._async_record_outdoor_correlation(event)
+            # Add statistics asynchronously
+            await get_instance(self.hass).async_add_executor_job(
+                async_add_external_statistics, self.hass, metadata, statistics_data
+            )
+
+            _LOGGER.info(
+                "Recorded heating rate statistic for %s: %.3f°C/min",
+                event.area_id,
+                event.heating_rate,
+            )
+
+            # Record outdoor correlation if available
+            if event.outdoor_temp is not None:
+                await self._async_record_outdoor_correlation(event)
+        except Exception as err:
+            _LOGGER.error("Failed to record heating event for %s: %s", event.area_id, err)
 
     async def _async_record_outdoor_correlation(self, event: HeatingEvent) -> None:
         """Record outdoor temperature correlation.
@@ -266,32 +278,41 @@ class LearningEngine:
         Args:
             event: HeatingEvent instance
         """
-        await self._async_ensure_statistic_metadata(
-            event.area_id,
-            "outdoor_correlation",
-            f"Outdoor Temp - {event.area_id}",
-            UnitOfTemperature.CELSIUS,
-        )
-
-        statistic_id = self._get_statistic_id("outdoor_correlation", event.area_id)
-        statistics_data = [
-            StatisticData(
-                start=event.start_time,
-                mean=event.outdoor_temp,
-                state=event.outdoor_temp,
+        try:
+            await self._async_ensure_statistic_metadata(
+                event.area_id,
+                "outdoor_correlation",
+                f"Outdoor Temp - {event.area_id}",
+                UnitOfTemperature.CELSIUS,
             )
-        ]
 
-        metadata = StatisticMetaData(
-            has_mean=True,
-            has_sum=False,
-            name=f"Outdoor Temp During Heating - {event.area_id}",
-            source="smart_heating",
-            statistic_id=statistic_id,
-            unit_of_measurement=UnitOfTemperature.CELSIUS,
-        )
+            statistic_id = self._get_statistic_id("outdoor_correlation", event.area_id)
+            statistics_data = [
+                StatisticData(
+                    start=event.start_time,
+                    mean=event.outdoor_temp,
+                    state=event.outdoor_temp,
+                )
+            ]
 
-        async_add_external_statistics(self.hass, metadata, statistics_data)
+            metadata = StatisticMetaData(
+                has_mean=True,
+                has_sum=False,
+                name=f"Outdoor Temp During Heating - {event.area_id}",
+                source="smart_heating",
+                statistic_id=statistic_id,
+                unit_of_measurement=UnitOfTemperature.CELSIUS,
+            )
+
+            await get_instance(self.hass).async_add_executor_job(
+                async_add_external_statistics, self.hass, metadata, statistics_data
+            )
+
+            _LOGGER.debug(
+                "Recorded outdoor correlation for %s: %.1f°C", event.area_id, event.outdoor_temp
+            )
+        except Exception as err:
+            _LOGGER.error("Failed to record outdoor correlation for %s: %s", event.area_id, err)
 
     async def _async_get_outdoor_temperature(self) -> float | None:
         """Get current outdoor temperature from weather entity.
@@ -375,24 +396,49 @@ class LearningEngine:
         Returns:
             List of heating rates
         """
+        from datetime import timedelta
+
         statistic_id = self._get_statistic_id("heating_rate", area_id)
 
-        # Get statistics from recorder
-        stats = await get_instance(self.hass).async_add_executor_job(
-            get_last_statistics,
-            self.hass,
-            1,  # number of stats
-            statistic_id,
-            True,  # convert units
-            {"mean"},  # types
-        )
+        # Calculate time range
+        end_time = datetime.now()
+        start_time = end_time - timedelta(days=days)
 
-        if not stats or statistic_id not in stats:
+        try:
+            # Get statistics from recorder using statistics_during_period
+            stats = await get_instance(self.hass).async_add_executor_job(
+                statistics_during_period,
+                self.hass,
+                start_time,
+                end_time,
+                {statistic_id},
+                "hour",  # period
+                None,  # units
+                {"mean"},  # types
+            )
+
+            if not stats or statistic_id not in stats:
+                _LOGGER.debug("No heating rate statistics found for %s", area_id)
+                return []
+
+            # Extract mean values
+            rates = [
+                s["mean"]
+                for s in stats[statistic_id]
+                if s.get("mean") is not None and s["mean"] > 0
+            ]
+
+            _LOGGER.debug(
+                "Retrieved %d heating rate data points for %s (last %d days)",
+                len(rates),
+                area_id,
+                days,
+            )
+
+            return rates
+        except Exception as err:
+            _LOGGER.error("Failed to retrieve heating rates for %s: %s", area_id, err)
             return []
-
-        # Extract mean values
-        rates = [s["mean"] for s in stats[statistic_id] if s.get("mean") is not None]
-        return rates
 
     async def _async_calculate_outdoor_adjustment(self, current_outdoor_temp: float) -> float:
         """Calculate heating rate adjustment based on outdoor temperature.

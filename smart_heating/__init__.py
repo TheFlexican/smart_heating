@@ -154,6 +154,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Create learning engine
     learning_engine = LearningEngine(hass)
+    await learning_engine.async_setup()
     hass.data[DOMAIN]["learning_engine"] = learning_engine
     _LOGGER.info("Learning engine initialized")
 
