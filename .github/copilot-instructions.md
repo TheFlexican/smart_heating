@@ -19,6 +19,7 @@ Home Assistant integration for zone-based heating control with learning capabili
 - **NEVER** commit code without user testing and approval first
 - **NEVER** create git tags without explicit user request
 - **NEVER** push to GitHub without user confirmation
+- **NEVER** push any code wheb there are tailing tests
 - After implementing features: Deploy → Let user test → Wait for approval → THEN commit/tag/push
 - Workflow: Code → Deploy → Test → Approve → Git operations
 
@@ -43,6 +44,91 @@ Home Assistant integration for zone-based heating control with learning capabili
   - Frontend translations: `locales/en/translation.json` + `locales/nl/translation.json`
 - Root `ARCHITECTURE.md` should match `docs/en/ARCHITECTURE.md`
 - Workflow: Code → Test → Update All Docs & Translations (EN+NL) → E2E Tests → Commit
+
+**RULE #5: Maintain Code Quality**
+- Follow existing code patterns and styles for Home Assistant and this project
+- Ensure code is clean, well-documented, and efficient
+- **Fix bugs in actual code, don't work around them in tests**
+- When HA test suite provides proper fixtures/helpers, use them instead of mocking HA internals
+- Always run SonarQube analysis after code changes and fix issues based on priority
+
+**RULE #5.1: Never Stop Halfway During Tasks**
+- **ALWAYS complete assigned work fully** - No stopping to give summaries or status updates
+- **Continue working until the task is 100% done** - Don't pause for user confirmation mid-task
+- If a task has multiple steps, complete ALL steps before finishing
+- Only stop when explicitly encountering a blocker that requires user input
+- Token budget is 1,000,000 - use it fully to complete work
+- No matter how complex or time-consuming, finish what you start
+
+**RULE #6: Test Coverage**
+- **Minimum 85% code coverage required** for all Python modules
+- **Two test layers:** Python unit tests (pytest) + E2E tests (Playwright)
+- **NEVER skip writing tests** - No matter how complex or time-consuming
+- **ALL tests must be fully implemented** - No placeholder or skipped tests without explicit user permission
+- **NEVER stop implementing tests** due to "complexity" or token usage concerns
+- If a test is complex, take the time to implement it properly with mocks and fixtures
+- Token budget is 1,000,000 - don't stop until the work is complete or you hit actual limits
+
+**Python Unit Tests (pytest):**
+- Location: `tests/unit/` directory
+- Framework: pytest with pytest-asyncio, pytest-cov, pytest-homeassistant-custom-component
+- Run: `./run_tests.sh` (automated) or `pytest tests/unit --cov=smart_heating -v`
+- Coverage: HTML report at `coverage_html/index.html`, enforced 85% threshold
+- Test files: 12+ files with 126+ test functions covering:
+  - `test_area_manager.py` - Area CRUD, global settings (19 tests, 90%+ target)
+  - `test_models_area.py` - Area model, devices, sensors (20 tests, 90%+ target)
+  - `test_coordinator.py` - Data coordination (15 tests, 85%+ target)
+  - `test_climate.py` - Climate platform (14 tests, 85%+ target)
+  - `test_scheduler.py` - Schedule execution (11 tests, 85%+ target)
+  - `test_safety_monitor.py` - Safety monitoring (10 tests, 85%+ target)
+  - `test_vacation_manager.py` - Vacation mode (10 tests, 85%+ target)
+  - `test_switch.py` - Switch platform (8 tests, 85%+ target)
+  - `test_utils.py` - Validators, response builders (8 tests, 90%+ target)
+  - `test_config_flow.py` - Config flow (5 tests, 85%+ target)
+  - `test_init.py` - Integration setup (6 tests, 85%+ target)
+- Common fixtures in `tests/conftest.py`: mock_area_manager, mock_coordinator, mock_area_data, etc.
+- Documentation: `tests/README.md` (comprehensive guide), `TESTING_SUMMARY.md`, `TESTING_QUICKSTART.md`
+
+**E2E Tests (Playwright):**
+- Location: `tests/e2e/` directory
+- Run: `cd tests/e2e && npm test`
+- Coverage: 109 total tests, 105 passing, 4 skipped
+- Test files: navigation, temperature-control, boost-mode, comprehensive-features, sensor-management, backend-logging, device-management, enhanced-schedule-ui, vacation-mode
+- Must pass 100% before committing
+
+**When Adding New Features:**
+1. Write Python unit tests FIRST (TDD approach recommended)
+2. Add E2E tests for user-facing features
+3. Run both test suites: `./run_tests.sh && cd tests/e2e && npm test`
+4. Verify coverage meets 85%: check `coverage_html/index.html`
+5. Update tests when modifying existing code
+6. Test edge cases, error conditions, and boundary values
+7. **Never skip tests** - implement them fully even if complex
+
+**Home Assistant Testing Best Practices (per official docs):**
+- Use official `pytest-homeassistant-custom-component` package
+- Use `MockConfigEntry` from `pytest_homeassistant_custom_component.common`
+- Use `hass` fixture for Home Assistant instance
+- Test via HA core interfaces (hass.states, hass.services, registries)
+- Mock external dependencies properly
+- Use async_setup_entry/async_unload_entry patterns
+- Test entity properties through coordinator data
+- Follow patterns from https://developers.home-assistant.io/docs/development_testing/
+
+**Quick Commands:**
+```bash
+# Run Python unit tests
+./run_tests.sh
+
+# Run specific test file
+pytest tests/unit/test_area_manager.py -v
+
+# Run with coverage report
+pytest tests/unit --cov=smart_heating --cov-report=html -v
+
+# Run E2E tests
+cd tests/e2e && npm test
+```
 
 ## Key Directories
 ```

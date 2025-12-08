@@ -58,7 +58,7 @@ class ScheduleExecutor:
         )
         _LOGGER.info("Schedule executor started, checking every %s", SCHEDULE_CHECK_INTERVAL)
 
-    async def async_stop(self) -> None:
+    def async_stop(self) -> None:
         """Stop the schedule executor."""
         if self._unsub_interval:
             self._unsub_interval()
@@ -146,6 +146,96 @@ class ScheduleExecutor:
                         current_time.strftime("%H:%M"),
                     )
 
+    def _get_previous_day(self, current_day: str) -> str:
+        """Get the previous day name.
+        
+        Args:
+            current_day: Current day name
+            
+        Returns:
+            Previous day name
+        """
+        day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        current_day_idx = day_order.index(current_day)
+        return day_order[(current_day_idx - 1) % 7]
+
+    def _is_time_in_midnight_crossing_schedule_from_previous_day(
+        self, schedule: dict, current_time: time
+    ) -> bool:
+        """Check if current time falls in a midnight-crossing schedule from previous day.
+        
+        Args:
+            schedule: Schedule entry
+            current_time: Current time
+            
+        Returns:
+            True if time matches
+        """
+        start_time = time.fromisoformat(schedule.start_time)
+        end_time = time.fromisoformat(schedule.end_time)
+        
+        # Only check if schedule crosses midnight
+        if start_time > end_time:
+            # Check if we're in the early period (< end_time)
+            if current_time < end_time:
+                _LOGGER.debug(
+                    "Matched midnight-crossing schedule from previous day: %s-%s",
+                    schedule.start_time, schedule.end_time
+                )
+                return True
+        return False
+
+    def _is_time_in_midnight_crossing_schedule_today(
+        self, schedule: dict, current_time: time
+    ) -> bool:
+        """Check if current time falls in a midnight-crossing schedule starting today.
+        
+        Args:
+            schedule: Schedule entry
+            current_time: Current time
+            
+        Returns:
+            True if time matches
+        """
+        start_time = time.fromisoformat(schedule.start_time)
+        end_time = time.fromisoformat(schedule.end_time)
+        
+        # Crosses midnight: 22:00 - 06:00
+        if start_time > end_time:
+            # Only match if we're in the late period (>= start_time)
+            if current_time >= start_time:
+                _LOGGER.debug(
+                    "Matched midnight-crossing schedule: %s-%s",
+                    schedule.start_time, schedule.end_time
+                )
+                return True
+        return False
+
+    def _is_time_in_normal_schedule(
+        self, schedule: dict, current_time: time
+    ) -> bool:
+        """Check if current time falls in a normal (non-midnight-crossing) schedule.
+        
+        Args:
+            schedule: Schedule entry
+            current_time: Current time
+            
+        Returns:
+            True if time matches
+        """
+        start_time = time.fromisoformat(schedule.start_time)
+        end_time = time.fromisoformat(schedule.end_time)
+        
+        # Normal case: 08:00 - 22:00
+        if start_time <= end_time:
+            if start_time <= current_time < end_time:
+                _LOGGER.debug(
+                    "Matched normal schedule: %s-%s",
+                    schedule.start_time, schedule.end_time
+                )
+                return True
+        return False
+
     def _find_active_schedule(
         self,
         schedules: list[dict],
@@ -165,59 +255,124 @@ class ScheduleExecutor:
         Returns:
             Active schedule entry or None
         """
-        # Get previous day name for cross-midnight check
-        day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-        current_day_idx = day_order.index(current_day)
-        previous_day = day_order[(current_day_idx - 1) % 7]
+        previous_day = self._get_previous_day(current_day)
         
         # FIRST: Check if a schedule from the previous day extends into today (higher priority)
         for schedule in schedules.values():
             if schedule.day == previous_day:
-                start_time = time.fromisoformat(schedule.start_time)
-                end_time = time.fromisoformat(schedule.end_time)
-                
-                # Only check if schedule crosses midnight
-                if start_time > end_time:
-                    # Check if we're in the early period (< end_time)
-                    if current_time < end_time:
-                        _LOGGER.debug(
-                            "Matched midnight-crossing schedule from %s: %s-%s",
-                            previous_day, schedule.start_time, schedule.end_time
-                        )
-                        return schedule
+                if self._is_time_in_midnight_crossing_schedule_from_previous_day(schedule, current_time):
+                    return schedule
         
         # SECOND: Check midnight-crossing schedules that start today (high priority)
         for schedule in schedules.values():
             if schedule.day == current_day:
-                start_time = time.fromisoformat(schedule.start_time)
-                end_time = time.fromisoformat(schedule.end_time)
-                
-                # Crosses midnight: 22:00 - 06:00
-                if start_time > end_time:
-                    # Only match if we're in the late period (>= start_time)
-                    if current_time >= start_time:
-                        _LOGGER.debug(
-                            "Matched midnight-crossing schedule: %s-%s",
-                            schedule.start_time, schedule.end_time
-                        )
-                        return schedule
+                if self._is_time_in_midnight_crossing_schedule_today(schedule, current_time):
+                    return schedule
         
         # THIRD: Check normal (non-midnight-crossing) schedules for current day
         for schedule in schedules.values():
             if schedule.day == current_day:
-                start_time = time.fromisoformat(schedule.start_time)
-                end_time = time.fromisoformat(schedule.end_time)
-                
-                # Normal case: 08:00 - 22:00
-                if start_time <= end_time:
-                    if start_time <= current_time < end_time:
-                        _LOGGER.debug(
-                            "Matched normal schedule: %s-%s",
-                            schedule.start_time, schedule.end_time
-                        )
-                        return schedule
+                if self._is_time_in_normal_schedule(schedule, current_time):
+                    return schedule
         
         return None
+
+    def _get_target_time_and_temp_from_schedule(
+        self, area: Area, morning_schedule: ScheduleEntry, now: datetime
+    ) -> tuple[datetime, float]:
+        """Get target time and temperature from a morning schedule.
+        
+        Args:
+            area: Area instance
+            morning_schedule: Morning schedule entry
+            now: Current datetime
+            
+        Returns:
+            Tuple of (target_time, target_temp)
+        """
+        # Use schedule's start time as target
+        target_hour, target_min = map(int, morning_schedule.start_time.split(':'))
+        target_time = now.replace(hour=target_hour, minute=target_min, second=0, microsecond=0)
+        
+        # Determine target temperature from schedule
+        if morning_schedule.preset_mode:
+            # Get temperature from preset mode
+            target_temp = self._get_preset_temperature(area, morning_schedule.preset_mode)
+        elif morning_schedule.temperature is not None:
+            target_temp = morning_schedule.temperature
+        else:
+            target_temp = area.target_temperature
+        
+        _LOGGER.debug(
+            "Smart night boost for %s: Using morning schedule at %s (target temp: %.1f°C)",
+            area.area_id,
+            morning_schedule.start_time,
+            target_temp
+        )
+        if hasattr(self, 'area_logger') and self.area_logger:
+            self.area_logger.log_event(
+                area.area_id,
+                "smart_boost",
+                f"Smart night boost: targeting morning schedule at {morning_schedule.start_time}",
+                {
+                    "target_time": morning_schedule.start_time,
+                    "target_temp": target_temp,
+                    "preset_mode": morning_schedule.preset_mode
+                }
+            )
+        
+        return target_time, target_temp
+
+    def _get_target_time_from_config(
+        self, area: Area, now: datetime
+    ) -> Optional[datetime]:
+        """Get target time from area configuration.
+        
+        Args:
+            area: Area instance
+            now: Current datetime
+            
+        Returns:
+            Target datetime or None if not configured
+        """
+        if not area.smart_night_boost_target_time:
+            return None
+        
+        target_hour, target_min = map(int, area.smart_night_boost_target_time.split(':'))
+        target_time = now.replace(hour=target_hour, minute=target_min, second=0, microsecond=0)
+        
+        _LOGGER.debug(
+            "Smart night boost for %s: Using configured target time %s",
+            area.area_id,
+            area.smart_night_boost_target_time
+        )
+        
+        return target_time
+
+    def _get_outdoor_temperature(self, area: Area) -> Optional[float]:
+        """Get outdoor temperature from weather entity.
+        
+        Args:
+            area: Area instance
+            
+        Returns:
+            Temperature in Celsius or None
+        """
+        if not area.weather_entity_id:
+            return None
+        
+        state = self.hass.states.get(area.weather_entity_id)
+        if not state or state.state in ("unknown", "unavailable"):
+            return None
+        
+        try:
+            outdoor_temp = float(state.state)
+            unit = state.attributes.get("unit_of_measurement", "°C")
+            if unit in ("°F", "F"):
+                outdoor_temp = (outdoor_temp - 32) * 5/9
+            return outdoor_temp
+        except (ValueError, TypeError):
+            return None
 
     async def _handle_smart_night_boost(self, area, now: datetime) -> None:
         """Handle smart night boost by predicting when to start heating.
@@ -230,7 +385,7 @@ class ScheduleExecutor:
             area: Area instance with smart_night_boost_enabled
             now: Current datetime
         """
-        # Determine target time: either configured target OR first morning schedule
+        # Determine target time and temperature
         target_time = None
         target_temp = area.target_temperature
         
@@ -238,46 +393,15 @@ class ScheduleExecutor:
         morning_schedule = self._find_first_morning_schedule(area.schedules, now)
         
         if morning_schedule:
-            # Use schedule's start time as target
-            target_hour, target_min = map(int, morning_schedule.start_time.split(':'))
-            target_time = now.replace(hour=target_hour, minute=target_min, second=0, microsecond=0)
-            
-            # Determine target temperature from schedule
-            if morning_schedule.preset_mode:
-                # Get temperature from preset mode
-                target_temp = self._get_preset_temperature(area, morning_schedule.preset_mode)
-            elif morning_schedule.temperature is not None:
-                target_temp = morning_schedule.temperature
-            
-            _LOGGER.debug(
-                "Smart night boost for %s: Using morning schedule at %s (target temp: %.1f°C)",
-                area.area_id,
-                morning_schedule.start_time,
-                target_temp
-            )
-            if hasattr(self, 'area_logger') and self.area_logger:
-                self.area_logger.log_event(
-                    area.area_id,
-                    "smart_boost",
-                    f"Smart night boost: targeting morning schedule at {morning_schedule.start_time}",
-                    {
-                        "target_time": morning_schedule.start_time,
-                        "target_temp": target_temp,
-                        "preset_mode": morning_schedule.preset_mode
-                    }
-                )
-        elif area.smart_night_boost_target_time:
-            # Fallback to configured target time
-            target_hour, target_min = map(int, area.smart_night_boost_target_time.split(':'))
-            target_time = now.replace(hour=target_hour, minute=target_min, second=0, microsecond=0)
-            _LOGGER.debug(
-                "Smart night boost for %s: Using configured target time %s",
-                area.area_id,
-                area.smart_night_boost_target_time
+            target_time, target_temp = self._get_target_time_and_temp_from_schedule(
+                area, morning_schedule, now
             )
         else:
-            # No target configured and no morning schedule
-            return
+            # Fallback to configured target time
+            target_time = self._get_target_time_from_config(area, now)
+            if target_time is None:
+                # No target configured and no morning schedule
+                return
         
         # If target time has passed today, use tomorrow's target
         if now >= target_time:
@@ -291,17 +415,7 @@ class ScheduleExecutor:
             return
         
         # Get outdoor temperature if available
-        outdoor_temp = None
-        if area.weather_entity_id:
-            state = self.hass.states.get(area.weather_entity_id)
-            if state and state.state not in ("unknown", "unavailable"):
-                try:
-                    outdoor_temp = float(state.state)
-                    unit = state.attributes.get("unit_of_measurement", "°C")
-                    if unit in ("°F", "F"):
-                        outdoor_temp = (outdoor_temp - 32) * 5/9
-                except (ValueError, TypeError):
-                    pass
+        outdoor_temp = self._get_outdoor_temperature(area)
         
         # Predict heating time using learning engine
         predicted_minutes = await self.learning_engine.async_predict_heating_time(
@@ -430,6 +544,155 @@ class ScheduleExecutor:
         # Default fallback
         return area.target_temperature
 
+    async def _apply_preset_schedule(
+        self, area, schedule, climate_entity_id: str
+    ) -> None:
+        """Apply a schedule that uses a preset mode.
+        
+        Args:
+            area: Area instance
+            schedule: Schedule with preset_mode
+            climate_entity_id: Climate entity ID
+        """
+        preset_temp = self._get_preset_temperature(area, schedule.preset_mode)
+        
+        _LOGGER.info(
+            "Applying schedule to area %s: %s-%s @ preset '%s'",
+            area.name,
+            schedule.start_time,
+            schedule.end_time,
+            schedule.preset_mode,
+        )
+        if hasattr(self, 'area_logger') and self.area_logger:
+            self.area_logger.log_event(
+                area.area_id,
+                "schedule",
+                f"Schedule activated: {schedule.start_time}-{schedule.end_time} @ preset '{schedule.preset_mode}' ({preset_temp:.1f}°C)",
+                {
+                    "schedule_id": schedule.schedule_id,
+                    "start_time": schedule.start_time,
+                    "end_time": schedule.end_time,
+                    "preset_mode": schedule.preset_mode,
+                    "preset_temp": preset_temp
+                }
+            )
+        
+        # Set preset mode
+        area.preset_mode = schedule.preset_mode
+        
+        # Also update the base target temperature to match the preset
+        # This ensures the area's target_temperature reflects the current preset
+        area.target_temperature = preset_temp
+        
+        # Clear manual override when schedule applies a preset
+        manual_override_cleared = False
+        if hasattr(area, 'manual_override') and area.manual_override:
+            _LOGGER.info(
+                "Clearing manual override for %s - schedule now controls preset",
+                area.name
+            )
+            area.manual_override = False
+            manual_override_cleared = True
+        
+        await self.area_manager.async_save()
+        
+        # If we cleared manual override, immediately update thermostat with preset temperature
+        if manual_override_cleared and preset_temp is not None:
+            climate_entity_id = f"climate.{area.area_id}"
+            try:
+                await self.hass.services.async_call(
+                    "climate",
+                    "set_temperature",
+                    {
+                        "entity_id": climate_entity_id,
+                        "temperature": preset_temp,
+                    },
+                    blocking=False,
+                )
+                _LOGGER.info(
+                    "Updated thermostat %s to preset temperature %.1f°C after clearing manual override",
+                    climate_entity_id, preset_temp
+                )
+            except Exception as err:
+                _LOGGER.debug(
+                    "Climate entity %s not found or error updating: %s (will be handled by climate controller)",
+                    climate_entity_id, err
+                )
+        
+        _LOGGER.debug(
+            "Set preset mode for area %s to %s",
+            area.area_id,
+            schedule.preset_mode,
+        )
+
+    async def _apply_temperature_schedule(
+        self, area, schedule, climate_entity_id: str
+    ) -> None:
+        """Apply a schedule that uses a direct temperature.
+        
+        Args:
+            area: Area instance
+            schedule: Schedule with temperature
+            climate_entity_id: Climate entity ID
+        """
+        target_temp = schedule.temperature
+        
+        _LOGGER.info(
+            "Applying schedule to area %s: %s-%s @ %s°C",
+            area.name,
+            schedule.start_time,
+            schedule.end_time,
+            target_temp,
+        )
+        if hasattr(self, 'area_logger') and self.area_logger:
+            self.area_logger.log_event(
+                area.area_id,
+                "schedule",
+                f"Schedule activated: {schedule.start_time}-{schedule.end_time} @ {target_temp}°C",
+                {
+                    "schedule_id": schedule.schedule_id,
+                    "start_time": schedule.start_time,
+                    "end_time": schedule.end_time,
+                    "temperature": target_temp
+                }
+            )
+        
+        # Update area target temperature
+        area.target_temperature = target_temp
+        
+        # Clear manual override when schedule applies a temperature
+        if hasattr(area, 'manual_override') and area.manual_override:
+            _LOGGER.info(
+                "Clearing manual override for %s - schedule now controls temperature",
+                area.name
+            )
+            area.manual_override = False
+        
+        await self.area_manager.async_save()
+        
+        # Update the climate entity if it exists
+        try:
+            await self.hass.services.async_call(
+                "climate",
+                "set_temperature",
+                {
+                    "entity_id": climate_entity_id,
+                    "temperature": target_temp,
+                },
+                blocking=True,
+            )
+            _LOGGER.debug(
+                "Set temperature for %s to %s°C via climate service",
+                climate_entity_id,
+                target_temp,
+            )
+        except Exception as err:
+            _LOGGER.warning(
+                "Failed to set temperature via climate service for %s: %s",
+                climate_entity_id,
+                err,
+            )
+
     async def _apply_schedule(self, area, schedule) -> None:
         """Apply a schedule's temperature or preset mode to an area.
         
@@ -441,133 +704,8 @@ class ScheduleExecutor:
         
         # Apply preset mode if specified
         if schedule.preset_mode:
-            _LOGGER.info(
-                "Applying schedule to area %s: %s-%s @ preset '%s'",
-                area.name,
-                schedule.start_time,
-                schedule.end_time,
-                schedule.preset_mode,
-            )
-            if hasattr(self, 'area_logger') and self.area_logger:
-                preset_temp = self._get_preset_temperature(area, schedule.preset_mode)
-                self.area_logger.log_event(
-                    area.area_id,
-                    "schedule",
-                    f"Schedule activated: {schedule.start_time}-{schedule.end_time} @ preset '{schedule.preset_mode}' ({preset_temp:.1f}°C)",
-                    {
-                        "schedule_id": schedule.schedule_id,
-                        "start_time": schedule.start_time,
-                        "end_time": schedule.end_time,
-                        "preset_mode": schedule.preset_mode,
-                        "preset_temp": preset_temp
-                    }
-                )
-            
-            # Set preset mode
-            area.preset_mode = schedule.preset_mode
-            
-            # Also update the base target temperature to match the preset
-            # This ensures the area's target_temperature reflects the current preset
-            area.target_temperature = preset_temp
-            
-            # Clear manual override when schedule applies a preset
-            manual_override_cleared = False
-            if hasattr(area, 'manual_override') and area.manual_override:
-                _LOGGER.info(
-                    "Clearing manual override for %s - schedule now controls preset",
-                    area.name
-                )
-                area.manual_override = False
-                manual_override_cleared = True
-            
-            await self.area_manager.async_save()
-            
-            # If we cleared manual override, immediately update thermostat with preset temperature
-            if manual_override_cleared and preset_temp is not None:
-                climate_entity_id = f"climate.{area.area_id}"
-                try:
-                    await self.hass.services.async_call(
-                        "climate",
-                        "set_temperature",
-                        {
-                            "entity_id": climate_entity_id,
-                            "temperature": preset_temp,
-                        },
-                        blocking=False,
-                    )
-                    _LOGGER.info(
-                        "Updated thermostat %s to preset temperature %.1f°C after clearing manual override",
-                        climate_entity_id, preset_temp
-                    )
-                except Exception as err:
-                    _LOGGER.debug(
-                        "Climate entity %s not found or error updating: %s (will be handled by climate controller)",
-                        climate_entity_id, err
-                    )
-            
-            _LOGGER.debug(
-                "Set preset mode for area %s to %s",
-                area.area_id,
-                schedule.preset_mode,
-            )
+            await self._apply_preset_schedule(area, schedule, climate_entity_id)
         else:
             # Apply temperature directly
-            target_temp = schedule.temperature
-            
-            _LOGGER.info(
-                "Applying schedule to area %s: %s-%s @ %s°C",
-                area.name,
-                schedule.start_time,
-                schedule.end_time,
-                target_temp,
-            )
-            if hasattr(self, 'area_logger') and self.area_logger:
-                self.area_logger.log_event(
-                    area.area_id,
-                    "schedule",
-                    f"Schedule activated: {schedule.start_time}-{schedule.end_time} @ {target_temp}°C",
-                    {
-                        "schedule_id": schedule.schedule_id,
-                        "start_time": schedule.start_time,
-                        "end_time": schedule.end_time,
-                        "temperature": target_temp
-                    }
-                )
-            
-            # Update area target temperature
-            area.target_temperature = target_temp
-            
-            # Clear manual override when schedule applies a temperature
-            if hasattr(area, 'manual_override') and area.manual_override:
-                _LOGGER.info(
-                    "Clearing manual override for %s - schedule now controls temperature",
-                    area.name
-                )
-                area.manual_override = False
-            
-            await self.area_manager.async_save()
-            
-            # Update the climate entity if it exists
-            # Call the climate service to set temperature
-            try:
-                await self.hass.services.async_call(
-                    "climate",
-                    "set_temperature",
-                    {
-                        "entity_id": climate_entity_id,
-                        "temperature": target_temp,
-                    },
-                    blocking=True,
-                )
-                _LOGGER.debug(
-                    "Set temperature for %s to %s°C via climate service",
-                    climate_entity_id,
-                    target_temp,
-                )
-            except Exception as err:
-                _LOGGER.warning(
-                    "Failed to set temperature via climate service for %s: %s",
-                    climate_entity_id,
-                    err,
-                )
+            await self._apply_temperature_schedule(area, schedule, climate_entity_id)
 

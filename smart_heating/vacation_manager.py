@@ -56,7 +56,7 @@ class VacationManager:
             
             # Set up person entity listeners if auto-disable is enabled
             if self._data["enabled"] and self._data["auto_disable"]:
-                await self._setup_person_listeners()
+                self._setup_person_listeners()
                 
             _LOGGER.info("Loaded vacation mode data: %s", self._data)
         except Exception as err:
@@ -96,7 +96,7 @@ class VacationManager:
         except ValueError as err:
             _LOGGER.error("Invalid end_date format: %s", err)
     
-    async def _setup_person_listeners(self) -> None:
+    def _setup_person_listeners(self) -> None:
         """Set up listeners for person entities to auto-disable when someone comes home."""
         # Clean up existing listeners
         for unsub in self._unsub_person_listeners:
@@ -186,7 +186,7 @@ class VacationManager:
         
         # Set up person listeners if auto-disable is enabled
         if auto_disable and person_entities:
-            await self._setup_person_listeners()
+            self._setup_person_listeners()
         
         _LOGGER.info("Vacation mode enabled: %s to %s", start_date, end_date)
         return self._data.copy()

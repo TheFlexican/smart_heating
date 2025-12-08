@@ -34,8 +34,9 @@ The codebase undergoes regular SonarQube analysis to maintain high code quality 
 │  │  └──────┬───────┘  └──────┬───────┘  └─────────────┘   │ │
 │  │         │                 │                            │ │
 │  │  ┌──────┴─────────────────┴──────-────────────────┐    │ │
-│  │  │                                                │    │ │
-│  │  │        REST API + WebSocket API                │    │ │
+│  │  │   REST API (api.py + api_handlers/)            │    │ │
+│  │  │   WebSocket API (websocket.py)                 │    │ │
+│  │  │   Service Handlers (ha_services/)              │    │ │
 │  │  │   (/api/smart_heating/*)                       │    │ │
 │  │  │                                                │    │ │
 │  │  └───────────────────────┬────────────────────────┘    │ │
@@ -887,6 +888,76 @@ Example:
 - **Frontend Bundle**: ~500KB gzipped
 - **WebSocket**: Minimal overhead for real-time updates
 
+## Backend Module Structure
+
+**v0.6.0+ Modular Architecture:**
+
+The backend has been refactored into a clean modular structure following single-responsibility principles:
+
+### Core Integration Files
+- `__init__.py` (591 lines) - Integration setup, coordinator initialization
+- `area_manager.py` - Area/zone management and storage
+- `coordinator.py` - Data update coordinator with manual override detection
+- `climate.py` - Climate platform (zone entities)
+- `switch.py` - Switch platform (zone enable/disable)
+- `sensor.py` - Sensor platform
+- `config_flow.py` - Configuration flow
+
+### Service Handler Modules (`ha_services/`)
+Extracted from `__init__.py` - 29 Home Assistant service handlers:
+- `__init__.py` - Central exports
+- `schemas.py` - 22 service validation schemas
+- `area_handlers.py` - Set temperature, enable/disable area
+- `device_handlers.py` - Add/remove devices
+- `schedule_handlers.py` - Schedule management, night boost, copy
+- `hvac_handlers.py` - Preset mode, boost mode, HVAC mode
+- `sensor_handlers.py` - Window/presence sensor management
+- `config_handlers.py` - Global settings, frost protection, presets
+- `safety_handlers.py` - Safety sensor configuration
+- `vacation_handlers.py` - Vacation mode control
+- `system_handlers.py` - Refresh, status
+
+### API Handler Modules (`api_handlers/`)
+Extracted from `api.py` - 49 REST API endpoint handlers:
+- `__init__.py` - Central exports
+- `areas.py` - 12 area management endpoints
+- `devices.py` - 4 device discovery/assignment endpoints
+- `schedules.py` - 5 schedule/preset/boost endpoints
+- `sensors.py` - 5 sensor management endpoints
+- `config.py` - 15 global configuration endpoints
+- `history.py` - 4 history/learning endpoints
+- `logs.py` - 1 logging endpoint
+- `system.py` - 3 system status endpoints
+
+### Manager/Controller Modules
+- `climate_controller.py` - HVAC device control logic
+- `scheduler.py` - Schedule execution (1-minute interval)
+- `learning_engine.py` - ML-based temperature learning
+- `safety_monitor.py` - Emergency shutdown on safety alerts
+- `vacation_manager.py` - Vacation mode coordination
+- `history.py` - Temperature logging and retention
+- `area_logger.py` - Per-area event logging
+
+### Model Modules (`models/`)
+- `area.py` - Area data model
+- `schedule.py` - Schedule data model
+
+### Utility Modules (`utils/`)
+- `validators.py` - Input validation functions
+- `response_builders.py` - API response formatting
+- `coordinator_helpers.py` - Coordinator utility functions
+- `device_registry.py` - HA device registry helpers
+
+### API & Communication
+- `api.py` (446 lines) - REST API routing, static file serving
+- `websocket.py` - WebSocket real-time updates
+
+**Refactoring Impact:**
+- Phase 2 (ha_services/): `__init__.py` reduced from 1,126 → 591 lines (47% reduction)
+- Phase 3 (api_handlers/): `api.py` reduced from 2,518 → 446 lines (82% reduction)
+- Overall: 72% code reduction with 20 focused, single-responsibility modules
+- Maintainability: Significantly improved with clear separation of concerns
+
 ## Extensibility
 
 ### Adding New Device Types
@@ -903,9 +974,19 @@ Example:
 
 ### Adding New API Endpoints
 
-1. Add method to `ZoneHeaterAPIView` in `api.py`
-2. Add client function to `frontend/src/api.ts`
-3. Use in React components
+1. Add handler function to appropriate module in `api_handlers/`
+2. Import handler in `api_handlers/__init__.py`
+3. Add routing in `api.py` (SmartHeatingAPIView)
+4. Add client function to `frontend/src/api.ts`
+5. Use in React components
+
+### Adding New Services
+
+1. Add schema to `ha_services/schemas.py`
+2. Create handler in appropriate module in `ha_services/`
+3. Import handler in `ha_services/__init__.py`
+4. Register service in `__init__.py` (async_setup_services)
+5. Document in `services.yaml`
 
 ## Future Enhancements
 

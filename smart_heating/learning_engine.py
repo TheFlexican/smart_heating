@@ -171,7 +171,6 @@ class LearningEngine:
         self,
         area_id: str,
         current_temp: float,
-        target_reached: bool = True,
     ) -> None:
         """Record the end of a heating event and calculate learning metrics.
         
@@ -331,7 +330,7 @@ class LearningEngine:
         outdoor_temp = await self._async_get_outdoor_temperature()
         if outdoor_temp is not None:
             adjustment = await self._async_calculate_outdoor_adjustment(
-                area_id, outdoor_temp
+                outdoor_temp
             )
             avg_rate *= adjustment
         
@@ -384,13 +383,11 @@ class LearningEngine:
     
     async def _async_calculate_outdoor_adjustment(
         self,
-        area_id: str,
         current_outdoor_temp: float
     ) -> float:
         """Calculate heating rate adjustment based on outdoor temperature.
         
         Args:
-            area_id: Area identifier
             current_outdoor_temp: Current outdoor temperature
             
         Returns:

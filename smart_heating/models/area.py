@@ -431,6 +431,143 @@ class Area:
         active_schedules.sort(key=lambda s: s.time, reverse=True)
         return active_schedules[0].temperature
 
+    def _get_window_open_temperature(self) -> Optional[float]:
+        """Get temperature when window is open based on sensor actions.
+        
+        Returns:
+            Temperature or None if no window action applies
+        """
+        if not self.window_is_open or len(self.window_sensors) == 0:
+            return None
+        
+        # Find sensors with action_when_open configured
+        for sensor in self.window_sensors:
+            action = sensor.get("action_when_open", "reduce_temperature")
+            if action == "turn_off":
+                return 5.0  # Turn off heating (frost protection)
+            elif action == "reduce_temperature":
+                temp_drop = sensor.get("temp_drop", DEFAULT_WINDOW_OPEN_TEMP_DROP)
+                return max(5.0, self.target_temperature - temp_drop)
+            # "none" action means no temperature change
+        
+        return None
+
+    def _get_base_target_from_preset_or_schedule(self, current_time: datetime) -> tuple[float, str]:
+        """Get base target temperature from preset or schedule.
+        
+        Args:
+            current_time: Current time
+            
+        Returns:
+            Tuple of (temperature, source_description)
+        """
+        # Priority 1: Preset mode temperature
+        if self.preset_mode != PRESET_NONE and self.preset_mode != PRESET_BOOST:
+            target = self.get_preset_temperature()
+            source = f"preset:{self.preset_mode}"
+            return target, source
+        
+        # Priority 2: Schedule temperature (if available)
+        target = self.get_active_schedule_temperature(current_time)
+        if target is not None:
+            return target, "schedule"
+        
+        # Priority 3: Base target temperature
+        return self.target_temperature, "base_target"
+
+    def _is_in_time_period(
+        self, current_time: datetime, start_time_str: str, end_time_str: str
+    ) -> bool:
+        """Check if current time is within a time period.
+        
+        Handles periods that cross midnight.
+        
+        Args:
+            current_time: Current datetime
+            start_time_str: Start time as "HH:MM"
+            end_time_str: End time as "HH:MM"
+            
+        Returns:
+            True if current time is in period
+        """
+        start_hour, start_min = map(int, start_time_str.split(':'))
+        end_hour, end_min = map(int, end_time_str.split(':'))
+        current_hour = current_time.hour
+        current_min = current_time.minute
+        
+        start_minutes = start_hour * 60 + start_min
+        end_minutes = end_hour * 60 + end_min
+        current_minutes = current_hour * 60 + current_min
+        
+        if start_minutes <= end_minutes:
+            # Normal period (e.g., 08:00-18:00)
+            return start_minutes <= current_minutes < end_minutes
+        else:
+            # Period crosses midnight (e.g., 22:00-06:00)
+            return current_minutes >= start_minutes or current_minutes < end_minutes
+
+    def _apply_night_boost(
+        self, target: float, current_time: datetime
+    ) -> float:
+        """Apply night boost to target temperature if applicable.
+        
+        Args:
+            target: Current target temperature
+            current_time: Current time
+            
+        Returns:
+            Adjusted temperature with night boost
+        """
+        if not self.night_boost_enabled:
+            return target
+        
+        # Check if current time is within night boost period
+        is_active = self._is_in_time_period(
+            current_time,
+            self.night_boost_start_time,
+            self.night_boost_end_time
+        )
+        
+        # Important: Only apply night boost if we're NOT in a schedule period
+        # This allows schedules (like "sleep" preset from 22:00-06:30) to take precedence
+        # Night boost is meant to pre-heat BEFORE the morning schedule starts
+        in_schedule = self.get_active_schedule_temperature(current_time) is not None
+        
+        # Debug logging for troubleshooting
+        _LOGGER.debug(
+            "Night boost check for %s at %02d:%02d: period=%s-%s, is_active=%s, in_schedule=%s",
+            self.area_id, current_time.hour, current_time.minute,
+            self.night_boost_start_time, self.night_boost_end_time,
+            is_active, in_schedule
+        )
+        
+        if is_active and not in_schedule:
+            old_target = target
+            target += self.night_boost_offset
+            _LOGGER.debug(
+                "Night boost active for area %s (%s-%s): %.1f°C + %.1f°C = %.1f°C",
+                self.area_id, self.night_boost_start_time, self.night_boost_end_time,
+                old_target, self.night_boost_offset, target
+            )
+            # Log to area logger if available
+            if self.area_manager and hasattr(self.area_manager, 'hass'):
+                area_logger = self.area_manager.hass.data.get("smart_heating", {}).get("area_logger")
+                if area_logger:
+                    area_logger.log_event(
+                        self.area_id,
+                        "temperature",
+                        f"Night boost applied: +{self.night_boost_offset}°C",
+                        {
+                            "base_target": old_target,
+                            "boost_offset": self.night_boost_offset,
+                            "effective_target": target,
+                            "boost_period": f"{self.night_boost_start_time}-{self.night_boost_end_time}",
+                            "current_time": f"{current_time.hour:02d}:{current_time.minute:02d}"
+                        }
+                    )
+        
+        return target
+
     def get_effective_target_temperature(self, current_time: datetime | None = None) -> float:
         """Get the effective target temperature considering all factors.
         
@@ -460,30 +597,12 @@ class Area:
             return self.boost_temp
         
         # Priority 2: Window open actions
-        if self.window_is_open and len(self.window_sensors) > 0:
-            # Find sensors with action_when_open configured
-            for sensor in self.window_sensors:
-                action = sensor.get("action_when_open", "reduce_temperature")
-                if action == "turn_off":
-                    return 5.0  # Turn off heating (frost protection)
-                elif action == "reduce_temperature":
-                    temp_drop = sensor.get("temp_drop", DEFAULT_WINDOW_OPEN_TEMP_DROP)
-                    return max(5.0, self.target_temperature - temp_drop)
-                # "none" action means no temperature change
+        window_temp = self._get_window_open_temperature()
+        if window_temp is not None:
+            return window_temp
         
-        # Priority 3: Preset mode temperature
-        if self.preset_mode != PRESET_NONE and self.preset_mode != PRESET_BOOST:
-            target = self.get_preset_temperature()
-            source = f"preset:{self.preset_mode}"
-        else:
-            # Priority 4: Schedule temperature (if available)
-            target = self.get_active_schedule_temperature(current_time)
-            if target is None:
-                # Priority 5: Base target temperature
-                target = self.target_temperature
-                source = "base_target"
-            else:
-                source = "schedule"
+        # Priority 3-5: Get base target from preset or schedule
+        target, source = self._get_base_target_from_preset_or_schedule(current_time)
         
         # Log what we're starting with for debugging
         _LOGGER.debug(
@@ -492,64 +611,7 @@ class Area:
         )
         
         # Priority 6: Apply night boost if enabled (additive)
-        if self.night_boost_enabled:
-            # Parse start and end times
-            start_hour, start_min = map(int, self.night_boost_start_time.split(':'))
-            end_hour, end_min = map(int, self.night_boost_end_time.split(':'))
-            current_hour = current_time.hour
-            current_min = current_time.minute
-            
-            # Check if current time is within night boost period
-            # Handle period that crosses midnight
-            start_minutes = start_hour * 60 + start_min
-            end_minutes = end_hour * 60 + end_min
-            current_minutes = current_hour * 60 + current_min
-            
-            is_active = False
-            if start_minutes <= end_minutes:
-                # Normal period (e.g., 08:00-18:00)
-                is_active = start_minutes <= current_minutes < end_minutes
-            else:
-                # Period crosses midnight (e.g., 22:00-06:00)
-                is_active = current_minutes >= start_minutes or current_minutes < end_minutes
-            
-            # Important: Only apply night boost if we're NOT in a schedule period
-            # This allows schedules (like "sleep" preset from 22:00-06:30) to take precedence
-            # Night boost is meant to pre-heat BEFORE the morning schedule starts
-            in_schedule = self.get_active_schedule_temperature(current_time) is not None
-            
-            # Debug logging for troubleshooting
-            _LOGGER.debug(
-                "Night boost check for %s at %02d:%02d: period=%s-%s, is_active=%s, in_schedule=%s",
-                self.area_id, current_hour, current_min,
-                self.night_boost_start_time, self.night_boost_end_time,
-                is_active, in_schedule
-            )
-            
-            if is_active and not in_schedule:
-                old_target = target
-                target += self.night_boost_offset
-                _LOGGER.debug(
-                    "Night boost active for area %s (%s-%s): %.1f°C + %.1f°C = %.1f°C",
-                    self.area_id, self.night_boost_start_time, self.night_boost_end_time,
-                    old_target, self.night_boost_offset, target
-                )
-                # Log to area logger if available
-                if self.area_manager and hasattr(self.area_manager, 'hass'):
-                    area_logger = self.area_manager.hass.data.get("smart_heating", {}).get("area_logger")
-                    if area_logger:
-                        area_logger.log_event(
-                            self.area_id,
-                            "temperature",
-                            f"Night boost applied: +{self.night_boost_offset}°C",
-                            {
-                                "base_target": old_target,
-                                "boost_offset": self.night_boost_offset,
-                                "effective_target": target,
-                                "boost_period": f"{self.night_boost_start_time}-{self.night_boost_end_time}",
-                                "current_time": f"{current_hour:02d}:{current_min:02d}"
-                            }
-                        )
+        target = self._apply_night_boost(target, current_time)
         
         # Note: Presence sensor actions are now handled by switching preset modes
         # (see climate_controller.py) rather than adjusting temperature directly

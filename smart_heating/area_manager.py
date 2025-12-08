@@ -64,7 +64,9 @@ class AreaManager:
         # Global Presence Sensors
         self.global_presence_sensors: list[dict] = []
         
-        # Safety Sensors (smoke/CO detectors)
+        # Safety Sensors (smoke/CO detectors) - Multi-sensor support
+        self.safety_sensors: list[dict] = []  # List of safety sensor configurations
+        # Legacy single sensor attributes (kept for backward compatibility migration)
         self.safety_sensor_id: str | None = None
         self.safety_sensor_attribute: str = "smoke"  # or "carbon_monoxide", "gas"
         self.safety_sensor_alert_value: str | bool = True  # Value that indicates danger

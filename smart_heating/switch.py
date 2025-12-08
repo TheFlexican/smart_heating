@@ -14,6 +14,7 @@ from .models import Area
 _LOGGER = logging.getLogger(__name__)
 
 
+# noqa: ASYNC109 - Home Assistant platform setup must be async
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,

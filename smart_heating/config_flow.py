@@ -156,7 +156,7 @@ class SmartHeatingOptionsFlowHandler(config_entries.OptionsFlow):
         
         # Create options with "None" option
         options_dict = {"": "None (Disabled)"}
-        options_dict.update({entity_id: name for entity_id, name in climate_entities})
+        options_dict.update(dict(climate_entities))
         
         # Show options form
         _LOGGER.debug("Showing options form with %d climate entities", len(climate_entities))

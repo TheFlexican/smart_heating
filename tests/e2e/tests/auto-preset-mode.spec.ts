@@ -2,6 +2,12 @@ import { test, expect } from '@playwright/test'
 import { navigateToSmartHeating, navigateToArea, switchToTab } from './helpers'
 
 test.describe('Auto Preset Mode', () => {
+  // Helper function to navigate to area settings and expand Auto Preset card
+  async function navigateToAreaSettings(page: any) {
+    await page.locator('text=Auto Preset Mode').click()
+    await page.waitForTimeout(500)
+  }
+
   test.beforeEach(async ({ page }) => {
     await navigateToSmartHeating(page)
     await navigateToArea(page, 'Woonkamer') // Navigate to first area
@@ -61,8 +67,8 @@ test.describe('Auto Preset Mode', () => {
 
   test('Can configure home preset when auto preset is enabled', async ({ page }) => {
     await navigateToAreaSettings(page)
-  test('Can configure home preset when auto preset is enabled', async ({ page }) => {
-    // Enable auto preseteout(500)
+
+    // Enable auto preset first
     const enableSwitch = page.locator('text=Enable Auto Preset').locator('..').locator('input[type="checkbox"]').first()
     await enableSwitch.click()
     await page.waitForTimeout(1000)
@@ -91,8 +97,8 @@ test.describe('Auto Preset Mode', () => {
 
   test('Can configure away preset when auto preset is enabled', async ({ page }) => {
     await navigateToAreaSettings(page)
-  test('Can configure away preset when auto preset is enabled', async ({ page }) => {
-    // Enable auto preseteout(500)
+
+    // Enable auto preset first
     const enableSwitch = page.locator('text=Enable Auto Preset').locator('..').locator('input[type="checkbox"]').first()
     await enableSwitch.click()
     await page.waitForTimeout(1000)
@@ -119,10 +125,8 @@ test.describe('Auto Preset Mode', () => {
 
   test('Shows warning when no presence sensors configured', async ({ page }) => {
     await navigateToAreaSettings(page)
-  test('Shows warning when no presence sensors configured', async ({ page }) => {
-    // Expand Auto Preset card500)
 
-    // Enable auto preset
+    // Expand Auto Preset card and enable
     const enableSwitch = page.locator('text=Enable Auto Preset').locator('..').locator('input[type="checkbox"]').first()
     await enableSwitch.click()
     await page.waitForTimeout(1000)
@@ -140,8 +144,8 @@ test.describe('Auto Preset Mode', () => {
 
   test('Can disable Auto Preset Mode', async ({ page }) => {
     await navigateToAreaSettings(page)
-  test('Can disable Auto Preset Mode', async ({ page }) => {
-    // Enable auto preset first00)
+
+    // Enable auto preset first
     const enableSwitch = page.locator('text=Enable Auto Preset').locator('..').locator('input[type="checkbox"]').first()
     await enableSwitch.click()
     await page.waitForTimeout(1000)
@@ -166,9 +170,9 @@ test.describe('Auto Preset Mode', () => {
   test('Settings persist after page reload', async ({ page }) => {
     await navigateToAreaSettings(page)
 
-    // Enable auto preset and configure it
-  test('Settings persist after page reload', async ({ page }) => {
-    // Enable auto preset and configure it
+    // Enable auto preset first
+    const enableSwitch = page.locator('text=Enable Auto Preset').locator('..').locator('input[type="checkbox"]').first()
+    await enableSwitch.click()
     await page.waitForTimeout(1000)
 
     // Configure home preset to Comfort

@@ -179,7 +179,7 @@ class SafetyMonitor:
         # Check current status
         await self._check_safety_status()
 
-    async def async_shutdown(self) -> None:
+    def async_shutdown(self) -> None:
         """Shutdown safety monitor and clean up listeners."""
         if self._state_unsub:
             self._state_unsub()

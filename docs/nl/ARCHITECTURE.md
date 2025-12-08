@@ -34,8 +34,9 @@ De codebase ondergaat regelmatige SonarQube analyse om hoge codekwaliteitsnormen
 │  │  └──────┬───────┘  └──────┬───────┘  └─────────────┘   │ │
 │  │         │                 │                            │ │
 │  │  ┌──────┴─────────────────┴──────-────────────────┐    │ │
-│  │  │                                                │    │ │
-│  │  │        REST API + WebSocket API                │    │ │
+│  │  │   REST API (api.py + api_handlers/)            │    │ │
+│  │  │   WebSocket API (websocket.py)                 │    │ │
+│  │  │   Service Handlers (ha_services/)              │    │ │
 │  │  │   (/api/smart_heating/*)                       │    │ │
 │  │  │                                                │    │ │
 │  │  └───────────────────────┬────────────────────────┘    │ │

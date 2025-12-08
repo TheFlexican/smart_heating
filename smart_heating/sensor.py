@@ -13,6 +13,7 @@ from .coordinator import SmartHeatingCoordinator
 _LOGGER = logging.getLogger(__name__)
 
 
+# noqa: ASYNC109 - Home Assistant platform setup must be async
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,

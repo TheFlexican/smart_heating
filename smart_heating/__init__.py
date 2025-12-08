@@ -157,7 +157,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _LOGGER.info("Learning engine initialized")
     
     # Create coordinator instance
-    coordinator = SmartHeatingCoordinator(hass, area_manager)
+    coordinator = SmartHeatingCoordinator(hass, entry, area_manager)
     
     # Set up state change listeners before first refresh
     await coordinator.async_setup()
@@ -169,8 +169,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Create and start climate controller
     climate_controller = ClimateController(hass, area_manager, learning_engine)
     
-    # Pass area_logger to climate controller
-    climate_controller.area_logger = area_logger
+    # Initialize handlers with area_logger
+    climate_controller.set_area_logger(area_logger)
     
     # Store climate controller
     hass.data[DOMAIN]["climate_controller"] = climate_controller
