@@ -2,7 +2,7 @@
 import asyncio
 import logging
 from datetime import timedelta
-from typing import Any
+from typing import Any, Optional
 
 from homeassistant.core import HomeAssistant, Event, callback
 from homeassistant.config_entries import ConfigEntry
@@ -12,6 +12,7 @@ from homeassistant.const import ATTR_ENTITY_ID
 
 from .const import DOMAIN, STATE_INITIALIZED, UPDATE_INTERVAL
 from .area_manager import AreaManager
+from .models import Area
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -191,6 +192,19 @@ class SmartHeatingCoordinator(DataUpdateCoordinator):
                     _LOGGER.info(
                         "Temperature change for %s matches expected %.1f°C - ignoring (not manual)",
                         area.name,
+                        expected_temp
+                    )
+                    break
+                
+                # IMPORTANT: Ignore temperature changes that are LOWER than current target
+                # These are typically stale state changes from old preset values that arrive
+                # AFTER a schedule has already updated the area target to a higher value.
+                # This prevents false manual override triggers during schedule transitions.
+                if new_temp < expected_temp - 0.1:
+                    _LOGGER.info(
+                        "Temperature change for %s is %.1f°C < expected %.1f°C - likely stale state from old preset, ignoring",
+                        area.name,
+                        new_temp,
                         expected_temp
                     )
                     break

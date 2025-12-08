@@ -9,6 +9,7 @@ from homeassistant.util import dt as dt_util
 from datetime import timedelta
 
 from .area_manager import AreaManager
+from .models import Area, Schedule
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -278,7 +279,7 @@ class ScheduleExecutor:
         return None
 
     def _get_target_time_and_temp_from_schedule(
-        self, area: Area, morning_schedule: ScheduleEntry, now: datetime
+        self, area: Area, morning_schedule: Schedule, now: datetime
     ) -> tuple[datetime, float]:
         """Get target time and temperature from a morning schedule.
         

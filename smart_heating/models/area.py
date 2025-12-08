@@ -1,6 +1,6 @@
 """Area model for Smart Heating integration."""
 import logging
-from typing import Any, TYPE_CHECKING
+from typing import Any, Optional, TYPE_CHECKING
 from datetime import datetime, timedelta
 
 from ..const import (
