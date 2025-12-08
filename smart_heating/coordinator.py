@@ -168,7 +168,8 @@ class SmartHeatingCoordinator(DataUpdateCoordinator):
                     del self._debounce_tasks[entity_id]
         
         # Store and start the debounce task
-        self._debounce_tasks[entity_id] = self.hass.async_create_task(debounced_temp_update())
+        import asyncio
+        self._debounce_tasks[entity_id] = asyncio.create_task(debounced_temp_update())
 
     async def _apply_manual_temperature_change(
         self, entity_id: str, new_temp: float
@@ -222,6 +223,7 @@ class SmartHeatingCoordinator(DataUpdateCoordinator):
                 await self.area_manager.async_save()
                 break
 
+    @callback
     def _handle_state_change(self, event: Event) -> None:
         """Handle state changes of tracked entities.
         
@@ -245,7 +247,8 @@ class SmartHeatingCoordinator(DataUpdateCoordinator):
         if self._should_update_for_state_change(entity_id, old_state, new_state):
             # Trigger immediate coordinator update
             _LOGGER.debug("Triggering coordinator refresh for %s", entity_id)
-            self.hass.async_create_task(self.async_request_refresh())
+            import asyncio
+            asyncio.create_task(self.async_request_refresh())
 
     async def async_shutdown(self) -> None:
         """Shutdown coordinator and clean up listeners."""
