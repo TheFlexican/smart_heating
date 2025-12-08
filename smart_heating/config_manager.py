@@ -29,8 +29,8 @@ class ConfigManager:
         """
         self.hass = hass
         self.area_manager = area_manager
-        self.storage_path = storage_path
-        self.backup_dir = storage_path / "backups"
+        self.storage_path = Path(storage_path) if isinstance(storage_path, str) else storage_path
+        self.backup_dir = self.storage_path / "backups"
         self.backup_dir.mkdir(exist_ok=True)
 
     async def async_export_config(self) -> dict[str, Any]:
