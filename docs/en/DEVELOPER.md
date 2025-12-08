@@ -201,6 +201,101 @@ def from_dict(cls, data: dict) -> "Area":
 
 ### Adding a New API Endpoint
 
+**Example: Primary Temperature Sensor (v0.5.10)**
+
+This feature demonstrates the full stack for adding a new API endpoint.
+
+1. **Backend Handler** (`api_handlers/area_handlers.py`):
+   ```python
+   async def handle_set_primary_temperature_sensor(
+       request: web.Request,
+       area_manager: AreaManager,
+       area_id: str
+   ) -> web.Response:
+       """Set primary temperature sensor for area."""
+       data = await request.json()
+       sensor_id = data.get("sensor_id")
+       
+       # Validate area exists
+       area = await area_manager.get_area(area_id)
+       if not area:
+           return web.json_response({"error": "Area not found"}, status=404)
+       
+       # Validate sensor (can be null for auto mode)
+       if sensor_id:
+           devices = area.get_all_devices()
+           if sensor_id not in devices:
+               return web.json_response(
+                   {"error": "Sensor not found in area"}, 
+                   status=400
+               )
+       
+       # Update area
+       area.primary_temperature_sensor = sensor_id
+       await area_manager.update_area(area)
+       
+       return web.json_response({"success": True, "sensor_id": sensor_id})
+   ```
+
+2. **Route Registration** (`api.py`):
+   ```python
+   # In ZoneHeaterAPIView.post()
+   if len(parts) == 3 and parts[2] == "primary_temp_sensor":
+       return await handle_set_primary_temperature_sensor(
+           request, self.area_manager, parts[1]
+       )
+   ```
+
+3. **Frontend API Client** (`frontend/src/api.ts`):
+   ```typescript
+   export const setPrimaryTemperatureSensor = async (
+     areaId: string,
+     sensorId: string | null
+   ): Promise<void> => {
+     await client.post(`/areas/${areaId}/primary_temp_sensor`, {
+       sensor_id: sensorId,
+     })
+   }
+   ```
+
+4. **React Component** (`AreaDetail.tsx`):
+   ```typescript
+   import { setPrimaryTemperatureSensor } from '../api'
+   
+   const handlePrimarySensorChange = async (event: SelectChangeEvent) => {
+     const value = event.target.value === 'auto' ? null : event.target.value
+     await setPrimaryTemperatureSensor(area.id, value)
+     // Refresh area data
+     await fetchAreaData()
+   }
+   ```
+
+5. **Temperature Collection Logic** (`climate_handlers/temperature_sensors.py`):
+   ```python
+   async def collect_area_temperatures(
+       hass: HomeAssistant,
+       area: Area
+   ) -> dict[str, float]:
+       """Collect temperatures, prioritizing primary sensor if set."""
+       
+       # If primary sensor configured, use it exclusively
+       if area.primary_temperature_sensor:
+           state = hass.states.get(area.primary_temperature_sensor)
+           if state and state.state not in (STATE_UNAVAILABLE, STATE_UNKNOWN):
+               temp = float(state.state)
+               return {area.primary_temperature_sensor: temp}
+       
+       # Fall back to averaging all sensors
+       temps = {}
+       for sensor_id in area.temperature_sensors:
+           state = hass.states.get(sensor_id)
+           if state and state.state not in (STATE_UNAVAILABLE, STATE_UNKNOWN):
+               temps[sensor_id] = float(state.state)
+       return temps
+   ```
+
+### Adding a New API Endpoint (Generic)
+
 1. **Add method** to `ZoneHeaterAPIView` in `api.py`:
    ```python
    async def my_endpoint(self, request: web.Request) -> web.Response:

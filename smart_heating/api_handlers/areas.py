@@ -660,3 +660,68 @@ async def handle_set_manual_override(
         await coordinator.async_request_refresh()
     
     return web.json_response({"success": True})
+
+
+async def handle_set_primary_temperature_sensor(
+    hass: HomeAssistant,
+    area_manager: AreaManager,
+    area_id: str,
+    data: dict
+) -> web.Response:
+    """Set the primary temperature sensor for an area.
+    
+    Args:
+        hass: Home Assistant instance
+        area_manager: Area manager instance
+        area_id: Area identifier
+        data: Dictionary with 'sensor_id' (can be None to reset)
+        
+    Returns:
+        JSON response
+    """
+    area = area_manager.get_area(area_id)
+    if not area:
+        return web.json_response(
+            {"error": f"Area {area_id} not found"}, status=404
+        )
+    
+    sensor_id = data.get("sensor_id")
+    
+    # Validate sensor exists in area if not None
+    if sensor_id is not None:
+        all_temp_devices = area.get_temperature_sensors() + area.get_thermostats()
+        if sensor_id not in all_temp_devices:
+            return web.json_response(
+                {"error": f"Device {sensor_id} not found in area {area_id}"}, status=400
+            )
+    
+    old_sensor = area.primary_temperature_sensor
+    area.primary_temperature_sensor = sensor_id
+    
+    _LOGGER.warning(
+        "🌡️ API: PRIMARY TEMP SENSOR for %s: %s → %s",
+        area.name,
+        old_sensor or "Auto (all sensors)",
+        sensor_id or "Auto (all sensors)"
+    )
+    
+    # Save to storage
+    await area_manager.async_save()
+    
+    # Update temperatures immediately
+    climate_controller = hass.data.get(DOMAIN, {}).get("climate_controller")
+    if climate_controller:
+        await climate_controller.async_update_area_temperatures()
+        await climate_controller.async_control_heating()
+    
+    # Refresh coordinator
+    entry_ids = [
+        key for key in hass.data[DOMAIN].keys()
+        if key not in ["history", "climate_controller", "schedule_executor", "climate_unsub", "learning_engine", "area_logger", "vacation_manager", "safety_monitor"]
+    ]
+    if entry_ids:
+        coordinator = hass.data[DOMAIN][entry_ids[0]]
+        await coordinator.async_request_refresh()
+    
+    return web.json_response({"success": True})
+

@@ -56,9 +56,24 @@ dist/
 .vite/
 *.local
 
-
 # Mosquitto
 ha-config/
 mosquitto-data/
 mosquitto-log/
 mosquitto-config/
+
+# Testing
+.coverage.*
+coverage.xml
+.cache
+
+# Exclude pytest related files
+.pytest_cache/
+.pytest_cache/*
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Tokens
+.ha_token

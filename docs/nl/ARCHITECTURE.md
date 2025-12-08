@@ -762,21 +762,40 @@ WebSocket verbinding voor live updates:
 Gebruiker klikt "Zone Creëren"
     ↓
 CreateZoneDialog verzamelt invoer
-    ↓
-api.createZone() roept POST /api/smart_heating/areas aan
-    ↓
-ZoneHeaterAPIView.post() routeert naar create_area()
-    ↓
-area_manager.add_area()
-    ↓
-Zone opgeslagen in opslag
-    ↓
-Coordinator haalt bijgewerkte data op
-    ↓
-WebSocket pusht update naar frontend
-    ↓
-ZoneList toont nieuwe zone kaart
+
+### Primaire Temperatuursensor Selectie (v0.5.10+)
+
+**Functie:** Stelt gebruikers in staat te kiezen welk apparaat de temperatuur meet per zone.
+
+**Gebruikscases:**
+- Airconditioner met ingebouwde temp sensor + dedicated temperatuursensor → Gebruik dedicated sensor voor nauwkeurigheid
+- Meerdere thermostaten in één zone → Kies welke thermostaat temperatuur gebruiken
+- Voorkeur voor losse sensor boven AC's sensor voor consistente metingen
+
+**Gedrag:**
 ```
+Auto Modus (standaard):
+    - primary_temperature_sensor = null
+    - Middelt ALLE temperatuursensoren + thermostaten in zone
+    
+Primaire Sensor Modus:
+    - primary_temperature_sensor = "sensor.xyz" of "climate.abc"
+    - Gebruikt ALLEEN het geselecteerde apparaat voor temperatuur
+    - Als geselecteerd apparaat niet beschikbaar → Valt tijdelijk terug naar auto modus
+```
+
+**Implementatie:**
+- **Opslag:** `Area.primary_temperature_sensor` (str | None)
+- **Temperatuur Verzameling:** `climate_handlers/temperature_sensors.py`
+  - Controleert of primaire sensor is ingesteld
+  - Geeft enkele temperatuur van primair apparaat terug
+  - Valt terug naar middelen als primair niet beschikbaar
+- **API Endpoint:** `POST /api/smart_heating/areas/{area_id}/primary_temp_sensor`
+  - Valideert sensor bestaat in zone
+  - Werkt temperatuur onmiddellijk bij
+  - Triggert vernieuwing verwarmingscontrole
+- **UI:** Zone Detail → Apparaten tab → Primaire Temperatuursensor dropdown
+- **Vertalingen:** Engels + Nederlands
 
 ### Temperatuur Controle Flow
 
@@ -796,6 +815,8 @@ Zone bijgewerkt in opslag
 Climate controller (30s interval) detecteert wijziging
     ↓
 Climate controller verwerkt zone:
+    │
+    ├──→ Verzamelt temperatuur met primaire sensor (indien ingesteld) of middelen (indien null)
     │
     ├──→ Thermostaten: climate.set_temperature naar doel
     │

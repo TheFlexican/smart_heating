@@ -303,6 +303,13 @@ export const setManualOverride = async (
   await axios.post(`${API_BASE}/areas/${areaId}/manual_override`, { enabled })
 }
 
+export const setPrimaryTemperatureSensor = async (
+  areaId: string,
+  sensorId: string | null
+): Promise<void> => {
+  await axios.post(`${API_BASE}/areas/${areaId}/primary_temp_sensor`, { sensor_id: sensorId })
+}
+
 // Global presence sensor management
 export const getGlobalPresence = async (): Promise<{
   sensors: PresenceSensorConfig[]

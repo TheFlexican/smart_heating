@@ -25,9 +25,11 @@ def mock_hass():
 def mock_area():
     """Return mocked area."""
     area = MagicMock(spec=Area)
+    area.area_id = "test_area"
     area.get_temperature_sensors = MagicMock(return_value=[])
     area.get_thermostats = MagicMock(return_value=[])
     area.weather_entity_id = None
+    area.primary_temperature_sensor = None
     return area
 
 
@@ -315,6 +317,118 @@ class TestCollectAreaTemperatures:
         result = temp_handler.collect_area_temperatures(mock_area)
         
         assert result == [20.0]
+
+
+class TestCollectAreaTemperaturesWithPrimarySensor:
+    """Test collect_area_temperatures method with primary sensor selection."""
+    
+    def test_primary_temperature_sensor_only(self, temp_handler, mock_hass, mock_area):
+        """Test using only primary temperature sensor when set."""
+        mock_area.primary_temperature_sensor = "sensor.primary"
+        mock_area.get_temperature_sensors.return_value = ["sensor.primary", "sensor.secondary"]
+        mock_area.get_thermostats.return_value = ["climate.thermo1"]
+        
+        primary_state = MagicMock()
+        primary_state.state = "21.5"
+        primary_state.attributes = {"unit_of_measurement": "°C"}
+        
+        mock_hass.states.get.return_value = primary_state
+        
+        result = temp_handler.collect_area_temperatures(mock_area)
+        
+        # Should only return primary sensor temperature
+        assert result == [21.5]
+        # Verify only primary sensor was queried
+        mock_hass.states.get.assert_called_once_with("sensor.primary")
+    
+    def test_primary_thermostat_only(self, temp_handler, mock_hass, mock_area):
+        """Test using primary thermostat when set."""
+        mock_area.primary_temperature_sensor = "climate.primary_thermo"
+        mock_area.get_temperature_sensors.return_value = ["sensor.temp1"]
+        mock_area.get_thermostats.return_value = ["climate.primary_thermo", "climate.secondary"]
+        
+        # First call for sensor check (returns None), second for thermostat
+        sensor_state = None
+        thermo_state = MagicMock()
+        thermo_state.state = "heat"
+        thermo_state.attributes = {
+            "current_temperature": 20.0,
+            "unit_of_measurement": "°C"
+        }
+        
+        mock_hass.states.get.side_effect = [sensor_state, thermo_state]
+        
+        result = temp_handler.collect_area_temperatures(mock_area)
+        
+        # Should only return primary thermostat temperature
+        assert result == [20.0]
+    
+    def test_primary_sensor_unavailable_fallback_to_all(self, temp_handler, mock_hass, mock_area):
+        """Test fallback to all sensors when primary is unavailable."""
+        mock_area.primary_temperature_sensor = "sensor.primary"
+        mock_area.get_temperature_sensors.return_value = ["sensor.primary", "sensor.backup"]
+        mock_area.get_thermostats.return_value = ["climate.thermo1"]
+        
+        # Primary sensor unavailable (first check as sensor, then as thermostat)
+        unavail_state = MagicMock()
+        unavail_state.state = "unavailable"
+        unavail_state.attributes = {}
+        
+        # Backup sensor
+        backup_state = MagicMock()
+        backup_state.state = "19.5"
+        backup_state.attributes = {"unit_of_measurement": "°C"}
+        
+        # Thermostat
+        thermo_state = MagicMock()
+        thermo_state.state = "heat"
+        thermo_state.attributes = {
+            "current_temperature": 20.0,
+            "unit_of_measurement": "°C"
+        }
+        
+        # Need enough states for: primary sensor (None), primary thermostat (unavail),
+        # then fallback: sensor.primary (None again), sensor.backup (backup_state), climate.thermo1 (thermo_state)
+        mock_hass.states.get.side_effect = [
+            None,  # Primary "sensor.primary" as sensor not found
+            unavail_state,  # Primary "sensor.primary" as thermostat unavailable
+            None,  # Fallback: sensor.primary still not found
+            backup_state,  # Fallback: sensor.backup
+            thermo_state  # Fallback: climate.thermo1
+        ]
+        
+        result = temp_handler.collect_area_temperatures(mock_area)
+        
+        # Should fall back to all sensors (backup + thermostat)
+        assert len(result) == 2
+        assert 19.5 in result
+        assert 20.0 in result
+    
+    def test_primary_sensor_none_uses_all_sensors(self, temp_handler, mock_hass, mock_area):
+        """Test that None primary sensor uses all sensors (default behavior)."""
+        mock_area.primary_temperature_sensor = None
+        mock_area.get_temperature_sensors.return_value = ["sensor.temp1"]
+        mock_area.get_thermostats.return_value = ["climate.thermo1"]
+        
+        sensor_state = MagicMock()
+        sensor_state.state = "20.0"
+        sensor_state.attributes = {"unit_of_measurement": "°C"}
+        
+        thermo_state = MagicMock()
+        thermo_state.state = "heat"
+        thermo_state.attributes = {
+            "current_temperature": 20.5,
+            "unit_of_measurement": "°C"
+        }
+        
+        mock_hass.states.get.side_effect = [sensor_state, thermo_state]
+        
+        result = temp_handler.collect_area_temperatures(mock_area)
+        
+        # Should use all sensors
+        assert len(result) == 2
+        assert 20.0 in result
+        assert 20.5 in result
 
 
 class TestAsyncGetOutdoorTemperature:

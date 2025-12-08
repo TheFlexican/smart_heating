@@ -413,8 +413,9 @@ class TestConfigHandlers:
     async def test_handle_get_safety_sensor_with_sensor(self, mock_area_manager):
         """Test getting safety sensor when one is configured."""
         mock_area_manager.get_safety_sensors.return_value = [
-            {"entity_id": "binary_sensor.smoke"}
+            {"sensor_id": "binary_sensor.smoke", "enabled": True}
         ]
+        mock_area_manager.is_safety_alert_active.return_value = False
         
         response = await handle_get_safety_sensor(mock_area_manager)
         

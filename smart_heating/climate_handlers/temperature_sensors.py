@@ -108,6 +108,9 @@ class TemperatureSensorHandler:
     def collect_area_temperatures(self, area: Area) -> list[float]:
         """Collect all temperature readings for an area.
         
+        If a primary_temperature_sensor is set, only use that device.
+        Otherwise, collect from all temperature sensors and thermostats.
+        
         Args:
             area: Area instance
             
@@ -116,6 +119,24 @@ class TemperatureSensorHandler:
         """
         temps = []
         
+        # If primary temperature sensor is configured, use only that
+        if area.primary_temperature_sensor:
+            # Try as temperature sensor first
+            temp = self.get_temperature_from_sensor(area.primary_temperature_sensor)
+            if temp is not None:
+                return [temp]
+            
+            # Try as thermostat
+            temp = self.get_temperature_from_thermostat(area.primary_temperature_sensor)
+            if temp is not None:
+                return [temp]
+            
+            _LOGGER.warning(
+                "Primary temperature sensor %s unavailable for area %s, falling back to all sensors",
+                area.primary_temperature_sensor, area.area_id
+            )
+        
+        # No primary sensor or primary sensor unavailable - collect from all
         # Read from temperature sensors
         for sensor_id in area.get_temperature_sensors():
             temp = self.get_temperature_from_sensor(sensor_id)

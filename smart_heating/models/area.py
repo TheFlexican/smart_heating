@@ -133,6 +133,9 @@ class Area:
         
         # Hysteresis override - None means use global setting
         self.hysteresis_override: float | None = None  # Area-specific hysteresis in °C (0.1-2.0)
+        
+        # Primary temperature sensor - which device to use for temperature reading
+        self.primary_temperature_sensor: str | None = None  # Entity ID of primary temp sensor (can be thermostat or temp sensor)
 
     def add_device(self, device_id: str, device_type: str, mqtt_topic: str | None = None) -> None:
         """Add a device to the area.
@@ -723,6 +726,8 @@ class Area:
             "auto_preset_away": self.auto_preset_away,
             # Hysteresis override
             "hysteresis_override": self.hysteresis_override,
+            # Primary temperature sensor
+            "primary_temperature_sensor": self.primary_temperature_sensor,
         }
 
     @classmethod
@@ -788,6 +793,9 @@ class Area:
         
         # Hysteresis override
         area.hysteresis_override = data.get("hysteresis_override")
+        
+        # Primary temperature sensor
+        area.primary_temperature_sensor = data.get("primary_temperature_sensor")
         
         # Window sensors - support both old string format and new dict format
         window_sensors_data = data.get("window_sensors", [])

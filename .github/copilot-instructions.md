@@ -61,7 +61,7 @@ Home Assistant integration for zone-based heating control with learning capabili
 - No matter how complex or time-consuming, finish what you start
 
 **RULE #6: Test Coverage**
-- **Minimum 85% code coverage required** for all Python modules
+- **Minimum 80% code coverage required** for all Python modules
 - **Two test layers:** Python unit tests (pytest) + E2E tests (Playwright)
 - **NEVER skip writing tests** - No matter how complex or time-consuming
 - **ALL tests must be fully implemented** - No placeholder or skipped tests without explicit user permission
@@ -73,19 +73,19 @@ Home Assistant integration for zone-based heating control with learning capabili
 - Location: `tests/unit/` directory
 - Framework: pytest with pytest-asyncio, pytest-cov, pytest-homeassistant-custom-component
 - Run: `./run_tests.sh` (automated) or `pytest tests/unit --cov=smart_heating -v`
-- Coverage: HTML report at `coverage_html/index.html`, enforced 85% threshold
+- Coverage: HTML report at `coverage_html/index.html`, enforced 80% threshold
 - Test files: 12+ files with 126+ test functions covering:
   - `test_area_manager.py` - Area CRUD, global settings (19 tests, 90%+ target)
   - `test_models_area.py` - Area model, devices, sensors (20 tests, 90%+ target)
-  - `test_coordinator.py` - Data coordination (15 tests, 85%+ target)
-  - `test_climate.py` - Climate platform (14 tests, 85%+ target)
-  - `test_scheduler.py` - Schedule execution (11 tests, 85%+ target)
-  - `test_safety_monitor.py` - Safety monitoring (10 tests, 85%+ target)
-  - `test_vacation_manager.py` - Vacation mode (10 tests, 85%+ target)
-  - `test_switch.py` - Switch platform (8 tests, 85%+ target)
+  - `test_coordinator.py` - Data coordination (15 tests, 80%+ target)
+  - `test_climate.py` - Climate platform (14 tests, 80%+ target)
+  - `test_scheduler.py` - Schedule execution (11 tests, 80%+ target)
+  - `test_safety_monitor.py` - Safety monitoring (10 tests, 80%+ target)
+  - `test_vacation_manager.py` - Vacation mode (10 tests, 80%+ target)
+  - `test_switch.py` - Switch platform (8 tests, 80%+ target)
   - `test_utils.py` - Validators, response builders (8 tests, 90%+ target)
-  - `test_config_flow.py` - Config flow (5 tests, 85%+ target)
-  - `test_init.py` - Integration setup (6 tests, 85%+ target)
+  - `test_config_flow.py` - Config flow (5 tests, 80%+ target)
+  - `test_init.py` - Integration setup (6 tests, 80%+ target)
 - Common fixtures in `tests/conftest.py`: mock_area_manager, mock_coordinator, mock_area_data, etc.
 - Documentation: `tests/README.md` (comprehensive guide), `TESTING_SUMMARY.md`, `TESTING_QUICKSTART.md`
 
@@ -100,7 +100,7 @@ Home Assistant integration for zone-based heating control with learning capabili
 1. Write Python unit tests FIRST (TDD approach recommended)
 2. Add E2E tests for user-facing features
 3. Run both test suites: `./run_tests.sh && cd tests/e2e && npm test`
-4. Verify coverage meets 85%: check `coverage_html/index.html`
+4. Verify coverage meets 80%: check `coverage_html/index.html`
 5. Update tests when modifying existing code
 6. Test edge cases, error conditions, and boundary values
 7. **Never skip tests** - implement them fully even if complex

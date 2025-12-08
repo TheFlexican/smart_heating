@@ -668,3 +668,155 @@ class TestAreaHandlers:
         assert response.status == 404
         body = json.loads(response.body.decode())
         assert "error" in body
+
+
+class TestHandleSetPrimaryTemperatureSensor:
+    """Test handle_set_primary_temperature_sensor function."""
+    
+    @pytest.mark.asyncio
+    async def test_set_primary_sensor_success(self, mock_hass, mock_area_manager):
+        """Test setting primary temperature sensor successfully."""
+        from smart_heating.api_handlers.areas import handle_set_primary_temperature_sensor
+        
+        area = MagicMock()
+        area.id = "area1"
+        area.name = "Living Room"
+        area.primary_temperature_sensor = None
+        area.get_temperature_sensors.return_value = ["sensor.temp1", "sensor.temp2"]
+        area.get_thermostats.return_value = ["climate.thermo1"]
+        
+        mock_area_manager.get_area.return_value = area
+        
+        # Mock climate controller
+        climate_controller = MagicMock()
+        climate_controller.async_update_area_temperatures = AsyncMock()
+        climate_controller.async_control_heating = AsyncMock()
+        
+        # Mock coordinator with AsyncMock for refresh
+        coordinator = MagicMock()
+        coordinator.async_request_refresh = AsyncMock()
+        
+        mock_hass.data = {
+            "smart_heating": {
+                "climate_controller": climate_controller,
+                "test_entry_id": coordinator
+            }
+        }
+        
+        data = {"sensor_id": "sensor.temp1"}
+        response = await handle_set_primary_temperature_sensor(mock_hass, mock_area_manager, "area1", data)
+        
+        assert response.status == 200
+        assert area.primary_temperature_sensor == "sensor.temp1"
+        mock_area_manager.async_save.assert_called_once()
+        climate_controller.async_update_area_temperatures.assert_called_once()
+        climate_controller.async_control_heating.assert_called_once()
+    
+    @pytest.mark.asyncio
+    async def test_set_primary_thermostat_success(self, mock_hass, mock_area_manager):
+        """Test setting primary thermostat successfully."""
+        from smart_heating.api_handlers.areas import handle_set_primary_temperature_sensor
+        
+        area = MagicMock()
+        area.id = "area1"
+        area.name = "Living Room"
+        area.primary_temperature_sensor = None
+        area.get_temperature_sensors.return_value = ["sensor.temp1"]
+        area.get_thermostats.return_value = ["climate.thermo1", "climate.thermo2"]
+        
+        mock_area_manager.get_area.return_value = area
+        
+        # Mock climate controller
+        climate_controller = MagicMock()
+        climate_controller.async_update_area_temperatures = AsyncMock()
+        climate_controller.async_control_heating = AsyncMock()
+        
+        # Mock coordinator with AsyncMock for refresh
+        coordinator = MagicMock()
+        coordinator.async_request_refresh = AsyncMock()
+        
+        mock_hass.data = {
+            "smart_heating": {
+                "climate_controller": climate_controller,
+                "test_entry_id": coordinator
+            }
+        }
+        
+        data = {"sensor_id": "climate.thermo1"}
+        response = await handle_set_primary_temperature_sensor(mock_hass, mock_area_manager, "area1", data)
+        
+        assert response.status == 200
+        assert area.primary_temperature_sensor == "climate.thermo1"
+    
+    @pytest.mark.asyncio
+    async def test_reset_to_auto_mode(self, mock_hass, mock_area_manager):
+        """Test resetting to auto mode (None)."""
+        from smart_heating.api_handlers.areas import handle_set_primary_temperature_sensor
+        
+        area = MagicMock()
+        area.id = "area1"
+        area.name = "Living Room"
+        area.primary_temperature_sensor = "sensor.temp1"
+        area.get_temperature_sensors.return_value = ["sensor.temp1"]
+        area.get_thermostats.return_value = []
+        
+        mock_area_manager.get_area.return_value = area
+        
+        # Mock climate controller
+        climate_controller = MagicMock()
+        climate_controller.async_update_area_temperatures = AsyncMock()
+        climate_controller.async_control_heating = AsyncMock()
+        
+        # Mock coordinator with AsyncMock for refresh
+        coordinator = MagicMock()
+        coordinator.async_request_refresh = AsyncMock()
+        
+        mock_hass.data = {
+            "smart_heating": {
+                "climate_controller": climate_controller,
+                "test_entry_id": coordinator
+            }
+        }
+        
+        data = {"sensor_id": None}
+        response = await handle_set_primary_temperature_sensor(mock_hass, mock_area_manager, "area1", data)
+        
+        assert response.status == 200
+        assert area.primary_temperature_sensor is None
+    
+    @pytest.mark.asyncio
+    async def test_sensor_not_in_area(self, mock_hass, mock_area_manager):
+        """Test setting sensor that doesn't exist in area."""
+        from smart_heating.api_handlers.areas import handle_set_primary_temperature_sensor
+        
+        area = MagicMock()
+        area.id = "area1"
+        area.name = "Living Room"
+        area.get_temperature_sensors.return_value = ["sensor.temp1"]
+        area.get_thermostats.return_value = ["climate.thermo1"]
+        
+        mock_area_manager.get_area.return_value = area
+        
+        data = {"sensor_id": "sensor.nonexistent"}
+        response = await handle_set_primary_temperature_sensor(mock_hass, mock_area_manager, "area1", data)
+        
+        assert response.status == 400
+        body = json.loads(response.body.decode())
+        assert "error" in body
+        assert "not found" in body["error"]
+    
+    @pytest.mark.asyncio
+    async def test_area_not_found(self, mock_hass):
+        """Test setting primary sensor for non-existent area."""
+        from smart_heating.api_handlers.areas import handle_set_primary_temperature_sensor
+        
+        area_manager = MagicMock()
+        area_manager.get_area.return_value = None
+        
+        data = {"sensor_id": "sensor.temp1"}
+        response = await handle_set_primary_temperature_sensor(mock_hass, area_manager, "nonexistent", data)
+        
+        assert response.status == 404
+        body = json.loads(response.body.decode())
+        assert "error" in body
+

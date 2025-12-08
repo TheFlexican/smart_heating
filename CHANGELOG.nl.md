@@ -7,6 +7,22 @@ en dit project volgt [Semantic Versioning](https://semver.org/).
 
 ## [Niet Uitgebracht]
 
+### ✨ Functies
+
+**Primaire Temperatuursensor Selectie**
+- **Selecteer welk apparaat de temperatuur meet**: Kies een specifieke temperatuursensor of thermostaat voor elke ruimte
+  - Handig wanneer je meerdere temperatuur bronnen hebt (bijv. airconditioning + aparte temperatuursensor)
+  - Geef voorkeur aan een losse temperatuursensor boven de ingebouwde sensor van een AC voor nauwkeurigere metingen
+  - Automatische modus (standaard): Middelt alle temperatuursensoren en thermostaten in de ruimte
+  - Primaire modus: Gebruikt alleen het geselecteerde apparaat voor temperatuurmeting
+  - Automatische fallback: Als primaire sensor niet beschikbaar is, keert tijdelijk terug naar automatische modus
+- **UI verbeteringen**:
+  - Nieuwe dropdown selector in Ruimte Detail → Apparaten tab
+  - Toont alle beschikbare temperatuursensoren en thermostaten
+  - Real-time temperatuur updates bij selectie wijziging
+  - Beschikbaar in zowel Engels als Nederlands
+- **API endpoint**: `POST /api/smart_heating/areas/{area_id}/primary_temp_sensor`
+
 ### 📱 Mobiele Verbeteringen
 
 **WebSocket Mobiele Herverbinding (v0.5.8)**

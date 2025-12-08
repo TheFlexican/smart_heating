@@ -23,6 +23,7 @@ from .api_handlers import (
     handle_set_auto_preset,
     handle_set_area_preset_config,
     handle_set_manual_override,
+    handle_set_primary_temperature_sensor,
     # Devices
     handle_get_devices,
     handle_refresh_devices,
@@ -239,6 +240,9 @@ class SmartHeatingAPIView(HomeAssistantView):
             elif endpoint.startswith(ENDPOINT_PREFIX_AREAS) and endpoint.endswith("/manual_override"):
                 area_id = endpoint.split("/")[1]
                 return await handle_set_manual_override(self.hass, self.area_manager, area_id, data)
+            elif endpoint.startswith(ENDPOINT_PREFIX_AREAS) and endpoint.endswith("/primary_temp_sensor"):
+                area_id = endpoint.split("/")[1]
+                return await handle_set_primary_temperature_sensor(self.hass, self.area_manager, area_id, data)
             
             # Global config endpoints
             elif endpoint == "frost_protection":

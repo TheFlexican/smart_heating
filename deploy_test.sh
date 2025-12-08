@@ -18,6 +18,9 @@ echo -e "${BLUE}  Smart Heating - Sync Script${NC}"
 echo -e "${BLUE}════════════════════════════════════════════════════════${NC}"
 echo ""
 
+# Change docker context to local
+docker context use desktop-linux > /dev/null 2>&1 || true
+
 # Check if container is running
 if ! docker ps | grep -q "$HA_CONTAINER"; then
     echo -e "${RED}✗${NC} Container '$HA_CONTAINER' is not running"

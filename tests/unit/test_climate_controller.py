@@ -91,6 +91,7 @@ def mock_area():
     area.presence_sensors = []
     area.shutdown_switches_when_idle = True
     area.devices = {}
+    area.primary_temperature_sensor = None  # Default to auto mode
     area.get_effective_target_temperature = MagicMock(return_value=20.0)
     area.get_temperature_sensors = MagicMock(return_value=[])
     area.get_thermostats = MagicMock(return_value=[])
@@ -331,11 +332,13 @@ class TestAsyncUpdateAreaTemperatures:
         """Test updating temperatures for multiple areas."""
         area1 = MagicMock(spec=Area)
         area1.area_id = "living_room"
+        area1.primary_temperature_sensor = None
         area1.get_temperature_sensors = MagicMock(return_value=["sensor.lr_temp"])
         area1.get_thermostats = MagicMock(return_value=[])
         
         area2 = MagicMock(spec=Area)
         area2.area_id = "bedroom"
+        area2.primary_temperature_sensor = None
         area2.get_temperature_sensors = MagicMock(return_value=["sensor.br_temp"])
         area2.get_thermostats = MagicMock(return_value=[])
         

@@ -1,6 +1,6 @@
 {
   "name": "smart-heating-frontend",
-  "version": "0.5.9",
+  "version": "0.5.10",
   "private": true,
   "dependencies": {
     "@emotion/react": "^11.13.5",

@@ -112,7 +112,7 @@ const Header = ({ wsConnected = false }: HeaderProps) => {
             </Box>
           </Tooltip>
           <Chip 
-            label="v0.5.9" 
+            label="v0.5.10" 
             size="small" 
             variant="outlined"
             sx={{ 

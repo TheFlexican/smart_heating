@@ -750,6 +750,41 @@ WebSocket connection for live updates:
 User clicks "Create Area"
     ↓
 CreateZoneDialog collects input
+
+### Primary Temperature Sensor Selection (v0.5.10+)
+
+**Feature:** Allows users to select which device measures temperature for each area.
+
+**Use Cases:**
+- Air conditioner with built-in temp sensor + dedicated temperature sensor → Use dedicated sensor for accuracy
+- Multiple thermostats in one area → Choose which thermostat's temperature to use
+- Prefer standalone sensor over AC's sensor for consistent readings
+
+**Behavior:**
+```
+Auto Mode (default):
+    - primary_temperature_sensor = null
+    - Averages ALL temperature sensors + thermostats in area
+    
+Primary Sensor Mode:
+    - primary_temperature_sensor = "sensor.xyz" or "climate.abc"
+    - Uses ONLY the selected device for temperature
+    - If selected device unavailable → Falls back to auto mode temporarily
+```
+
+**Implementation:**
+- **Storage:** `Area.primary_temperature_sensor` (str | None)
+- **Temperature Collection:** `climate_handlers/temperature_sensors.py`
+  - Checks if primary sensor is set
+  - Returns single temperature from primary device
+  - Falls back to averaging if primary unavailable
+- **API Endpoint:** `POST /api/smart_heating/areas/{area_id}/primary_temp_sensor`
+  - Validates sensor exists in area
+  - Updates temperature immediately
+  - Triggers heating control refresh
+- **UI:** Area Detail → Devices tab → Primary Temperature Sensor dropdown
+- **Translations:** English + Dutch
+
 ### Temperature Control Flow
 
 ```
@@ -768,6 +803,8 @@ Area updated in storage
 Climate controller (30s interval) detects change
     ↓
 Climate controller processes area:
+    │
+    ├──→ Collects temperature using primary sensor (if set) or averaging (if null)
     │
     ├──→ Thermostats: climate.set_temperature to target
     │

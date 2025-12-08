@@ -409,6 +409,8 @@ class SmartHeatingCoordinator(DataUpdateCoordinator):
             "smart_night_boost_enabled": area.smart_night_boost_enabled,
             "smart_night_boost_target_time": area.smart_night_boost_target_time,
             "weather_entity_id": area.weather_entity_id,
+            # Primary temperature sensor
+            "primary_temperature_sensor": area.primary_temperature_sensor,
         }
 
     async def _async_update_data(self) -> dict:

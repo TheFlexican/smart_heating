@@ -102,6 +102,9 @@ export interface Zone {
   
   // Hysteresis override (null = use global setting)
   hysteresis_override?: number | null
+  
+  // Primary temperature sensor (which device to use for temperature measurement)
+  primary_temperature_sensor?: string | null
 }
 
 // Window sensor configuration

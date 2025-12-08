@@ -68,7 +68,8 @@ import {
   setAreaPresetConfig,
   setAreaPresenceConfig,
   getAreaLogs,
-  AreaLogEntry
+  AreaLogEntry,
+  setPrimaryTemperatureSensor,
 } from '../api'
 import ScheduleEditor from '../components/ScheduleEditor'
 import HistoryChart from '../components/HistoryChart'
@@ -1610,6 +1611,43 @@ const ZoneDetail = () => {
         {/* Devices Tab */}
         <TabPanel value={tabValue} index={1}>
           <Box sx={{ maxWidth: 800, mx: 'auto' }}>
+            {/* Primary Temperature Sensor Selection */}
+            <Paper sx={{ p: 3, mb: 3 }}>
+              <Typography variant="h6" gutterBottom color="text.primary">
+                {t('areaDetail.primaryTemperatureSensor')}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                {t('areaDetail.primaryTemperatureSensorDescription')}
+              </Typography>
+              <FormControl fullWidth>
+                <InputLabel>{t('areaDetail.temperatureSensor')}</InputLabel>
+                <Select
+                  value={area.primary_temperature_sensor || 'auto'}
+                  label={t('areaDetail.temperatureSensor')}
+                  onChange={async (e) => {
+                    try {
+                      const value = e.target.value === 'auto' ? null : e.target.value
+                      await setPrimaryTemperatureSensor(area.id, value)
+                      await loadData()
+                    } catch (error) {
+                      console.error('Failed to set primary temperature sensor:', error)
+                    }
+                  }}
+                >
+                  <MenuItem value="auto">
+                    <em>{t('areaDetail.autoAllSensors')}</em>
+                  </MenuItem>
+                  {area.devices
+                    .filter(d => d.type === 'temperature_sensor' || d.type === 'thermostat')
+                    .map(device => (
+                      <MenuItem key={device.id} value={device.id}>
+                        {device.name || device.id} ({device.type === 'thermostat' ? t('areaDetail.thermostat') : t('areaDetail.tempSensor')})
+                      </MenuItem>
+                    ))}
+                </Select>
+              </FormControl>
+            </Paper>
+            
             {/* Assigned Devices */}
             <Paper sx={{ p: 3, mb: 3 }}>
               <Typography variant="h6" gutterBottom color="text.primary">

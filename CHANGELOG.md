@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### ✨ Features
+
+**Primary Temperature Sensor Selection**
+- **Select which device measures temperature**: Choose a specific temperature sensor or thermostat for each area
+  - Useful when you have multiple temperature sources (e.g., air conditioner + dedicated temperature sensor)
+  - Prefer a standalone temperature sensor over an AC's built-in sensor for more accurate readings
+  - Auto mode (default): Averages all temperature sensors and thermostats in the area
+  - Primary mode: Uses only the selected device for temperature measurement
+  - Automatic fallback: If primary sensor becomes unavailable, temporarily reverts to auto mode
+- **UI improvements**:
+  - New dropdown selector in Area Detail → Devices tab
+  - Shows all available temperature sensors and thermostats
+  - Real-time temperature updates when selection changes
+  - Available in both English and Dutch
+- **API endpoint**: `POST /api/smart_heating/areas/{area_id}/primary_temp_sensor`
+
 ### 📱 Mobile Improvements
 
 **WebSocket Mobile Reconnection (v0.5.8)**

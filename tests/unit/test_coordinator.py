@@ -250,7 +250,8 @@ class TestStateChangeHandling:
         # Should not raise any errors
         coordinator._handle_state_change(event)
 
-    def test_handle_state_change_initial_state(self, coordinator: SmartHeatingCoordinator):
+    @pytest.mark.asyncio
+    async def test_handle_state_change_initial_state(self, coordinator: SmartHeatingCoordinator):
         """Test handling initial state (old_state is None)."""
         mock_new_state = MagicMock()
         mock_new_state.state = "heat"
@@ -262,12 +263,13 @@ class TestStateChangeHandling:
             "new_state": mock_new_state
         }
         
-        with patch.object(coordinator.hass, "async_create_task") as mock_create_task:
+        with patch("asyncio.create_task") as mock_create_task:
             coordinator._handle_state_change(event)
             # Should trigger refresh for initial state
             mock_create_task.assert_called_once()
 
-    def test_handle_state_change_state_changed(self, coordinator: SmartHeatingCoordinator):
+    @pytest.mark.asyncio
+    async def test_handle_state_change_state_changed(self, coordinator: SmartHeatingCoordinator):
         """Test handling state change."""
         mock_old_state = MagicMock()
         mock_old_state.state = "idle"
@@ -284,12 +286,13 @@ class TestStateChangeHandling:
             "new_state": mock_new_state
         }
         
-        with patch.object(coordinator.hass, "async_create_task") as mock_create_task:
+        with patch("asyncio.create_task") as mock_create_task:
             coordinator._handle_state_change(event)
             # Should trigger refresh when state changes
             mock_create_task.assert_called_once()
 
-    def test_handle_state_change_current_temperature_changed(self, coordinator: SmartHeatingCoordinator):
+    @pytest.mark.asyncio
+    async def test_handle_state_change_current_temperature_changed(self, coordinator: SmartHeatingCoordinator):
         """Test handling current temperature change."""
         mock_old_state = MagicMock()
         mock_old_state.state = "heat"
@@ -314,12 +317,13 @@ class TestStateChangeHandling:
             "new_state": mock_new_state
         }
         
-        with patch.object(coordinator.hass, "async_create_task") as mock_create_task:
+        with patch("asyncio.create_task") as mock_create_task:
             coordinator._handle_state_change(event)
             # Should trigger refresh when current temperature changes
             mock_create_task.assert_called_once()
 
-    def test_handle_state_change_hvac_action_changed(self, coordinator: SmartHeatingCoordinator):
+    @pytest.mark.asyncio
+    async def test_handle_state_change_hvac_action_changed(self, coordinator: SmartHeatingCoordinator):
         """Test handling HVAC action change."""
         mock_old_state = MagicMock()
         mock_old_state.state = "heat"
@@ -344,12 +348,13 @@ class TestStateChangeHandling:
             "new_state": mock_new_state
         }
         
-        with patch.object(coordinator.hass, "async_create_task") as mock_create_task:
+        with patch("asyncio.create_task") as mock_create_task:
             coordinator._handle_state_change(event)
             # Should trigger refresh when hvac_action changes
             mock_create_task.assert_called_once()
 
-    def test_handle_state_change_target_temperature_debounced(self, coordinator: SmartHeatingCoordinator):
+    @pytest.mark.asyncio
+    async def test_handle_state_change_target_temperature_debounced(self, coordinator: SmartHeatingCoordinator):
         """Test that target temperature changes are debounced."""
         mock_old_state = MagicMock()
         mock_old_state.state = "heat"
@@ -374,7 +379,7 @@ class TestStateChangeHandling:
             "new_state": mock_new_state
         }
         
-        with patch.object(coordinator.hass, "async_create_task") as mock_create_task:
+        with patch("asyncio.create_task") as mock_create_task:
             coordinator._handle_state_change(event)
             # Should create debounce task, not trigger immediate refresh
             mock_create_task.assert_called_once()

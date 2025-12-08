@@ -13,6 +13,7 @@ from .areas import (
     handle_set_auto_preset,
     handle_set_area_preset_config,
     handle_set_manual_override,
+    handle_set_primary_temperature_sensor,
 )
 
 from .devices import (
