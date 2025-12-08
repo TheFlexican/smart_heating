@@ -1,4 +1,5 @@
 """Constants for the Smart Heating integration."""
+
 from datetime import timedelta
 from typing import Final
 
@@ -104,7 +105,7 @@ DEVICE_TYPE_WINDOW_SENSOR: Final = "window_sensor"
 DEVICE_TYPE_PRESENCE_SENSOR: Final = "presence_sensor"
 
 # Platforms
-PLATFORMS: Final = ["sensor", "climate", "switch"]
+PLATFORMS: Final = ["sensor", "switch"]
 
 # Storage
 STORAGE_VERSION: Final = 1

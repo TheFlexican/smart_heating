@@ -1,17 +1,24 @@
 """Response builder utilities for API handlers."""
+
 from typing import Any, Dict, List, Optional
+
 from ..models.area import Area
 
 
-def build_device_info(device_id: str, device_data: Dict[str, Any], state_obj: Any = None, coordinator_device: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def build_device_info(
+    device_id: str,
+    device_data: Dict[str, Any],
+    state_obj: Any = None,
+    coordinator_device: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
     """Build device information dictionary.
-    
+
     Args:
         device_id: Device entity ID
         device_data: Stored device data
         state_obj: Home Assistant state object
         coordinator_device: Coordinator device data
-        
+
     Returns:
         Device information dictionary
     """
@@ -20,38 +27,42 @@ def build_device_info(device_id: str, device_data: Dict[str, Any], state_obj: An
         "type": device_data["type"],
         "mqtt_topic": device_data.get("mqtt_topic"),
     }
-    
+
     # Add friendly name from entity state
     if state_obj:
         device_info["name"] = state_obj.attributes.get("friendly_name", device_id)
-    
+
     # Add coordinator data if available
     if coordinator_device:
-        device_info.update({
-            "state": coordinator_device.get("state"),
-            "current_temperature": coordinator_device.get("current_temperature"),
-            "target_temperature": coordinator_device.get("target_temperature"),
-            "hvac_action": coordinator_device.get("hvac_action"),
-            "temperature": coordinator_device.get("temperature"),
-            "position": coordinator_device.get("position"),
-        })
-    
+        device_info.update(
+            {
+                "state": coordinator_device.get("state"),
+                "current_temperature": coordinator_device.get("current_temperature"),
+                "target_temperature": coordinator_device.get("target_temperature"),
+                "hvac_action": coordinator_device.get("hvac_action"),
+                "temperature": coordinator_device.get("temperature"),
+                "position": coordinator_device.get("position"),
+            }
+        )
+
     return device_info
 
 
-def build_area_response(area: Area, devices_list: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+def build_area_response(
+    area: Area, devices_list: Optional[List[Dict[str, Any]]] = None
+) -> Dict[str, Any]:
     """Build area response dictionary.
-    
+
     Args:
         area: Area model instance
         devices_list: Optional list of device information dictionaries
-        
+
     Returns:
         Area data dictionary
     """
     if devices_list is None:
         devices_list = []
-    
+
     return {
         "id": area.area_id,
         "name": area.name,
@@ -96,18 +107,18 @@ def build_area_response(area: Area, devices_list: Optional[List[Dict[str, Any]]]
         # Hysteresis override
         "hysteresis_override": area.hysteresis_override,
         # Manual override
-        "manual_override": getattr(area, 'manual_override', False),
+        "manual_override": getattr(area, "manual_override", False),
         # Sensors
         "window_sensors": area.window_sensors,
         "presence_sensors": area.presence_sensors,
         "use_global_presence": area.use_global_presence,
         # Auto preset mode
-        "auto_preset_enabled": getattr(area, 'auto_preset_enabled', False),
-        "auto_preset_home": getattr(area, 'auto_preset_home', 'home'),
-        "auto_preset_away": getattr(area, 'auto_preset_away', 'away'),
+        "auto_preset_enabled": getattr(area, "auto_preset_enabled", False),
+        "auto_preset_home": getattr(area, "auto_preset_home", "home"),
+        "auto_preset_away": getattr(area, "auto_preset_away", "away"),
         # Switch shutdown
-        "switch_shutdown_enabled": getattr(area, 'switch_shutdown_enabled', False),
-        "switch_shutdown_entities": getattr(area, 'switch_shutdown_entities', []),
+        "switch_shutdown_enabled": getattr(area, "switch_shutdown_enabled", False),
+        "switch_shutdown_entities": getattr(area, "switch_shutdown_entities", []),
         # Primary temperature sensor
-        "primary_temperature_sensor": getattr(area, 'primary_temperature_sensor', None),
+        "primary_temperature_sensor": getattr(area, "primary_temperature_sensor", None),
     }

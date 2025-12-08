@@ -1,7 +1,8 @@
 """Schedule model for Smart Heating integration."""
+
 import logging
-from typing import Any
 from datetime import datetime
+from typing import Any
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,7 +24,7 @@ class Schedule:
         date: str | None = None,
     ) -> None:
         """Initialize a schedule.
-        
+
         Args:
             schedule_id: Unique identifier
             time: Time in HH:MM format (legacy)
@@ -44,14 +45,19 @@ class Schedule:
         self.temperature = temperature
         self.preset_mode = preset_mode
         self.date = date  # Specific date for one-time schedules
-        
+
         # Convert between day formats
         day_map = {
-            "Monday": "mon", "Tuesday": "tue", "Wednesday": "wed",
-            "Thursday": "thu", "Friday": "fri", "Saturday": "sat", "Sunday": "sun"
+            "Monday": "mon",
+            "Tuesday": "tue",
+            "Wednesday": "wed",
+            "Thursday": "thu",
+            "Friday": "fri",
+            "Saturday": "sat",
+            "Sunday": "sun",
         }
         reverse_day_map = {v: k for k, v in day_map.items()}
-        
+
         # If date is specified, this is a date-specific schedule (not recurring weekly)
         if date:
             self.day = None
@@ -66,21 +72,21 @@ class Schedule:
         else:
             self.days = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
             self.day = "Monday"
-        
+
         self.enabled = enabled
 
     def is_active(self, current_time: datetime) -> bool:
         """Check if schedule is active at given time.
-        
+
         Args:
             current_time: Current datetime
-            
+
         Returns:
             True if schedule should be active
         """
         if not self.enabled:
             return False
-        
+
         # Check if this is a date-specific schedule
         if self.date:
             current_date_str = current_time.strftime("%Y-%m-%d")
@@ -91,23 +97,23 @@ class Schedule:
             schedule_end = datetime.strptime(self.end_time, "%H:%M").time()
             current_time_only = current_time.time()
             return schedule_start <= current_time_only < schedule_end
-        
+
         # Otherwise, check day of week for recurring schedules
         if not self.days:
             return False
-            
+
         day_names = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
         current_day = day_names[current_time.weekday()]
         if current_day not in self.days:
             return False
-        
+
         # Check time (within 30 minutes)
         schedule_time = datetime.strptime(self.time, "%H:%M").time()
         current_time_only = current_time.time()
-        
+
         # Simple time comparison - schedule is active from its time until next schedule
         return current_time_only >= schedule_time
-    
+
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         result = {
@@ -116,7 +122,7 @@ class Schedule:
             "end_time": self.end_time,
             "enabled": self.enabled,
         }
-        
+
         # Add date for date-specific schedules
         if self.date:
             result["date"] = self.date
@@ -124,20 +130,25 @@ class Schedule:
         elif self.days:
             # Convert internal format to frontend format
             day_map = {
-                "mon": "Monday", "tue": "Tuesday", "wed": "Wednesday",
-                "thu": "Thursday", "fri": "Friday", "sat": "Saturday", "sun": "Sunday"
+                "mon": "Monday",
+                "tue": "Tuesday",
+                "wed": "Wednesday",
+                "thu": "Thursday",
+                "fri": "Friday",
+                "sat": "Saturday",
+                "sun": "Sunday",
             }
             result["days"] = [day_map.get(d, d) for d in self.days]
             # Keep single day for backwards compatibility
             if self.day:
                 result["day"] = self.day
-        
+
         if self.temperature is not None:
             result["temperature"] = self.temperature
         if self.preset_mode is not None:
             result["preset_mode"] = self.preset_mode
         return result
-    
+
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "Schedule":
         """Create from dictionary."""
@@ -146,15 +157,20 @@ class Schedule:
         if days_data and isinstance(days_data, list) and days_data:
             # Check if it's frontend format (Monday, Tuesday, etc.)
             day_map = {
-                "Monday": "mon", "Tuesday": "tue", "Wednesday": "wed",
-                "Thursday": "thu", "Friday": "fri", "Saturday": "sat", "Sunday": "sun"
+                "Monday": "mon",
+                "Tuesday": "tue",
+                "Wednesday": "wed",
+                "Thursday": "thu",
+                "Friday": "fri",
+                "Saturday": "sat",
+                "Sunday": "sun",
             }
             if days_data[0] in day_map:
                 days_data = [day_map.get(d, d) for d in days_data]
-        
+
         # Filter out None values to match type hint list[str] | None
         filtered_days = [d for d in days_data if d is not None] if days_data else None
-        
+
         return cls(
             schedule_id=data["id"],
             time=data.get("time", ""),

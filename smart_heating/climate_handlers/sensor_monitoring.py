@@ -1,10 +1,11 @@
 """Sensor monitoring for climate control."""
+
 import logging
 
 from homeassistant.core import HomeAssistant
 
-from ..models import Area
 from ..area_manager import AreaManager
+from ..models import Area
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -14,7 +15,7 @@ class SensorMonitoringHandler:
 
     def __init__(self, hass: HomeAssistant, area_manager: AreaManager, area_logger=None):
         """Initialize sensor monitoring handler.
-        
+
         Args:
             hass: Home Assistant instance
             area_manager: Area manager instance
@@ -26,13 +27,13 @@ class SensorMonitoringHandler:
 
     def check_window_sensors(self, area_id: str, area: Area) -> bool:
         """Check window sensor states for an area.
-        
+
         Returns:
             True if any window is open
         """
         if not area.window_sensors:
             return False
-        
+
         any_window_open = False
         for sensor in area.window_sensors:
             sensor_id = sensor.get("entity_id") if isinstance(sensor, dict) else sensor
@@ -42,7 +43,7 @@ class SensorMonitoringHandler:
                 if is_open:
                     any_window_open = True
                     _LOGGER.debug("Window sensor %s is open in area %s", sensor_id, area_id)
-        
+
         return any_window_open
 
     def log_window_state_change(self, area_id: str, area: Area, any_window_open: bool) -> None:
@@ -56,7 +57,7 @@ class SensorMonitoringHandler:
                         area_id,
                         "sensor",
                         "Window opened - temperature adjustment active",
-                        {"sensor_type": "window", "state": "open"}
+                        {"sensor_type": "window", "state": "open"},
                     )
             else:
                 _LOGGER.info("All windows closed in area %s - normal heating resumed", area_id)
@@ -65,7 +66,7 @@ class SensorMonitoringHandler:
                         area_id,
                         "sensor",
                         "All windows closed - normal heating resumed",
-                        {"sensor_type": "window", "state": "closed"}
+                        {"sensor_type": "window", "state": "closed"},
                     )
 
     def get_presence_sensors_for_area(self, area: Area) -> list:
@@ -76,13 +77,13 @@ class SensorMonitoringHandler:
 
     def check_presence_sensors(self, area_id: str, sensors: list) -> bool:
         """Check presence sensor states.
-        
+
         Returns:
             True if presence is detected
         """
         if not sensors:
             return False
-        
+
         any_presence_detected = False
         for sensor in sensors:
             sensor_id = sensor.get("entity_id") if isinstance(sensor, dict) else sensor
@@ -92,7 +93,7 @@ class SensorMonitoringHandler:
                 if is_present:
                     any_presence_detected = True
                     _LOGGER.debug("Presence detected by %s in area %s", sensor_id, area_id)
-        
+
         return any_presence_detected
 
     def log_presence_state_change(self, area_id: str, any_presence_detected: bool) -> None:
@@ -104,7 +105,7 @@ class SensorMonitoringHandler:
                     area_id,
                     "sensor",
                     "Presence detected - temperature boost active",
-                    {"sensor_type": "presence", "state": "detected"}
+                    {"sensor_type": "presence", "state": "detected"},
                 )
         else:
             _LOGGER.info("No presence in area %s - boost removed", area_id)
@@ -113,7 +114,7 @@ class SensorMonitoringHandler:
                     area_id,
                     "sensor",
                     "No presence detected - boost removed",
-                    {"sensor_type": "presence", "state": "not_detected"}
+                    {"sensor_type": "presence", "state": "not_detected"},
                 )
 
     async def handle_auto_preset_change(
@@ -122,7 +123,7 @@ class SensorMonitoringHandler:
         """Handle automatic preset mode switching based on presence."""
         if not area.auto_preset_enabled:
             return
-        
+
         new_preset = area.auto_preset_home if any_presence_detected else area.auto_preset_away
         if area.preset_mode != new_preset:
             old_preset = area.preset_mode
@@ -133,7 +134,7 @@ class SensorMonitoringHandler:
                 old_preset,
                 new_preset,
                 "detected" if any_presence_detected else "not detected",
-                area_id
+                area_id,
             )
             if self.area_logger:
                 self.area_logger.log_event(
@@ -144,8 +145,8 @@ class SensorMonitoringHandler:
                         "old_preset": old_preset,
                         "new_preset": new_preset,
                         "presence_detected": any_presence_detected,
-                        "trigger": "auto_presence"
-                    }
+                        "trigger": "auto_presence",
+                    },
                 )
 
     async def async_update_sensor_states(self) -> None:
@@ -154,15 +155,15 @@ class SensorMonitoringHandler:
             # Update window sensor states
             any_window_open = self.check_window_sensors(area_id, area)
             self.log_window_state_change(area_id, area, any_window_open)
-            
+
             # Update presence sensor states
             presence_sensors = self.get_presence_sensors_for_area(area)
             any_presence_detected = self.check_presence_sensors(area_id, presence_sensors)
-            
+
             # Update cached state and log if changed
             if area.presence_detected != any_presence_detected:
                 area.presence_detected = any_presence_detected
                 self.log_presence_state_change(area_id, any_presence_detected)
-                
+
                 # Auto preset mode switching
                 await self.handle_auto_preset_change(area_id, area, any_presence_detected)
