@@ -415,6 +415,9 @@ class ScheduleExecutor:
             _LOGGER.warning("Cannot predict smart night boost for %s: no temperature data", area.area_id)
             return
         
+        # Get outdoor temperature if available
+        outdoor_temp = self._get_outdoor_temperature(area)
+        
         # Predict heating time using learning engine
         predicted_minutes = await self.learning_engine.async_predict_heating_time(
             area_id=area.area_id,

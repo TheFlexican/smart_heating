@@ -67,7 +67,7 @@ class HistoryTracker:
         }
         await self._store.async_save(data)
     
-    def async_unload(self) -> None:
+    async def async_unload(self) -> None:
         """Unload and cleanup."""
         if self._cleanup_unsub:
             self._cleanup_unsub()
@@ -80,7 +80,7 @@ class HistoryTracker:
         cutoff_iso = cutoff.isoformat()
         
         total_removed = 0
-        for area_id in self._history.keys():
+        for area_id in list(self._history.keys()):
             original_count = len(self._history[area_id])
             self._history[area_id] = [
                 entry for entry in self._history[area_id]
@@ -106,7 +106,7 @@ class HistoryTracker:
         _LOGGER.debug("Running periodic history cleanup")
         await self._async_cleanup_old_entries()
 
-    def async_record_temperature(
+    async def async_record_temperature(
         self,
         area_id: str,
         current_temp: float,

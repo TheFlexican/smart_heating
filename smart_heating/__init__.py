@@ -225,7 +225,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
-def async_register_panel(hass: HomeAssistant, entry: ConfigEntry) -> None:
+async def async_register_panel(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Register the frontend panel.
     
     Args:
@@ -256,7 +256,7 @@ def async_register_panel(hass: HomeAssistant, entry: ConfigEntry) -> None:
     _LOGGER.info("Smart Heating panel registered in sidebar")
 
 
-def async_setup_services(hass: HomeAssistant, coordinator: SmartHeatingCoordinator) -> None:
+async def async_setup_services(hass: HomeAssistant, coordinator: SmartHeatingCoordinator) -> None:
     """Set up services for Smart Heating.
     
     Args:
@@ -537,7 +537,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         
         # Unload history tracker
         if "history" in hass.data[DOMAIN]:
-            hass.data[DOMAIN]["history"].async_unload()
+            await hass.data[DOMAIN]["history"].async_unload()
             _LOGGER.debug("History tracker unloaded")
         
         # Remove coordinator from hass.data
