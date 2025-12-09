@@ -18,11 +18,14 @@ import {
   TableRow,
   TextField,
   Chip,
+  IconButton,
 } from '@mui/material'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import TrendingDownIcon from '@mui/icons-material/TrendingDown'
 import TrendingFlatIcon from '@mui/icons-material/TrendingFlat'
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import { ComparisonResult, MetricDelta } from '../types'
 import { getComparison, getCustomComparison } from '../api'
 
@@ -30,6 +33,7 @@ type Period = 'day' | 'week' | 'month' | 'year' | 'custom'
 
 const HistoricalComparisons: React.FC = () => {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const [period, setPeriod] = useState<Period>('week')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -231,13 +235,18 @@ const HistoricalComparisons: React.FC = () => {
   return (
     <Box>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Box>
-          <Typography variant="h4" gutterBottom>
-            {t('comparison.title')}
-          </Typography>
-          <Typography color="textSecondary">
-            {t('comparison.description')}
-          </Typography>
+        <Box display="flex" alignItems="center" gap={2}>
+          <IconButton onClick={() => navigate('/')} size="large" color="primary">
+            <ArrowBackIcon />
+          </IconButton>
+          <Box>
+            <Typography variant="h4" gutterBottom>
+              {t('comparison.title')}
+            </Typography>
+            <Typography color="textSecondary">
+              {t('comparison.description')}
+            </Typography>
+          </Box>
         </Box>
         
         <ButtonGroup variant="outlined">

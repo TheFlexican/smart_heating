@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### 🐛 Bug Fixes
 
+**Efficiency Reports UI Fixes**
+- **Fixed efficiency reports undefined error**: Corrected API response structure to match frontend expectations
+  - API now returns metrics wrapped in `metrics` object as per TypeScript interface
+  - Fixed `TypeError: undefined is not an object (evaluating 'E.metrics.energy_score')`
+  - Both endpoints updated: `/api/smart_heating/efficiency/all_areas` and `/efficiency/report/{area_id}`
+  - Response now includes proper structure: `{area_id, period, metrics: {energy_score, ...}, recommendations}`
+- **Added back buttons to all page components**: Improved navigation UX
+  - Added back button (←) to Efficiency Reports page
+  - Added back button (←) to Historical Comparisons page  
+  - Added back button (←) to User Management page
+  - Added back button (←) to Vacation Mode Settings page
+  - Added back button (←) to Import/Export page
+  - All back buttons navigate to home screen (`/`)
+
 **Night Boost Critical Fix**
 - **Fixed night boost not activating**: Night boost now works correctly during active schedules
   - Previous behavior: Night boost was blocked when ANY schedule was active

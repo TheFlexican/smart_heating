@@ -35,16 +35,86 @@ async def handle_get_efficiency_report(
 
         if area_id and area_id != "all":
             # Single area report
-            metrics = await efficiency_calculator.calculate_area_efficiency(
+            area_metrics = await efficiency_calculator.calculate_area_efficiency(
                 area_id, period
             )
-            return web.json_response({"metrics": metrics})
+            # Wrap in expected format with metrics nested
+            return web.json_response({
+                "area_id": area_metrics.get("area_id"),
+                "period": area_metrics.get("period"),
+                "start_date": area_metrics.get("start_time", ""),
+                "end_date": area_metrics.get("end_time", ""),
+                "metrics": {
+                    "energy_score": area_metrics.get("energy_score", 0),
+                    "heating_time_percentage": area_metrics.get("heating_time_percentage", 0),
+                    "heating_cycles": area_metrics.get("heating_cycles", 0),
+                    "avg_temp_delta": area_metrics.get("average_temperature_delta", 0),
+                },
+                "recommendations": area_metrics.get("recommendations", []),
+            })
         else:
             # All areas report
-            metrics = await efficiency_calculator.calculate_all_areas_efficiency(
+            area_reports_raw = await efficiency_calculator.calculate_all_areas_efficiency(
                 area_manager, period
             )
-            return web.json_response({"metrics": metrics})
+            
+            # Transform each area report to match frontend structure
+            area_reports = []
+            for raw_report in area_reports_raw:
+                area_reports.append({
+                    "area_id": raw_report.get("area_id"),
+                    "period": raw_report.get("period"),
+                    "start_date": raw_report.get("start_time", ""),
+                    "end_date": raw_report.get("end_time", ""),
+                    "metrics": {
+                        "energy_score": raw_report.get("energy_score", 0),
+                        "heating_time_percentage": raw_report.get("heating_time_percentage", 0),
+                        "heating_cycles": raw_report.get("heating_cycles", 0),
+                        "avg_temp_delta": raw_report.get("average_temperature_delta", 0),
+                    },
+                    "recommendations": raw_report.get("recommendations", []),
+                })
+            
+            # Calculate summary metrics from all areas
+            if area_reports_raw:
+                total_energy_score = sum(r.get("energy_score", 0) for r in area_reports_raw)
+                total_heating_time = sum(r.get("heating_time_percentage", 0) for r in area_reports_raw)
+                total_cycles = sum(r.get("heating_cycles", 0) for r in area_reports_raw)
+                total_temp_delta = sum(r.get("average_temperature_delta", 0) for r in area_reports_raw)
+                count = len(area_reports_raw)
+                
+                summary_metrics = {
+                    "energy_score": total_energy_score / count,
+                    "heating_time_percentage": total_heating_time / count,
+                    "heating_cycles": total_cycles,
+                    "avg_temp_delta": total_temp_delta / count,
+                }
+                
+                # Generate summary recommendations based on overall metrics
+                recommendations = []
+                if summary_metrics["energy_score"] < 60:
+                    recommendations.append("Overall efficiency is low. Review individual areas for issues.")
+                if summary_metrics["heating_time_percentage"] > 60:
+                    recommendations.append("System heating time is high. Consider global temperature adjustments.")
+                if not recommendations:
+                    recommendations.append("Overall system efficiency is good.")
+            else:
+                summary_metrics = {
+                    "energy_score": 0,
+                    "heating_time_percentage": 0,
+                    "heating_cycles": 0,
+                    "avg_temp_delta": 0,
+                }
+                recommendations = ["No area data available."]
+            
+            return web.json_response({
+                "period": period,
+                "start_date": area_reports[0]["start_date"] if area_reports else "",
+                "end_date": area_reports[0]["end_date"] if area_reports else "",
+                "summary_metrics": summary_metrics,
+                "area_reports": area_reports,
+                "recommendations": recommendations,
+            })
 
     except Exception as e:
         _LOGGER.error("Error getting efficiency report: %s", e, exc_info=True)

@@ -12,13 +12,16 @@ import {
   List,
   ListItem,
   ListItemText,
+  IconButton,
 } from '@mui/material'
 import {
   Download as DownloadIcon,
   Upload as UploadIcon,
   Backup as BackupIcon,
+  ArrowBack as ArrowBackIcon,
 } from '@mui/icons-material'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { importConfig, validateConfig } from '../api'
 
 interface ImportPreview {
@@ -47,6 +50,7 @@ interface ImportResult {
 
 const ImportExport = () => {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
@@ -173,9 +177,14 @@ const ImportExport = () => {
 
   return (
     <Box>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        {t('importExport.description')}
-      </Typography>
+      <Box display="flex" alignItems="center" gap={2} mb={2}>
+        <IconButton onClick={() => navigate('/')} size="large" color="primary">
+          <ArrowBackIcon />
+          </IconButton>
+        <Typography variant="body2" color="text.secondary">
+          {t('importExport.description')}
+        </Typography>
+      </Box>
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>

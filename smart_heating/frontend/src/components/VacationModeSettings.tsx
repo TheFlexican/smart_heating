@@ -12,17 +12,21 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  CircularProgress
+  CircularProgress,
+  IconButton,
 } from '@mui/material'
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { VacationMode } from '../types'
 import { getVacationMode, enableVacationMode, disableVacationMode } from '../api'
 
 export const VacationModeSettings: React.FC = () => {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -126,12 +130,19 @@ export const VacationModeSettings: React.FC = () => {
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          {t('vacation.title')}
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          {t('vacation.description')}
-        </Typography>
+        <Box display="flex" alignItems="center" gap={2} mb={2}>
+          <IconButton onClick={() => navigate('/')} size="large" color="primary">
+            <ArrowBackIcon />
+          </IconButton>
+          <Box>
+            <Typography variant="h6" gutterBottom>
+              {t('vacation.title')}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t('vacation.description')}
+            </Typography>
+          </Box>
+        </Box>
 
         {error && (
           <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>

@@ -34,13 +34,16 @@ import {
   Person as PersonIcon,
   Home as HomeIcon,
   Settings as SettingsIcon,
+  ArrowBack as ArrowBackIcon,
 } from '@mui/icons-material'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { getUsers, createUser, updateUser, deleteUser, updateUserSettings } from '../api'
 import { UserProfile, UserData, MultiUserSettings } from '../types'
 
 export const UserManagement: React.FC = () => {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const [userData, setUserData] = useState<UserData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -207,6 +210,9 @@ export const UserManagement: React.FC = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
+        <IconButton onClick={() => navigate('/')} size="large" color="primary">
+          <ArrowBackIcon />
+        </IconButton>
         <PersonIcon fontSize="large" />
         <Typography variant="h4">
           {t('users.title', 'User Management')}

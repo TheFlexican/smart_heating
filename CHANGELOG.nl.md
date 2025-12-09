@@ -9,6 +9,20 @@ en dit project volgt [Semantic Versioning](https://semver.org/).
 
 ### 🐛 Bugfixes
 
+**Efficiëntie Rapporten UI Fixes**
+- **Efficiëntie rapporten undefined fout opgelost**: API response structuur gecorrigeerd om frontend verwachtingen te matchen
+  - API retourneert nu metrics gewikkeld in `metrics` object volgens TypeScript interface
+  - Opgelost: `TypeError: undefined is not an object (evaluating 'E.metrics.energy_score')`
+  - Beide endpoints bijgewerkt: `/api/smart_heating/efficiency/all_areas` en `/efficiency/report/{area_id}`
+  - Response bevat nu correcte structuur: `{area_id, period, metrics: {energy_score, ...}, recommendations}`
+- **Terug knoppen toegevoegd aan alle pagina componenten**: Verbeterde navigatie UX
+  - Terug knop (←) toegevoegd aan Efficiëntie Rapporten pagina
+  - Terug knop (←) toegevoegd aan Historische Vergelijkingen pagina
+  - Terug knop (←) toegevoegd aan Gebruikersbeheer pagina
+  - Terug knop (←) toegevoegd aan Vakantiemodus Instellingen pagina
+  - Terug knop (←) toegevoegd aan Importeren/Exporteren pagina
+  - Alle terug knoppen navigeren naar hoofdscherm (`/`)
+
 **Nacht Boost Kritieke Fix**
 - **Nacht boost werkt nu correct**: Nacht boost activeert nu correct tijdens actieve schema's
   - Vorig gedrag: Nacht boost werd geblokkeerd wanneer ER EEN schema actief was

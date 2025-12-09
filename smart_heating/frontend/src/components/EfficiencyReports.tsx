@@ -20,10 +20,13 @@ import {
   TableHead,
   TableRow,
   Alert,
+  IconButton,
 } from '@mui/material'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import WarningIcon from '@mui/icons-material/Warning'
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import { EfficiencyReport, EfficiencyMetrics } from '../types'
 import { getEfficiencyReport, getAllAreasEfficiency } from '../api'
 
@@ -31,6 +34,7 @@ type Period = 'day' | 'week' | 'month' | 'year'
 
 const EfficiencyReports: React.FC = () => {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const [period, setPeriod] = useState<Period>('week')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -235,13 +239,18 @@ const EfficiencyReports: React.FC = () => {
   return (
     <Box>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Box>
-          <Typography variant="h4" gutterBottom>
-            {t('efficiency.title')}
-          </Typography>
-          <Typography color="textSecondary">
-            {t('efficiency.description')}
-          </Typography>
+        <Box display="flex" alignItems="center" gap={2}>
+          <IconButton onClick={() => navigate('/')} size="large" color="primary">
+            <ArrowBackIcon />
+          </IconButton>
+          <Box>
+            <Typography variant="h4" gutterBottom>
+              {t('efficiency.title')}
+            </Typography>
+            <Typography color="textSecondary">
+              {t('efficiency.description')}
+            </Typography>
+          </Box>
         </Box>
         
         <ButtonGroup variant="outlined">

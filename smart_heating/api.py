@@ -221,10 +221,27 @@ class SmartHeatingAPIView(HomeAssistantView):
                         self.hass, self.area_manager, efficiency_calculator, request
                     )
                 elif endpoint.startswith("efficiency/report/"):
+                    # Single area report
                     area_id = endpoint.split("/")[2]
-                    return await handle_get_area_efficiency_history(
-                        self.hass, efficiency_calculator, request, area_id
+                    period = request.query.get("period", "week")
+                    area_metrics = await efficiency_calculator.calculate_area_efficiency(
+                        area_id, period
                     )
+                    # Wrap in expected format with metrics nested
+                    response_data = {
+                        "area_id": area_metrics.get("area_id"),
+                        "period": area_metrics.get("period"),
+                        "start_date": area_metrics.get("start_time", ""),
+                        "end_date": area_metrics.get("end_time", ""),
+                        "metrics": {
+                            "energy_score": area_metrics.get("energy_score", 0),
+                            "heating_time_percentage": area_metrics.get("heating_time_percentage", 0),
+                            "heating_cycles": area_metrics.get("heating_cycles", 0),
+                            "avg_temp_delta": area_metrics.get("average_temperature_delta", 0),
+                        },
+                        "recommendations": area_metrics.get("recommendations", []),
+                    }
+                    return web.json_response(response_data)
                 elif endpoint.startswith("efficiency/history/"):
                     area_id = endpoint.split("/")[2]
                     return await handle_get_area_efficiency_history(
