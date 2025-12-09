@@ -12,7 +12,6 @@ import { DragDropContext, DropResult } from 'react-beautiful-dnd'
 import Header from './components/Header'
 import ZoneList from './components/ZoneList'
 import DevicePanel from './components/DevicePanel'
-import OpenThermStatus from './components/OpenThermStatus'
 import { VacationModeBanner } from './components/VacationModeBanner'
 import ZoneDetail from './pages/AreaDetail'
 import GlobalSettings from './pages/GlobalSettings'
@@ -146,10 +145,6 @@ const ZonesOverview = ({
             </Alert>
           )}
           <VacationModeBanner />
-          <OpenThermStatus
-            openthermGatewayId={openthermConfig.gateway_id}
-            enabled={openthermConfig.enabled}
-          />
           <ZoneList
             areas={areas}
             loading={loading}
