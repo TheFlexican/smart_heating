@@ -481,8 +481,16 @@ class SmartHeatingAPIView(HomeAssistantView):
                     self.hass, self.area_manager, coordinator, data
                 )
             elif endpoint == "opentherm_gateway":
+                # Get coordinator for refresh
+                entry_ids = [
+                    entry.entry_id
+                    for entry in self.hass.config_entries.async_entries(DOMAIN)
+                ]
+                coordinator = (
+                    self.hass.data[DOMAIN][entry_ids[0]] if entry_ids else None
+                )
                 return await handle_set_opentherm_gateway(
-                    self.area_manager, self.coordinator, data
+                    self.area_manager, coordinator, data
                 )
             elif endpoint == "vacation_mode":
                 return await handle_enable_vacation_mode(self.hass, data)
