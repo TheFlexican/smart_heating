@@ -32,6 +32,7 @@ from .config import (
     handle_set_hide_devices_panel,
     handle_set_hvac_mode,
     handle_set_hysteresis_value,
+    handle_set_opentherm_gateway,
     handle_set_safety_sensor,
 )
 from .comparison import (
@@ -146,6 +147,7 @@ __all__ = [
     "handle_set_global_presets",
     "handle_get_hysteresis",
     "handle_set_hysteresis_value",
+    "handle_set_opentherm_gateway",
     "handle_get_global_presence",
     "handle_set_global_presence",
     "handle_set_hide_devices_panel",
