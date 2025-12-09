@@ -4,10 +4,10 @@ from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
-from homeassistant.core import HomeAssistant, State
+from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
-from custom_components.smart_heating.efficiency_calculator import EfficiencyCalculator
+from smart_heating.efficiency_calculator import EfficiencyCalculator
 
 
 @pytest.fixture
@@ -19,29 +19,35 @@ def mock_hass():
 
 
 @pytest.fixture
-def efficiency_calculator(mock_hass):
+def mock_history_tracker():
+    """Create a mock HistoryTracker instance."""
+    tracker = MagicMock()
+    tracker.get_history = MagicMock(return_value=[])
+    return tracker
+
+
+@pytest.fixture
+def efficiency_calculator(mock_hass, mock_history_tracker):
     """Create an EfficiencyCalculator instance."""
-    return EfficiencyCalculator(mock_hass)
+    return EfficiencyCalculator(mock_hass, mock_history_tracker)
 
 
-def create_mock_state(state_value, current_temp=20.0, target_temp=21.0, timestamp=None):
-    """Create a mock state object."""
-    state = Mock(spec=State)
-    state.state = state_value
-    state.attributes = {
+def create_history_entry(state_value, current_temp=20.0, target_temp=21.0, timestamp=None):
+    """Create a history entry dict (as provided by HistoryTracker)."""
+    return {
+        "timestamp": (timestamp or dt_util.now()).isoformat(),
         "current_temperature": current_temp,
-        "temperature": target_temp,
+        "target_temperature": target_temp,
+        "state": state_value,
     }
-    state.last_changed = timestamp or dt_util.now()
-    return state
 
 
 @pytest.mark.asyncio
 async def test_calculate_heating_time_all_heating(efficiency_calculator):
     """Test heating time calculation when always heating."""
-    states = [create_mock_state("heating") for _ in range(10)]
+    history_data = [create_history_entry("heating") for _ in range(10)]
     
-    result = efficiency_calculator._calculate_heating_time(states)
+    result = efficiency_calculator._calculate_heating_time(history_data)
     
     assert result == 100.0
 
@@ -49,12 +55,12 @@ async def test_calculate_heating_time_all_heating(efficiency_calculator):
 @pytest.mark.asyncio
 async def test_calculate_heating_time_half_heating(efficiency_calculator):
     """Test heating time calculation when heating 50% of time."""
-    states = (
-        [create_mock_state("heating") for _ in range(5)] +
-        [create_mock_state("idle") for _ in range(5)]
+    history_data = (
+        [create_history_entry("heating") for _ in range(5)] +
+        [create_history_entry("idle") for _ in range(5)]
     )
     
-    result = efficiency_calculator._calculate_heating_time(states)
+    result = efficiency_calculator._calculate_heating_time(history_data)
     
     assert result == 50.0
 
@@ -69,13 +75,13 @@ async def test_calculate_heating_time_no_states(efficiency_calculator):
 @pytest.mark.asyncio
 async def test_calculate_avg_temp_delta(efficiency_calculator):
     """Test average temperature delta calculation."""
-    states = [
-        create_mock_state("heating", current_temp=19.0, target_temp=21.0),  # delta: 2.0
-        create_mock_state("heating", current_temp=20.0, target_temp=21.0),  # delta: 1.0
-        create_mock_state("idle", current_temp=21.0, target_temp=21.0),      # delta: 0.0
+    history_data = [
+        create_history_entry("heating", current_temp=19.0, target_temp=21.0),  # delta: 2.0
+        create_history_entry("heating", current_temp=20.0, target_temp=21.0),  # delta: 1.0
+        create_history_entry("idle", current_temp=21.0, target_temp=21.0),      # delta: 0.0
     ]
     
-    result = efficiency_calculator._calculate_avg_temp_delta(states)
+    result = efficiency_calculator._calculate_avg_temp_delta(history_data)
     
     # Average of absolute deltas: (2.0 + 1.0 + 0.0) / 3 = 1.0
     assert result == 1.0
@@ -91,17 +97,17 @@ async def test_calculate_avg_temp_delta_no_states(efficiency_calculator):
 @pytest.mark.asyncio
 async def test_count_heating_cycles(efficiency_calculator):
     """Test counting heating cycles."""
-    states = [
-        create_mock_state("idle"),
-        create_mock_state("heating"),  # Cycle 1 start
-        create_mock_state("heating"),
-        create_mock_state("idle"),
-        create_mock_state("heating"),  # Cycle 2 start
-        create_mock_state("idle"),
-        create_mock_state("heating"),  # Cycle 3 start
+    history_data = [
+        create_history_entry("idle"),
+        create_history_entry("heating"),  # Cycle 1 start
+        create_history_entry("heating"),
+        create_history_entry("idle"),
+        create_history_entry("heating"),  # Cycle 2 start
+        create_history_entry("idle"),
+        create_history_entry("heating"),  # Cycle 3 start
     ]
     
-    result = efficiency_calculator._count_heating_cycles(states)
+    result = efficiency_calculator._count_heating_cycles(history_data)
     
     assert result == 3
 
@@ -109,9 +115,9 @@ async def test_count_heating_cycles(efficiency_calculator):
 @pytest.mark.asyncio
 async def test_count_heating_cycles_continuous_heating(efficiency_calculator):
     """Test counting cycles with continuous heating."""
-    states = [create_mock_state("heating") for _ in range(10)]
+    history_data = [create_history_entry("heating") for _ in range(10)]
     
-    result = efficiency_calculator._count_heating_cycles(states)
+    result = efficiency_calculator._count_heating_cycles(history_data)
     
     assert result == 0  # No cycles if always heating
 
@@ -126,13 +132,13 @@ async def test_count_heating_cycles_no_states(efficiency_calculator):
 @pytest.mark.asyncio
 async def test_calculate_temp_stability(efficiency_calculator):
     """Test temperature stability calculation."""
-    states = [
-        create_mock_state("heating", current_temp=20.0),
-        create_mock_state("heating", current_temp=20.0),
-        create_mock_state("heating", current_temp=20.0),
+    history_data = [
+        create_history_entry("heating", current_temp=20.0),
+        create_history_entry("heating", current_temp=20.0),
+        create_history_entry("heating", current_temp=20.0),
     ]
     
-    result = efficiency_calculator._calculate_temp_stability(states)
+    result = efficiency_calculator._calculate_temp_stability(history_data)
     
     # Std dev of [20, 20, 20] = 0
     assert result == 0.0
@@ -141,13 +147,13 @@ async def test_calculate_temp_stability(efficiency_calculator):
 @pytest.mark.asyncio
 async def test_calculate_temp_stability_variable_temps(efficiency_calculator):
     """Test temperature stability with variable temps."""
-    states = [
-        create_mock_state("heating", current_temp=18.0),
-        create_mock_state("heating", current_temp=20.0),
-        create_mock_state("heating", current_temp=22.0),
+    history_data = [
+        create_history_entry("heating", current_temp=18.0),
+        create_history_entry("heating", current_temp=20.0),
+        create_history_entry("heating", current_temp=22.0),
     ]
     
-    result = efficiency_calculator._calculate_temp_stability(states)
+    result = efficiency_calculator._calculate_temp_stability(history_data)
     
     # Std dev should be > 0 for variable temps
     assert result > 0
@@ -282,19 +288,20 @@ async def test_empty_metrics(efficiency_calculator):
 
 
 @pytest.mark.asyncio
-async def test_calculate_area_efficiency_integration(efficiency_calculator, mock_hass):
+async def test_calculate_area_efficiency_integration(efficiency_calculator, mock_history_tracker):
     """Test full area efficiency calculation integration."""
     # Mock historical data
-    states = [
-        create_mock_state("heating", current_temp=19.5, target_temp=21.0),
-        create_mock_state("heating", current_temp=20.0, target_temp=21.0),
-        create_mock_state("idle", current_temp=21.0, target_temp=21.0),
+    history_data = [
+        create_history_entry("heating", current_temp=19.5, target_temp=21.0),
+        create_history_entry("heating", current_temp=20.0, target_temp=21.0),
+        create_history_entry("idle", current_temp=21.0, target_temp=21.0),
     ] * 10  # Repeat to simulate more data
     
-    with patch.object(efficiency_calculator, "_fetch_states", return_value=states):
-        result = await efficiency_calculator.calculate_area_efficiency(
-            "living_room", period="day"
-        )
+    mock_history_tracker.get_history.return_value = history_data
+    
+    result = await efficiency_calculator.calculate_area_efficiency(
+        "living_room", period="day"
+    )
     
     assert result["area_id"] == "living_room"
     assert result["period"] == "day"
@@ -304,12 +311,13 @@ async def test_calculate_area_efficiency_integration(efficiency_calculator, mock
 
 
 @pytest.mark.asyncio
-async def test_calculate_area_efficiency_no_data(efficiency_calculator, mock_hass):
+async def test_calculate_area_efficiency_no_data(efficiency_calculator, mock_history_tracker):
     """Test efficiency calculation with no historical data."""
-    with patch.object(efficiency_calculator, "_fetch_states", return_value=[]):
-        result = await efficiency_calculator.calculate_area_efficiency(
-            "living_room", period="day"
-        )
+    mock_history_tracker.get_history.return_value = []
+    
+    result = await efficiency_calculator.calculate_area_efficiency(
+        "living_room", period="day"
+    )
     
     assert result["heating_time_percentage"] == 0.0
     assert result["data_points"] == 0
@@ -317,18 +325,20 @@ async def test_calculate_area_efficiency_no_data(efficiency_calculator, mock_has
 
 
 @pytest.mark.asyncio
-async def test_calculate_all_areas_efficiency(efficiency_calculator, mock_hass):
+async def test_calculate_all_areas_efficiency(efficiency_calculator, mock_history_tracker):
     """Test calculating efficiency for all areas."""
     mock_area_manager = Mock()
-    mock_area_manager.get_area_ids.return_value = ["living_room", "bedroom"]
-    mock_area_manager.get_area.side_effect = lambda area_id: {"enabled": True}
+    mock_area_manager.get_all_areas.return_value = {
+        "living_room": Mock(enabled=True),
+        "bedroom": Mock(enabled=True),
+    }
     
-    states = [create_mock_state("heating")] * 10
+    history_data = [create_history_entry("heating")] * 10
+    mock_history_tracker.get_history.return_value = history_data
     
-    with patch.object(efficiency_calculator, "_fetch_states", return_value=states):
-        results = await efficiency_calculator.calculate_all_areas_efficiency(
-            mock_area_manager, period="day"
-        )
+    results = await efficiency_calculator.calculate_all_areas_efficiency(
+        mock_area_manager, period="day"
+    )
     
     assert len(results) == 2
     assert results[0]["area_id"] in ["living_room", "bedroom"]
@@ -336,20 +346,20 @@ async def test_calculate_all_areas_efficiency(efficiency_calculator, mock_hass):
 
 
 @pytest.mark.asyncio
-async def test_calculate_all_areas_skips_disabled(efficiency_calculator, mock_hass):
+async def test_calculate_all_areas_skips_disabled(efficiency_calculator, mock_history_tracker):
     """Test that disabled areas are skipped."""
     mock_area_manager = Mock()
-    mock_area_manager.get_area_ids.return_value = ["living_room", "bedroom"]
-    mock_area_manager.get_area.side_effect = lambda area_id: {
-        "enabled": area_id == "living_room"
+    mock_area_manager.get_all_areas.return_value = {
+        "living_room": Mock(enabled=True),
+        "bedroom": Mock(enabled=False),
     }
     
-    states = [create_mock_state("heating")] * 10
+    history_data = [create_history_entry("heating")] * 10
+    mock_history_tracker.get_history.return_value = history_data
     
-    with patch.object(efficiency_calculator, "_fetch_states", return_value=states):
-        results = await efficiency_calculator.calculate_all_areas_efficiency(
-            mock_area_manager, period="day"
-        )
+    results = await efficiency_calculator.calculate_all_areas_efficiency(
+        mock_area_manager, period="day"
+    )
     
     # Only living_room should be included
     assert len(results) == 1

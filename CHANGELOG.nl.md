@@ -7,6 +7,20 @@ en dit project volgt [Semantic Versioning](https://semver.org/).
 
 ## [Niet Uitgebracht]
 
+### 🐛 Bugfixes
+
+**Efficiëntie Calculator Databron Fix**
+- EfficiencyCalculator gebruikt nu HistoryTracker data in plaats van HA recorder
+- Incorrecte entiteitnaam referenties verwijderd (`climate.smart_heating_{area_id}`) die niet bestaan
+- Leest nu correct van 5-minuten interval geschiedenis snapshots verzameld door HistoryTracker
+- Cyclus berekening bijgewerkt om correcte datapunt frequentie te gebruiken (12/uur vs 120/uur)
+- Efficiëntie rapporten werken nu correct met werkelijke historische data
+
+**WebSocket Coordinator Selectie Fix**
+- WebSocket fout opgelost bij abonneren op updates (`'UserManager' object has no attribute 'async_add_listener'`)
+- Nieuwe V0.6.0 services toegevoegd aan WebSocket uitsluitingslijst: `user_manager`, `efficiency_calculator`, `comparison_engine`, `config_manager`
+- WebSocket identificeert nu correct de coordinator instantie in plaats van service managers te selecteren
+
 ### ✨ Functies
 
 **Multi-Gebruiker Aanwezigheidsdetectie (v0.6.0)**

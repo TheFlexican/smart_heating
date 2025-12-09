@@ -4,7 +4,6 @@ import logging
 from datetime import datetime, timedelta
 from typing import Any
 
-from homeassistant.components.recorder import get_instance, history
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
@@ -14,13 +13,15 @@ _LOGGER = logging.getLogger(__name__)
 class EfficiencyCalculator:
     """Calculate heating efficiency metrics for areas."""
 
-    def __init__(self, hass: HomeAssistant) -> None:
+    def __init__(self, hass: HomeAssistant, history_tracker) -> None:
         """Initialize efficiency calculator.
 
         Args:
             hass: Home Assistant instance
+            history_tracker: HistoryTracker instance for data access
         """
         self.hass = hass
+        self.history_tracker = history_tracker
 
     async def calculate_area_efficiency(
         self,
@@ -55,32 +56,31 @@ class EfficiencyCalculator:
             else:
                 start = end - timedelta(days=1)
 
-        # Get climate entity for this area
-        climate_entity_id = f"climate.smart_heating_{area_id}"
-
-        # Fetch historical data
+        # Fetch historical data from HistoryTracker
         try:
-            states = await self._fetch_states(climate_entity_id, start, end)
+            history_data = self.history_tracker.get_history(
+                area_id, start_time=start, end_time=end
+            )
 
-            if not states:
+            if not history_data:
                 _LOGGER.warning(
-                    "No historical data found for %s between %s and %s",
-                    climate_entity_id,
+                    "No historical data found for area %s between %s and %s",
+                    area_id,
                     start,
                     end,
                 )
                 return self._empty_metrics(area_id, period, start, end)
 
             # Calculate metrics
-            heating_time_percentage = self._calculate_heating_time(states)
-            avg_temp_delta = self._calculate_avg_temp_delta(states)
-            heating_cycles = self._count_heating_cycles(states)
-            temp_stability = self._calculate_temp_stability(states)
+            heating_time_percentage = self._calculate_heating_time(history_data)
+            avg_temp_delta = self._calculate_avg_temp_delta(history_data)
+            heating_cycles = self._count_heating_cycles(history_data)
+            temp_stability = self._calculate_temp_stability(history_data)
 
             # Calculate overall efficiency score (0-100)
             # Higher score = more efficient
             energy_score = self._calculate_energy_score(
-                heating_time_percentage, avg_temp_delta, heating_cycles, len(states)
+                heating_time_percentage, avg_temp_delta, heating_cycles, len(history_data)
             )
 
             return {
@@ -93,7 +93,7 @@ class EfficiencyCalculator:
                 "heating_cycles": heating_cycles,
                 "energy_score": round(energy_score, 2),
                 "temperature_stability": round(temp_stability, 2),
-                "data_points": len(states),
+                "data_points": len(history_data),
                 "recommendations": self._generate_recommendations(
                     energy_score,
                     heating_time_percentage,
@@ -106,76 +106,45 @@ class EfficiencyCalculator:
             _LOGGER.error("Error calculating efficiency for %s: %s", area_id, e)
             return self._empty_metrics(area_id, period, start, end)
 
-    async def _fetch_states(
-        self, entity_id: str, start_time: datetime, end_time: datetime
-    ) -> list:
-        """Fetch historical states for an entity.
-
-        Args:
-            entity_id: Entity ID to fetch states for
-            start_time: Start of time range
-            end_time: End of time range
-
-        Returns:
-            List of historical states
-        """
-
-        # Use recorder executor to avoid blocking
-        def _get_states():
-            return history.state_changes_during_period(
-                self.hass,
-                start_time,
-                end_time,
-                entity_id,
-            )
-
-        recorder = get_instance(self.hass)
-        state_changes = await recorder.async_add_executor_job(_get_states)
-
-        if entity_id not in state_changes:
-            return []
-
-        return state_changes[entity_id]
-
-    def _calculate_heating_time(self, states: list) -> float:
+    def _calculate_heating_time(self, history_data: list[dict]) -> float:
         """Calculate percentage of time heating was active.
 
         Args:
-            states: List of historical states
+            history_data: List of historical data entries from HistoryTracker
 
         Returns:
             Percentage of time heating was on (0-100)
         """
-        if not states:
+        if not history_data:
             return 0.0
 
         heating_count = 0
-        total_count = len(states)
+        total_count = len(history_data)
 
-        for state in states:
-            if state.state == "heating":
+        for entry in history_data:
+            if entry.get("state") == "heating":
                 heating_count += 1
 
         return (heating_count / total_count) * 100 if total_count > 0 else 0.0
 
-    def _calculate_avg_temp_delta(self, states: list) -> float:
+    def _calculate_avg_temp_delta(self, history_data: list[dict]) -> float:
         """Calculate average temperature delta (target - current).
 
         Args:
-            states: List of historical states
+            history_data: List of historical data entries from HistoryTracker
 
         Returns:
             Average temperature difference
         """
-        if not states:
+        if not history_data:
             return 0.0
 
         deltas = []
 
-        for state in states:
+        for entry in history_data:
             try:
-                current_temp = float(state.attributes.get("current_temperature", 0))
-                target_temp = float(state.attributes.get("temperature", 0))
+                current_temp = float(entry.get("current_temperature", 0))
+                target_temp = float(entry.get("target_temperature", 0))
                 delta = target_temp - current_temp
                 deltas.append(abs(delta))
             except (ValueError, TypeError):
@@ -183,47 +152,47 @@ class EfficiencyCalculator:
 
         return sum(deltas) / len(deltas) if deltas else 0.0
 
-    def _count_heating_cycles(self, states: list) -> int:
+    def _count_heating_cycles(self, history_data: list[dict]) -> int:
         """Count number of heating on/off cycles.
 
         Args:
-            states: List of historical states
+            history_data: List of historical data entries from HistoryTracker
 
         Returns:
             Number of heating cycles
         """
-        if len(states) < 2:
+        if len(history_data) < 2:
             return 0
 
         cycles = 0
-        prev_heating = states[0].state == "heating"
+        prev_heating = history_data[0].get("state") == "heating"
 
-        for state in states[1:]:
-            current_heating = state.state == "heating"
+        for entry in history_data[1:]:
+            current_heating = entry.get("state") == "heating"
             if current_heating and not prev_heating:
                 cycles += 1
             prev_heating = current_heating
 
         return cycles
 
-    def _calculate_temp_stability(self, states: list) -> float:
+    def _calculate_temp_stability(self, history_data: list[dict]) -> float:
         """Calculate temperature stability (lower = more stable).
 
         Uses standard deviation of temperature differences.
 
         Args:
-            states: List of historical states
+            history_data: List of historical data entries from HistoryTracker
 
         Returns:
             Temperature stability metric
         """
-        if not states:
+        if not history_data:
             return 0.0
 
         temps = []
-        for state in states:
+        for entry in history_data:
             try:
-                current_temp = float(state.attributes.get("current_temperature", 0))
+                current_temp = float(entry.get("current_temperature", 0))
                 temps.append(current_temp)
             except (ValueError, TypeError):
                 continue
@@ -270,7 +239,8 @@ class EfficiencyCalculator:
             score -= (avg_temp_delta - 1.0) * 10
 
         # Penalize excessive cycling (more than 1 cycle per hour is inefficient)
-        hours = data_points / 120  # Assuming data points every 30 seconds
+        # HistoryTracker records every 5 minutes = 12 data points per hour
+        hours = data_points / 12 if data_points > 0 else 1
         cycles_per_hour = cycles / hours if hours > 0 else 0
         if cycles_per_hour > 1:
             score -= (cycles_per_hour - 1) * 5

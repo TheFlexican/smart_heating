@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### 🐛 Bug Fixes
+
+**Efficiency Calculator Data Source Fix**
+- Fixed EfficiencyCalculator to use HistoryTracker data instead of HA recorder
+- Removed incorrect entity name references (`climate.smart_heating_{area_id}`) that don't exist
+- Now properly reads from 5-minute interval history snapshots collected by HistoryTracker
+- Updated cycle calculation to account for correct data point frequency (12/hour vs 120/hour)
+- Efficiency reports now work correctly with actual historical data
+
+**WebSocket Coordinator Selection Fix**
+- Fixed WebSocket error when subscribing to updates (`'UserManager' object has no attribute 'async_add_listener'`)
+- Added new V0.6.0 services to WebSocket exclude list: `user_manager`, `efficiency_calculator`, `comparison_engine`, `config_manager`
+- WebSocket now correctly identifies the coordinator instance instead of picking service managers
+
 ### ✨ Features
 
 **Multi-User Presence Tracking (v0.6.0)**

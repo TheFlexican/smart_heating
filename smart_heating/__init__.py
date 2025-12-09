@@ -156,7 +156,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _LOGGER.info("User manager initialized")
 
     # Create efficiency calculator
-    efficiency_calculator = EfficiencyCalculator(hass)
+    efficiency_calculator = EfficiencyCalculator(hass, history_tracker)
     hass.data[DOMAIN]["efficiency_calculator"] = efficiency_calculator
     _LOGGER.info("Efficiency calculator initialized")
 

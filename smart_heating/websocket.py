@@ -64,6 +64,10 @@ def websocket_subscribe_updates(
         "vacation_manager",
         "safety_monitor",
         "climate_unsub",
+        "user_manager",
+        "efficiency_calculator",
+        "comparison_engine",
+        "config_manager",
     }
 
     entry_ids = [key for key in hass.data[DOMAIN].keys() if key not in exclude_keys]
