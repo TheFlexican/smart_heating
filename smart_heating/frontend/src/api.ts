@@ -212,6 +212,19 @@ export const copySchedule = async (
   await axios.post(`${API_BASE}/copy_schedule`, data)
 }
 
+// Heating Type Management
+export const setHeatingType = async (
+  areaId: string,
+  heatingType: 'radiator' | 'floor_heating',
+  customOverheadTemp?: number
+): Promise<void> => {
+  const data: any = { heating_type: heatingType }
+  if (customOverheadTemp !== undefined) {
+    data.custom_overhead_temp = customOverheadTemp
+  }
+  await axios.post(`${API_BASE}/areas/${areaId}/heating_type`, data)
+}
+
 // History Management
 export const getHistoryConfig = async (): Promise<{
   retention_days: number

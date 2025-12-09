@@ -24,6 +24,8 @@ import {
   FormControl,
   InputLabel,
   FormControlLabel,
+  RadioGroup,
+  Radio,
 } from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import ThermostatIcon from '@mui/icons-material/Thermostat'
@@ -73,6 +75,7 @@ import {
   AreaLogEntry,
   setPrimaryTemperatureSensor,
   getWeatherEntities,
+  setHeatingType,
 } from '../api'
 import ScheduleEditor from '../components/ScheduleEditor'
 import HistoryChart from '../components/HistoryChart'
@@ -675,6 +678,58 @@ const ZoneDetail = () => {
               <MenuItem value="off">Off</MenuItem>
             </Select>
           </FormControl>
+        )
+      },
+      {
+        id: 'heating-type',
+        title: t('settingsCards.heatingTypeTitle', 'Heating Type'),
+        description: t('settingsCards.heatingTypeDescription', 'Select radiator or floor heating to optimize temperature control'),
+        icon: <LocalFireDepartmentIcon />,
+        badge: area.heating_type === 'floor_heating' ? t('settingsCards.floorHeating', 'Floor Heating') : t('settingsCards.radiator', 'Radiator'),
+        defaultExpanded: false,
+        content: (
+          <Box>
+            <RadioGroup
+              value={area.heating_type || 'radiator'}
+              onChange={async (e) => {
+                try {
+                  await setHeatingType(area.id, e.target.value as 'radiator' | 'floor_heating')
+                  loadData()
+                } catch (error) {
+                  console.error('Failed to update heating type:', error)
+                }
+              }}
+            >
+              <FormControlLabel
+                value="radiator"
+                control={<Radio />}
+                label={
+                  <Box>
+                    <Typography variant="body1">{t('settingsCards.radiator', 'Radiator')}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {t('settingsCards.radiatorDescription', 'Fast response, higher overhead temperature (default: +20°C)')}
+                    </Typography>
+                  </Box>
+                }
+              />
+              <FormControlLabel
+                value="floor_heating"
+                control={<Radio />}
+                label={
+                  <Box>
+                    <Typography variant="body1">{t('settingsCards.floorHeating', 'Floor Heating')}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {t('settingsCards.floorHeatingDescription', 'Slow response, lower overhead temperature (default: +5°C)')}
+                    </Typography>
+                  </Box>
+                }
+              />
+            </RadioGroup>
+
+            <Alert severity="info" sx={{ mt: 2 }}>
+              {t('settingsCards.heatingTypeInfo', 'Heating type affects the boiler setpoint temperature. Radiators use higher temperature for faster heating, floor heating uses lower temperature for gradual heating.')}
+            </Alert>
+          </Box>
         )
       },
       {
