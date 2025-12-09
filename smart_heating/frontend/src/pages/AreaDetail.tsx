@@ -170,6 +170,7 @@ const ZoneDetail = () => {
         return
       }
 
+      console.log('AreaDetail loadData - weather_entity_id:', currentZone.weather_entity_id)
       setArea(currentZone)
       // If preset is active, show effective temperature, otherwise base target
       const displayTemp = (currentZone.preset_mode && currentZone.preset_mode !== 'none' && currentZone.effective_target_temperature != null)
@@ -1228,21 +1229,34 @@ const ZoneDetail = () => {
             <FormControl fullWidth sx={{ mb: 3 }} disabled={!area.smart_night_boost_enabled}>
               <InputLabel>{t('settingsCards.outdoorTemperatureSensor')}</InputLabel>
               <Select
-                value={area.weather_entity_id ?? ''}
+                value={area.weather_entity_id || ''}
                 onChange={async (e) => {
+                  const newValue = e.target.value || null  // Convert empty string to null
+                  console.log('Weather sensor onChange - Selected value:', newValue)
+                  console.log('Weather sensor onChange - Current area.weather_entity_id:', area.weather_entity_id)
                   try {
-                    await fetch('/api/smart_heating/call_service', {
+                    const serviceCallBody = {
+                      service: 'set_night_boost',
+                      area_id: area.id,
+                      weather_entity_id: newValue
+                    }
+                    console.log('Weather sensor onChange - Service call body:', serviceCallBody)
+
+                    const response = await fetch('/api/smart_heating/call_service', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        service: 'set_night_boost',
-                        area_id: area.id,
-                        weather_entity_id: e.target.value
-                      })
+                      body: JSON.stringify(serviceCallBody)
                     })
-                    loadData()
+                    const result = await response.json()
+                    console.log('Weather sensor onChange - Service call response:', result)
+
+                    // Wait a bit for the backend to save
+                    await new Promise(resolve => setTimeout(resolve, 500))
+
+                    await loadData()
+                    console.log('Weather sensor onChange - After loadData complete')
                   } catch (error) {
-                    console.error('Failed to update weather entity:', error)
+                    console.error('Weather sensor onChange - Failed to update:', error)
                   }
                 }}
                 onOpen={() => {

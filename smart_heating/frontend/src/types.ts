@@ -42,18 +42,18 @@ export interface Zone {
   current_temperature?: number
   devices: Device[]
   schedules?: ScheduleEntry[]
-  
+
   // Night boost settings
   night_boost_enabled?: boolean
   night_boost_offset?: number
   night_boost_start_time?: string
   night_boost_end_time?: string
-  
+
   // Smart night boost settings
   smart_night_boost_enabled?: boolean
   smart_night_boost_target_time?: string
-  weather_entity_id?: string
-  
+  weather_entity_id?: string | null
+
   // Preset mode settings
   preset_mode?: string
   away_temp?: number
@@ -62,7 +62,7 @@ export interface Zone {
   home_temp?: number
   sleep_temp?: number
   activity_temp?: number
-  
+
   // Global preset flags (use global vs custom temperatures)
   use_global_away?: boolean
   use_global_eco?: boolean
@@ -70,39 +70,39 @@ export interface Zone {
   use_global_home?: boolean
   use_global_sleep?: boolean
   use_global_activity?: boolean
-  
+
   // Boost mode settings
   boost_mode_active?: boolean
   boost_duration?: number
   boost_temp?: number
   boost_end_time?: string
-  
+
   // HVAC mode
   hvac_mode?: string
-  
+
   // Manual override mode
   manual_override?: boolean
-  
+
   // Switch/pump control setting
   shutdown_switches_when_idle?: boolean
-  
+
   // Window sensor settings
   window_sensors?: WindowSensorConfig[]
   window_is_open?: boolean
-  
+
   // Presence sensor settings
   presence_sensors?: PresenceSensorConfig[]
   presence_detected?: boolean
   use_global_presence?: boolean  // Use global presence sensors instead of area-specific
-  
+
   // Auto preset mode based on presence
   auto_preset_enabled?: boolean
   auto_preset_home?: string  // Preset when presence detected (default: 'home')
   auto_preset_away?: string  // Preset when no presence (default: 'away')
-  
+
   // Hysteresis override (null = use global setting)
   hysteresis_override?: number | null
-  
+
   // Primary temperature sensor (which device to use for temperature measurement)
   primary_temperature_sensor?: string | null
 }

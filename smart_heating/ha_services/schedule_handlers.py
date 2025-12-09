@@ -48,9 +48,7 @@ async def async_handle_add_schedule(
     )
 
     try:
-        area_manager.add_schedule_to_area(
-            area_id, schedule_id, time_str, temperature, days
-        )
+        area_manager.add_schedule_to_area(area_id, schedule_id, time_str, temperature, days)
         await area_manager.async_save()
         await coordinator.async_request_refresh()
         _LOGGER.info("Added schedule %s to area %s", schedule_id, area_id)
@@ -158,13 +156,14 @@ async def async_handle_set_night_boost(
     weather_entity_id = call.data.get("weather_entity_id")
 
     _LOGGER.debug(
-        "Setting night boost for area %s: enabled=%s, offset=%s, start=%s, end=%s, smart=%s",
+        "Setting night boost for area %s: enabled=%s, offset=%s, start=%s, end=%s, smart=%s, weather=%s",
         area_id,
         enabled,
         offset,
         start_time,
         end_time,
         smart_enabled,
+        weather_entity_id,
     )
 
     try:
@@ -188,6 +187,12 @@ async def async_handle_set_night_boost(
         if smart_target_time is not None:
             area.smart_night_boost_target_time = smart_target_time
         if weather_entity_id is not None:
+            _LOGGER.info(
+                "Setting weather_entity_id for area %s: %s → %s",
+                area_id,
+                area.weather_entity_id,
+                weather_entity_id,
+            )
             area.weather_entity_id = weather_entity_id
 
         await area_manager.async_save()
@@ -232,9 +237,7 @@ async def async_handle_copy_schedule(
     try:
         source_schedule = source_area.schedules.get(source_schedule_id)
         if not source_schedule:
-            _LOGGER.error(
-                "Schedule %s not found in area %s", source_schedule_id, source_area_id
-            )
+            _LOGGER.error("Schedule %s not found in area %s", source_schedule_id, source_area_id)
             return
 
         # Create new schedule(s) for target days
@@ -265,8 +268,6 @@ async def async_handle_copy_schedule(
 
         await area_manager.async_save()
         await coordinator.async_request_refresh()
-        _LOGGER.info(
-            "Copied schedule from area %s to area %s", source_area_id, target_area_id
-        )
+        _LOGGER.info("Copied schedule from area %s to area %s", source_area_id, target_area_id)
     except Exception as err:
         _LOGGER.error("Failed to copy schedule: %s", err)
