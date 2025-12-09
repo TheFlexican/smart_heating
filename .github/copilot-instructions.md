@@ -5,6 +5,21 @@ Home Assistant integration for zone-based heating control with learning capabili
 
 **Tech Stack:** Python 3.13, React + TypeScript + Material-UI v5, Docker test environment
 
+## Production API Access
+**Production Home Assistant URL:** http://homeassistant.local:8123
+**Production API Token:** `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIwNTc5M2FmNzM5Y2I0ZGQ2ODkzNjZlNzQ0MWRmMWM1YiIsImlhdCI6MTc2NTI5OTk5NywiZXhwIjoyMDgwNjU5OTk3fQ.fBxqcbRlz7oyoH50cBjEmUcJoNr2kMiRDqoJg9T0JFs`
+
+**Example API calls:**
+```bash
+# Get entity state
+curl -s "http://homeassistant.local:8123/api/states/climate.opentherm_gateway_otgw_otgw_thermostat" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIwNTc5M2FmNzM5Y2I0ZGQ2ODkzNjZlNzQ0MWRmMWM1YiIsImlhdCI6MTc2NTI5OTk5NywiZXhwIjoyMDgwNjU5OTk3fQ.fBxqcbRlz7oyoH50cBjEmUcJoNr2kMiRDqoJg9T0JFs" | jq
+
+# Get all states
+curl -s "http://homeassistant.local:8123/api/states" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIwNTc5M2FmNzM5Y2I0ZGQ2ODkzNjZlNzQ0MWRmMWM1YiIsImlhdCI6MTc2NTI5OTk5NywiZXhwIjoyMDgwNjU5OTk3fQ.fBxqcbRlz7oyoH50cBjEmUcJoNr2kMiRDqoJg9T0JFs" | jq
+```
+
 ## Critical Rules
 
 **RULE #1: Never Remove Features Without Permission**

@@ -589,41 +589,27 @@ class DeviceControlHandler:
                     1 for ht in heating_types.values() if ht == "radiator"
                 )
 
-                # Use OpenTherm Gateway specific service instead of climate.set_temperature
-                # The OTGW integration doesn't support set_temperature, use set_control_setpoint
+                # Use MQTT to control OpenTherm Gateway
+                # With MQTT Top Topic "OTGW", use topic: OTGW/command/setpoint
                 try:
                     await self.hass.services.async_call(
-                        "opentherm_gw",
-                        "set_control_setpoint",
+                        "mqtt",
+                        "publish",
                         {
-                            "gateway_id": gateway_id.split(".")[-1].replace(
-                                "_otgw_thermostat", ""
-                            ),
-                            "temperature": boiler_setpoint,
+                            "topic": "OTGW/command/setpoint",
+                            "payload": str(int(boiler_setpoint)),
                         },
                         blocking=False,
                     )
+                    _LOGGER.info(
+                        "OpenTherm gateway: Set setpoint via MQTT to OTGW/command/setpoint: %.1f°C",
+                        boiler_setpoint,
+                    )
                 except Exception as err:
                     _LOGGER.error(
-                        "Failed to set OpenTherm Gateway control setpoint: %s. "
-                        "Trying alternative MQTT method...",
+                        "Failed to set OpenTherm Gateway setpoint via MQTT: %s",
                         err,
                     )
-                    # Fallback: Try MQTT publish if service doesn't exist
-                    # Extract gateway name from entity_id (e.g., climate.otgw_thermostat -> otgw)
-                    try:
-                        gateway_name = gateway_id.split(".")[-1].split("_")[0]
-                        await self.hass.services.async_call(
-                            "mqtt",
-                            "publish",
-                            {
-                                "topic": f"opentherm/{gateway_name}/set/control_setpoint",
-                                "payload": str(boiler_setpoint),
-                            },
-                            blocking=False,
-                        )
-                    except Exception as mqtt_err:
-                        _LOGGER.error("MQTT fallback also failed: %s", mqtt_err)
 
                 _LOGGER.info(
                     "OpenTherm gateway: Boiler ON, setpoint=%.1f°C (overhead=%.1f°C, %d floor heating, %d radiator)",
@@ -645,38 +631,22 @@ class DeviceControlHandler:
                         radiator_count=radiator_count,
                     )
             else:
-                # Turn off boiler by setting control setpoint to 0
+                # Turn off boiler by setting setpoint to 0
                 try:
                     await self.hass.services.async_call(
-                        "opentherm_gw",
-                        "set_control_setpoint",
+                        "mqtt",
+                        "publish",
                         {
-                            "gateway_id": gateway_id.split(".")[-1].replace(
-                                "_otgw_thermostat", ""
-                            ),
-                            "temperature": 0,
+                            "topic": "OTGW/command/setpoint",
+                            "payload": "0",
                         },
                         blocking=False,
                     )
+                    _LOGGER.info("OpenTherm gateway: Boiler OFF (setpoint=0 via MQTT)")
                 except Exception as err:
                     _LOGGER.error(
-                        "Failed to turn off OpenTherm Gateway: %s. Trying MQTT...", err
+                        "Failed to turn off OpenTherm Gateway via MQTT: %s", err
                     )
-                    try:
-                        gateway_name = gateway_id.split(".")[-1].split("_")[0]
-                        await self.hass.services.async_call(
-                            "mqtt",
-                            "publish",
-                            {
-                                "topic": f"opentherm/{gateway_name}/set/control_setpoint",
-                                "payload": "0",
-                            },
-                            blocking=False,
-                        )
-                    except Exception as mqtt_err:
-                        _LOGGER.error("MQTT fallback also failed: %s", mqtt_err)
-
-                _LOGGER.info("OpenTherm gateway: Boiler OFF")
 
                 # Log boiler control
                 if opentherm_logger:
