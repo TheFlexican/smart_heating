@@ -590,13 +590,13 @@ class DeviceControlHandler:
                 )
 
                 # Use OpenTherm Gateway integration service
-                # Extract gateway_id from entity_id (e.g., climate.opentherm_gateway_otgw_otgw_thermostat)
-                # The gateway_id is typically the device name configured in the integration
-                # Try common patterns: full device name or just the gateway identifier
+                # Extract gateway_id from entity_id
+                # Examples:
+                #   climate.opentherm_gateway_otgw_otgw_thermostat -> gateway_id: otgw
+                #   climate.opentherm_thermostaat -> gateway_id: opentherm
                 gateway_device_id = None
 
-                # Try to extract gateway_id from the entity_id
-                # Pattern: climate.opentherm_gateway_{gateway_id}_otgw_thermostat
+                # Pattern 1: climate.opentherm_gateway_{gateway_id}_otgw_thermostat
                 if "_otgw_" in gateway_id:
                     # Extract the part between opentherm_gateway_ and _otgw_
                     parts = gateway_id.replace("climate.opentherm_gateway_", "").split(
@@ -604,9 +604,17 @@ class DeviceControlHandler:
                     )
                     if len(parts) > 0:
                         gateway_device_id = parts[0]  # e.g., "otgw"
+                # Pattern 2: climate.opentherm_thermostaat -> opentherm
+                elif gateway_id.startswith("climate.opentherm_"):
+                    # Remove "climate." prefix and "_thermostaat" suffix
+                    gateway_device_id = (
+                        gateway_id.replace("climate.", "")
+                        .replace("_thermostaat", "")
+                        .replace("_thermostat", "")
+                    )
 
                 if not gateway_device_id:
-                    # Fallback: use the full entity ID without domain
+                    # Final fallback: use the full entity ID without domain
                     gateway_device_id = gateway_id.replace("climate.", "")
 
                 try:
@@ -660,6 +668,12 @@ class DeviceControlHandler:
                     )
                     if len(parts) > 0:
                         gateway_device_id = parts[0]
+                elif gateway_id.startswith("climate.opentherm_"):
+                    gateway_device_id = (
+                        gateway_id.replace("climate.", "")
+                        .replace("_thermostaat", "")
+                        .replace("_thermostat", "")
+                    )
 
                 if not gateway_device_id:
                     gateway_device_id = gateway_id.replace("climate.", "")
