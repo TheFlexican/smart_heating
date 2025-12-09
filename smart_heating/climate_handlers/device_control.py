@@ -98,7 +98,9 @@ class DeviceControlHandler:
 
         state = self.hass.states.get(entity_id)
         if not state:
-            _LOGGER.warning("Cannot determine capabilities for %s: entity not found", entity_id)
+            _LOGGER.warning(
+                "Cannot determine capabilities for %s: entity not found", entity_id
+            )
             self._device_capabilities[entity_id] = capabilities
             return capabilities
 
@@ -128,7 +130,10 @@ class DeviceControlHandler:
                 )
 
             # Check if it supports temperature
-            if "temperature" in state.attributes or "target_temp_low" in state.attributes:
+            if (
+                "temperature" in state.attributes
+                or "target_temp_low" in state.attributes
+            ):
                 capabilities["supports_temperature"] = True
                 _LOGGER.debug("Valve %s supports temperature control", entity_id)
 
@@ -250,7 +255,9 @@ class DeviceControlHandler:
                     await self._async_ensure_climate_power_on(thermostat_id)
 
                     # Set HVAC mode first
-                    ha_hvac_mode = HVAC_MODE_HEAT if hvac_mode == "heat" else HVAC_MODE_COOL
+                    ha_hvac_mode = (
+                        HVAC_MODE_HEAT if hvac_mode == "heat" else HVAC_MODE_COOL
+                    )
                     await self.hass.services.async_call(
                         CLIMATE_DOMAIN,
                         "set_hvac_mode",
@@ -260,7 +267,9 @@ class DeviceControlHandler:
                         },
                         blocking=False,
                     )
-                    _LOGGER.debug("Set thermostat %s to %s mode", thermostat_id, hvac_mode)
+                    _LOGGER.debug(
+                        "Set thermostat %s to %s mode", thermostat_id, hvac_mode
+                    )
 
                     # Only set temperature if it has changed (avoid API rate limiting)
                     last_temp = self._last_set_temperatures.get(thermostat_id)
@@ -459,7 +468,9 @@ class DeviceControlHandler:
                                 },
                                 blocking=False,
                             )
-                            _LOGGER.debug("Set valve %s position to %.0f%%", valve_id, position)
+                            _LOGGER.debug(
+                                "Set valve %s position to %.0f%%", valve_id, position
+                            )
                         except Exception:
                             _LOGGER.debug(
                                 "Valve %s doesn't support set_position, using temperature control",
@@ -469,10 +480,15 @@ class DeviceControlHandler:
                             capabilities["supports_temperature"] = True
 
                 # Fall back to temperature control
-                if not capabilities["supports_position"] and capabilities["supports_temperature"]:
+                if (
+                    not capabilities["supports_position"]
+                    and capabilities["supports_temperature"]
+                ):
                     if heating and target_temp is not None:
                         offset = self.area_manager.trv_temp_offset
-                        heating_temp = max(target_temp + offset, self.area_manager.trv_heating_temp)
+                        heating_temp = max(
+                            target_temp + offset, self.area_manager.trv_heating_temp
+                        )
                         await self.hass.services.async_call(
                             CLIMATE_DOMAIN,
                             SERVICE_SET_TEMPERATURE,
@@ -482,7 +498,9 @@ class DeviceControlHandler:
                             },
                             blocking=False,
                         )
-                        _LOGGER.debug("Set TRV %s to heating temp %.1f°C", valve_id, heating_temp)
+                        _LOGGER.debug(
+                            "Set TRV %s to heating temp %.1f°C", valve_id, heating_temp
+                        )
                     else:
                         idle_temp = self.area_manager.trv_idle_temp
                         await self.hass.services.async_call(
@@ -494,7 +512,9 @@ class DeviceControlHandler:
                             },
                             blocking=False,
                         )
-                        _LOGGER.debug("Set TRV %s to idle temp %.1f°C", valve_id, idle_temp)
+                        _LOGGER.debug(
+                            "Set TRV %s to idle temp %.1f°C", valve_id, idle_temp
+                        )
 
                 if (
                     not capabilities["supports_position"]
@@ -565,17 +585,46 @@ class DeviceControlHandler:
                 floor_heating_count = sum(
                     1 for ht in heating_types.values() if ht == "floor_heating"
                 )
-                radiator_count = sum(1 for ht in heating_types.values() if ht == "radiator")
-
-                await self.hass.services.async_call(
-                    CLIMATE_DOMAIN,
-                    SERVICE_SET_TEMPERATURE,
-                    {
-                        "entity_id": gateway_id,
-                        ATTR_TEMPERATURE: boiler_setpoint,
-                    },
-                    blocking=False,
+                radiator_count = sum(
+                    1 for ht in heating_types.values() if ht == "radiator"
                 )
+
+                # Use OpenTherm Gateway specific service instead of climate.set_temperature
+                # The OTGW integration doesn't support set_temperature, use set_control_setpoint
+                try:
+                    await self.hass.services.async_call(
+                        "opentherm_gw",
+                        "set_control_setpoint",
+                        {
+                            "gateway_id": gateway_id.split(".")[-1].replace(
+                                "_otgw_thermostat", ""
+                            ),
+                            "temperature": boiler_setpoint,
+                        },
+                        blocking=False,
+                    )
+                except Exception as err:
+                    _LOGGER.error(
+                        "Failed to set OpenTherm Gateway control setpoint: %s. "
+                        "Trying alternative MQTT method...",
+                        err,
+                    )
+                    # Fallback: Try MQTT publish if service doesn't exist
+                    # Extract gateway name from entity_id (e.g., climate.otgw_thermostat -> otgw)
+                    try:
+                        gateway_name = gateway_id.split(".")[-1].split("_")[0]
+                        await self.hass.services.async_call(
+                            "mqtt",
+                            "publish",
+                            {
+                                "topic": f"opentherm/{gateway_name}/set/control_setpoint",
+                                "payload": str(boiler_setpoint),
+                            },
+                            blocking=False,
+                        )
+                    except Exception as mqtt_err:
+                        _LOGGER.error("MQTT fallback also failed: %s", mqtt_err)
+
                 _LOGGER.info(
                     "OpenTherm gateway: Boiler ON, setpoint=%.1f°C (overhead=%.1f°C, %d floor heating, %d radiator)",
                     boiler_setpoint,
@@ -596,12 +645,37 @@ class DeviceControlHandler:
                         radiator_count=radiator_count,
                     )
             else:
-                await self.hass.services.async_call(
-                    CLIMATE_DOMAIN,
-                    SERVICE_TURN_OFF,
-                    {"entity_id": gateway_id},
-                    blocking=False,
-                )
+                # Turn off boiler by setting control setpoint to 0
+                try:
+                    await self.hass.services.async_call(
+                        "opentherm_gw",
+                        "set_control_setpoint",
+                        {
+                            "gateway_id": gateway_id.split(".")[-1].replace(
+                                "_otgw_thermostat", ""
+                            ),
+                            "temperature": 0,
+                        },
+                        blocking=False,
+                    )
+                except Exception as err:
+                    _LOGGER.error(
+                        "Failed to turn off OpenTherm Gateway: %s. Trying MQTT...", err
+                    )
+                    try:
+                        gateway_name = gateway_id.split(".")[-1].split("_")[0]
+                        await self.hass.services.async_call(
+                            "mqtt",
+                            "publish",
+                            {
+                                "topic": f"opentherm/{gateway_name}/set/control_setpoint",
+                                "payload": "0",
+                            },
+                            blocking=False,
+                        )
+                    except Exception as mqtt_err:
+                        _LOGGER.error("MQTT fallback also failed: %s", mqtt_err)
+
                 _LOGGER.info("OpenTherm gateway: Boiler OFF")
 
                 # Log boiler control
