@@ -224,7 +224,9 @@ const ZoneCard = ({ area, onUpdate, index }: ZoneCardProps) => {
 
     // Add hvac_action if available (heating, cooling, idle, etc.)
     if (device.hvac_action && device.hvac_action !== 'idle' && device.hvac_action !== 'off') {
-      parts.push(`[${device.hvac_action}]`)
+      const key = `area.${device.hvac_action}`
+      const translatedAction = t(key, { defaultValue: device.hvac_action })
+      parts.push(`[${translatedAction}]`)
     }
 
     const currentTemp = formatTemperature(device.current_temperature)
@@ -239,7 +241,10 @@ const ZoneCard = ({ area, onUpdate, index }: ZoneCardProps) => {
     }
 
     if (parts.length === 0 && device.state) {
-      parts.push(device.state)
+      // Translate common states
+      const key = `area.${device.state}`
+      const translatedState = t(key, { defaultValue: device.state })
+      parts.push(translatedState)
     }
 
     return parts
@@ -274,7 +279,10 @@ const ZoneCard = ({ area, onUpdate, index }: ZoneCardProps) => {
     const parts = []
 
     if (isValidState(device.state)) {
-      parts.push(device.state)
+      // Translate common states (on, off, etc.)
+      const key = `area.${device.state}`
+      const translatedState = t(key, { defaultValue: device.state })
+      parts.push(translatedState)
     }
 
     return parts
@@ -362,7 +370,7 @@ const ZoneCard = ({ area, onUpdate, index }: ZoneCardProps) => {
             <Box display="flex" gap={1} flexWrap="wrap">
               <Chip
                 icon={getStateIcon()}
-                label={area.manual_override ? t('area.manual') : area.state.toUpperCase()}
+                label={area.manual_override ? t('area.manual') : t(`area.${area.state}`, { defaultValue: area.state }).toUpperCase()}
                 color={getStateColor()}
                 size="small"
                 sx={{ fontSize: { xs: '0.7rem', sm: '0.8125rem' } }}
@@ -370,7 +378,7 @@ const ZoneCard = ({ area, onUpdate, index }: ZoneCardProps) => {
               {area.presence_sensors && area.presence_sensors.length > 0 && presenceState && (
                 <Chip
                   icon={<PersonIcon />}
-                  label={presenceState.toUpperCase()}
+                  label={t(`presets.${presenceState}`, { defaultValue: presenceState }).toUpperCase()}
                   color={presenceState === 'home' ? 'success' : 'default'}
                   size="small"
                   sx={{ fontSize: { xs: '0.7rem', sm: '0.8125rem' } }}
@@ -379,7 +387,7 @@ const ZoneCard = ({ area, onUpdate, index }: ZoneCardProps) => {
               {area.boost_mode_active && (
                 <Chip
                   icon={<RocketLaunchIcon />}
-                  label="BOOST"
+                  label={t('presets.boost', { defaultValue: 'BOOST' }).toUpperCase()}
                   color="error"
                   size="small"
                   sx={{ fontSize: { xs: '0.7rem', sm: '0.8125rem' } }}
@@ -416,7 +424,7 @@ const ZoneCard = ({ area, onUpdate, index }: ZoneCardProps) => {
               {t('area.targetTemperature')}
               {area.preset_mode && area.preset_mode !== 'none' && (
                 <Chip
-                  label={area.preset_mode.toUpperCase()}
+                  label={t(`presets.${area.preset_mode}`).toUpperCase()}
                   size="small"
                   color="secondary"
                   sx={{ ml: 1, fontSize: { xs: '0.65rem', sm: '0.7rem' }, height: '20px' }}
@@ -555,7 +563,7 @@ const ZoneCard = ({ area, onUpdate, index }: ZoneCardProps) => {
                       </Typography>
                       {device.type === 'thermostat' && device.hvac_action && (
                         <Chip
-                          label={device.hvac_action}
+                          label={t(`area.${device.hvac_action}`, { defaultValue: device.hvac_action }).toUpperCase()}
                           size="small"
                           sx={{
                             height: { xs: 16, sm: 18 },

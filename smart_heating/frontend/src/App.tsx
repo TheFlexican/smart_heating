@@ -23,10 +23,10 @@ import { Zone, Device } from './types'
 import { getZones, getDevices, addDeviceToZone, getConfig, getSafetySensor } from './api'
 import { useWebSocket } from './hooks/useWebSocket'
 
-// Home Assistant color scheme - matches HA's native dark theme
-const theme = createTheme({
+// Home Assistant theme factory - matches HA's native theme
+const createHATheme = (mode: 'light' | 'dark') => createTheme({
   palette: {
-    mode: 'dark',
+    mode,
     primary: {
       main: '#03a9f4', // HA blue accent
       light: '#42c0fb',
@@ -37,15 +37,21 @@ const theme = createTheme({
       light: '#ffd54f',
       dark: '#c79100',
     },
-    background: {
+    background: mode === 'dark' ? {
       default: '#111111', // HA dark background
       paper: '#1c1c1c',   // HA card background
+    } : {
+      default: '#fafafa', // HA light background
+      paper: '#ffffff',   // HA light card background
     },
-    text: {
+    text: mode === 'dark' ? {
       primary: '#e1e1e1',
       secondary: '#9e9e9e',
+    } : {
+      primary: '#212121',
+      secondary: '#757575',
     },
-    divider: '#2c2c2c',
+    divider: mode === 'dark' ? '#2c2c2c' : '#e0e0e0',
     error: {
       main: '#f44336',
     },
@@ -179,6 +185,11 @@ function App() {
     enabled?: boolean
   }>({})
   const [safetyAlertActive, setSafetyAlertActive] = useState(false)
+  const [themeMode, setThemeMode] = useState<'light' | 'dark'>(() => {
+    // Load theme preference from localStorage
+    const saved = localStorage.getItem('appThemeMode')
+    return (saved === 'light' || saved === 'dark') ? saved : 'dark'
+  })
 
   const loadData = useCallback(async () => {
     try {
@@ -290,6 +301,11 @@ function App() {
     }
   })
 
+  // Save theme preference to localStorage when changed
+  useEffect(() => {
+    localStorage.setItem('appThemeMode', themeMode)
+  }, [themeMode])
+
   useEffect(() => {
     loadData()
   }, [])
@@ -323,7 +339,7 @@ function App() {
   }
 
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={createHATheme(themeMode)}>
       <CssBaseline />
       <Router basename="/smart_heating_ui">
         <Routes>
@@ -349,7 +365,7 @@ function App() {
             />
           } />
           <Route path="/area/:areaId" element={<ZoneDetail />} />
-          <Route path="/settings/global" element={<GlobalSettings />} />
+          <Route path="/settings/global" element={<GlobalSettings themeMode={themeMode} onThemeChange={setThemeMode} />} />
           <Route path="/settings/users" element={<UserManagement />} />
           <Route path="/analytics/efficiency" element={<EfficiencyReports />} />
           <Route path="/analytics/comparison" element={<HistoricalComparisons />} />

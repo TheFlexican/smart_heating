@@ -9,6 +9,29 @@ en dit project volgt [Semantic Versioning](https://semver.org/).
 
 ### ✨ Functies
 
+**Mushroom-Stijl UI Verbeteringen**
+- **Mushroom-geïnspireerd kaart ontwerp geïmplementeerd**: Moderne, gepolijste interface met vloeiende transities
+  - Afgeronde hoeken (borderRadius: 3) voor alle kaarten en componenten
+  - Alpha-gemengde achtergronden voor visuele diepte
+  - Verhoogde schaduwen met vloeiende transities bij hover/interactie
+  - Verbeterde visuele hiërarchie met Material Design principes
+- **Slepen-en-neerzetten toegevoegd voor zone kaarten**: Herorganiseer zones op hoofddashboard
+  - Sleep handgreep met grip icoon in linkerbovenhoek van elke zone kaart
+  - Visuele feedback tijdens slepen (opacity wijziging, elevatie)
+  - Volgorde blijft behouden in localStorage tussen pagina verversingen
+  - Vloeiende animaties voor herschikking
+- **Verbeterde vertalingen**: Volledige vertaalondersteuning voor alle UI elementen
+  - Apparaat statussen: heating/verwarmen, idle/inactief, off/uit, cooling/koelen
+  - Zone badges: HEATING/VERWARMEN, IDLE/INACTIEF, OFF/UIT
+  - Aanwezigheid statussen: HOME/THUIS, AWAY/WEG
+  - HVAC acties correct vertaald in apparaat chips
+  - Alle vertalingen bevatten fallback waarden voor robuustheid
+- **App-eigen thema schakelaar**: Eenvoudige licht/donker modus bediening zonder HA afhankelijkheden
+  - Thema schakelaar in Globale Instellingen → Geavanceerd tab
+  - Voorkeur blijft behouden in localStorage ('appThemeMode')
+  - Geen complexe parent window detectie of cross-origin problemen
+  - Schone, betrouwbare thema schakel ervaring
+
 **Beschikbare Apparaten Paneel Verbeteringen**
 - **Scroll probleem in Beschikbare Apparaten sidebar opgelost**: Juiste hoogte beperking toegevoegd om scrollen mogelijk te maken
   - Paneel scrollt nu correct wanneer de apparatenlijst lang is

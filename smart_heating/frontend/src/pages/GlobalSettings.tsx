@@ -83,7 +83,7 @@ const presetDescriptions = {
   activity_temp: 'Active daytime temperature',
 }
 
-export default function GlobalSettings() {
+export default function GlobalSettings({ themeMode, onThemeChange }: { themeMode: 'light' | 'dark', onThemeChange: (mode: 'light' | 'dark') => void }) {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState(0)
@@ -586,6 +586,43 @@ export default function GlobalSettings() {
 
         {/* Advanced Tab */}
         <TabPanel value={activeTab} index={4}>
+          {/* Theme Settings */}
+          <Paper sx={{ p: 3, mb: 3 }}>
+            <Typography variant="h6" sx={{ mb: 1 }}>
+              {t('globalSettings.theme.title', 'Theme')}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              {t('globalSettings.theme.description', 'Choose the color theme for the application interface.')}
+            </Typography>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Box>
+                <Typography variant="subtitle1">
+                  {t('globalSettings.theme.mode', 'Appearance')}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {themeMode === 'dark'
+                    ? t('globalSettings.theme.darkMode', 'Dark mode is active')
+                    : t('globalSettings.theme.lightMode', 'Light mode is active')}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="body2" color={themeMode === 'light' ? 'primary' : 'text.secondary'}>
+                  {t('globalSettings.theme.light', 'Light')}
+                </Typography>
+                <Switch
+                  checked={themeMode === 'dark'}
+                  onChange={(e) => onThemeChange(e.target.checked ? 'dark' : 'light')}
+                  color="primary"
+                />
+                <Typography variant="body2" color={themeMode === 'dark' ? 'primary' : 'text.secondary'}>
+                  {t('globalSettings.theme.dark', 'Dark')}
+                </Typography>
+              </Box>
+            </Box>
+          </Paper>
+
+          {/* Temperature Hysteresis */}
           <Paper sx={{ p: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
               <Typography variant="h6">

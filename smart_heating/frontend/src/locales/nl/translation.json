@@ -45,6 +45,10 @@
     "heating": "Verwarmen",
     "idle": "Inactief",
     "off": "Uit",
+    "cooling": "Koelen",
+    "heat": "Verwarmen",
+    "unavailable": "Niet beschikbaar",
+    "on": "Aan",
     "manual": "Handmatig",
     "targetTemp": "Doel",
     "currentTemp": "Huidig",
@@ -167,6 +171,15 @@
       "current": "Huidig",
       "heatingStarts": "Verwarming start wanneer de temperatuur",
       "belowTarget": "onder het doel daalt"
+    },
+    "theme": {
+      "title": "Thema",
+      "description": "Kies het kleurthema voor de applicatie-interface.",
+      "mode": "Weergave",
+      "darkMode": "Donkere modus is actief",
+      "lightMode": "Lichte modus is actief",
+      "light": "Licht",
+      "dark": "Donker"
     },
     "ui": {
       "title": "Gebruikersinterface",

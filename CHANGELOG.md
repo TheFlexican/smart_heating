@@ -9,6 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### ✨ Features
 
+**Mushroom-Style UI Enhancements**
+- **Implemented Mushroom-inspired card design**: Modern, polished interface with smooth transitions
+  - Rounded corners (borderRadius: 3) for all cards and components
+  - Alpha-blended backgrounds for visual depth
+  - Elevated shadows with smooth transitions on hover/interaction
+  - Improved visual hierarchy with Material Design principles
+- **Added drag-and-drop for area cards**: Reorganize areas on main dashboard
+  - Drag handle with grip icon in top-left corner of each area card
+  - Visual feedback during drag (opacity change, elevation)
+  - Order persists in localStorage across page refreshes
+  - Smooth animations for reordering
+- **Enhanced translations**: Full translation support for all UI elements
+  - Device states: heating/verwarmen, idle/inactief, off/uit, cooling/koelen
+  - Area badges: HEATING/VERWARMEN, IDLE/INACTIEF, OFF/UIT
+  - Presence states: HOME/THUIS, AWAY/WEG
+  - HVAC actions properly translated in device chips
+  - All translations include fallback values for robustness
+- **App-only theme toggle**: Simple light/dark mode control without HA dependencies
+  - Theme toggle switch in Global Settings → Advanced tab
+  - Preference persists in localStorage ('appThemeMode')
+  - No complex parent window detection or cross-origin issues
+  - Clean, reliable theme switching experience
+
 **Available Devices Panel Improvements**
 - **Fixed scroll issue in Available Devices sidebar**: Added proper height constraint to enable scrolling
   - Panel now properly scrolls when device list is long

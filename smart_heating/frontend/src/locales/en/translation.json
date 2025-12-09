@@ -45,6 +45,10 @@
     "heating": "Heating",
     "idle": "Idle",
     "off": "Off",
+    "cooling": "Cooling",
+    "heat": "Heat",
+    "unavailable": "Unavailable",
+    "on": "On",
     "manual": "Manual",
     "targetTemp": "Target",
     "currentTemp": "Current",
@@ -167,6 +171,15 @@
       "current": "Current",
       "heatingStarts": "Heating starts when temperature drops",
       "belowTarget": "below target"
+    },
+    "theme": {
+      "title": "Theme",
+      "description": "Choose the color theme for the application interface.",
+      "mode": "Appearance",
+      "darkMode": "Dark mode is active",
+      "lightMode": "Light mode is active",
+      "light": "Light",
+      "dark": "Dark"
     },
     "ui": {
       "title": "User Interface",

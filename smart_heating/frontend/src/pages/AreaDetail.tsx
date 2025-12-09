@@ -25,7 +25,6 @@ import {
   InputLabel,
   FormControlLabel,
 } from '@mui/material'
-import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import ThermostatIcon from '@mui/icons-material/Thermostat'
 import SensorsIcon from '@mui/icons-material/Sensors'
@@ -43,7 +42,6 @@ import HistoryIcon from '@mui/icons-material/History'
 import SpeedIcon from '@mui/icons-material/Speed'
 import BookmarkIcon from '@mui/icons-material/Bookmark'
 import ArticleIcon from '@mui/icons-material/Article'
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator'
 import { useTranslation } from 'react-i18next'
 import { Zone, WindowSensorConfig, PresenceSensorConfig, Device, GlobalPresets, HassEntity } from '../types'
 import {
@@ -116,29 +114,6 @@ const ZoneDetail = () => {
   const [globalPresets, setGlobalPresets] = useState<GlobalPresets | null>(null)
   const [loading, setLoading] = useState(true)
   const [tabValue, setTabValue] = useState(0)
-
-  // Load tab order from localStorage or use default
-  const getInitialTabOrder = () => {
-    const saved = localStorage.getItem('areaDetailTabOrder')
-    if (saved) {
-      try {
-        return JSON.parse(saved)
-      } catch {
-        // Fall through to default
-      }
-    }
-    return [
-      { id: 'overview', label: 'tabs.overview', icon: null },
-      { id: 'devices', label: 'tabs.devices', icon: null },
-      { id: 'schedule', label: 'tabs.schedule', icon: null },
-      { id: 'history', label: 'tabs.history', icon: null },
-      { id: 'settings', label: 'tabs.settings', icon: null },
-      { id: 'learning', label: 'tabs.learning', icon: null },
-      { id: 'logs', label: 'tabs.logs', icon: 'ArticleIcon' },
-    ]
-  }
-
-  const [tabOrder, setTabOrder] = useState(getInitialTabOrder())
   const [temperature, setTemperature] = useState(21)
   const [historyRetention, setHistoryRetention] = useState(30)
   const [storageBackend, setStorageBackend] = useState<string>('json')
@@ -357,17 +332,6 @@ const ZoneDetail = () => {
     setTabValue(newValue)
   }
 
-  const handleTabDragEnd = (result: DropResult) => {
-    if (!result.destination) return
-
-    const items = Array.from(tabOrder)
-    const [reorderedItem] = items.splice(result.source.index, 1)
-    items.splice(result.destination.index, 0, reorderedItem)
-
-    setTabOrder(items)
-    localStorage.setItem('areaDetailTabOrder', JSON.stringify(items))
-  }
-
   const handleToggle = async () => {
     if (!area) return
 
@@ -489,7 +453,7 @@ const ZoneDetail = () => {
         title: t('settingsCards.presetModesTitle'),
         description: t('settingsCards.presetModesDescription'),
         icon: <BookmarkIcon />,
-        badge: area.preset_mode === 'none' ? undefined : area.preset_mode,
+        badge: area.preset_mode === 'none' ? undefined : t(`presets.${area.preset_mode}`),
         defaultExpanded: false,
         content: (
           <>
@@ -519,7 +483,7 @@ const ZoneDetail = () => {
             </FormControl>
 
             <Alert severity="info">
-              {t('settingsCards.currentPresetInfo', { preset: area.preset_mode || 'none' })}
+              {t('settingsCards.currentPresetInfo', { preset: t(`presets.${area.preset_mode || 'none'}`) })}
             </Alert>
           </>
         )
@@ -1691,60 +1655,36 @@ const ZoneDetail = () => {
       </Paper>
 
       {/* Tabs */}
-      <DragDropContext onDragEnd={handleTabDragEnd}>
-        <Paper
-          elevation={0}
+      <Paper
+        elevation={0}
+        sx={{
+          borderBottom: 1,
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+        }}
+      >
+        <Tabs
+          value={tabValue}
+          onChange={handleTabChange}
+          variant="scrollable"
+          scrollButtons="auto"
           sx={{
-            borderBottom: 1,
-            borderColor: 'divider',
-            bgcolor: 'background.paper',
+            '& .MuiTab-root': {
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+              minWidth: { xs: 'auto', sm: 160 },
+              px: { xs: 1, sm: 2 }
+            }
           }}
         >
-          <Droppable droppableId="tabs" direction="horizontal">
-            {(provided) => (
-              <Tabs
-                value={tabValue}
-                onChange={handleTabChange}
-                variant="scrollable"
-                scrollButtons="auto"
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-                sx={{
-                  '& .MuiTab-root': {
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                    minWidth: { xs: 'auto', sm: 160 },
-                    px: { xs: 1, sm: 2 }
-                  }
-                }}
-              >
-                {tabOrder.map((tab: { id: string; label: string; icon: string | null }, index: number) => (
-                  <Draggable key={tab.id} draggableId={tab.id} index={index}>
-                    {(dragProvided, dragSnapshot) => (
-                      <Tab
-                        ref={dragProvided.innerRef}
-                        {...dragProvided.draggableProps}
-                        {...dragProvided.dragHandleProps}
-                        label={
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            {dragSnapshot.isDragging && <DragIndicatorIcon fontSize="small" />}
-                            {t(tab.label)}
-                          </Box>
-                        }
-                        icon={tab.icon === 'ArticleIcon' ? <ArticleIcon /> : undefined}
-                        iconPosition={tab.icon ? 'start' : undefined}
-                        sx={{
-                          opacity: dragSnapshot.isDragging ? 0.5 : 1,
-                        }}
-                      />
-                    )}
-                  </Draggable>
-                ))}
-                {provided.placeholder}
-              </Tabs>
-            )}
-          </Droppable>
-        </Paper>
-      </DragDropContext>
+          <Tab label={t('tabs.overview')} />
+          <Tab label={t('tabs.devices')} />
+          <Tab label={t('tabs.schedule')} />
+          <Tab label={t('tabs.history')} />
+          <Tab label={t('tabs.settings')} />
+          <Tab label={t('tabs.learning')} />
+          <Tab label={t('tabs.logs')} icon={<ArticleIcon />} iconPosition="start" />
+        </Tabs>
+      </Paper>
 
       {/* Tab Panels */}
       <Box sx={{ flex: 1, overflow: 'auto' }}>
@@ -1797,7 +1737,7 @@ const ZoneDetail = () => {
                 <Box mt={1} display="flex" alignItems="center" gap={1}>
                   <BookmarkIcon fontSize="small" color="secondary" />
                   <Typography variant="caption" color="text.secondary" dangerouslySetInnerHTML={{
-                    __html: t('areaDetail.presetModeActive', { mode: area.preset_mode.toUpperCase() })
+                    __html: t('areaDetail.presetModeActive', { mode: t(`presets.${area.preset_mode}`).toUpperCase() })
                   }} />
                 </Box>
               )}
