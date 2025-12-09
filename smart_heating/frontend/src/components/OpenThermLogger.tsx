@@ -31,6 +31,10 @@ import InfoIcon from '@mui/icons-material/Info'
 import WhatshotIcon from '@mui/icons-material/Whatshot'
 import SpeedIcon from '@mui/icons-material/Speed'
 import OpacityIcon from '@mui/icons-material/Opacity'
+import ErrorIcon from '@mui/icons-material/Error'
+import WarningIcon from '@mui/icons-material/Warning'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import BuildIcon from '@mui/icons-material/Build'
 import { useTranslation } from 'react-i18next'
 import {
   getOpenThermLogs,
@@ -414,6 +418,129 @@ export default function OpenThermLogger() {
               </Grid>
             )}
           </Grid>
+
+          {/* Boiler Status & Errors */}
+          {(sensorStates.ch_active !== undefined || sensorStates.dhw_active !== undefined ||
+            sensorStates.fault || sensorStates.diagnostic || sensorStates.low_water_pressure ||
+            sensorStates.gas_fault || sensorStates.air_pressure_fault || sensorStates.water_overtemp ||
+            sensorStates.service_required) && (
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="subtitle2" gutterBottom>
+                {t('opentherm.statusAndErrors', 'Boiler Status & Errors')}
+              </Typography>
+              <Grid container spacing={1}>
+                {/* CH Active */}
+                {sensorStates.ch_active !== undefined && (
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Chip
+                      icon={sensorStates.ch_active ? <CheckCircleIcon /> : undefined}
+                      label={t('opentherm.chActive', 'CH Active')}
+                      color={sensorStates.ch_active ? 'success' : 'default'}
+                      variant={sensorStates.ch_active ? 'filled' : 'outlined'}
+                      size="small"
+                    />
+                  </Grid>
+                )}
+
+                {/* DHW Active */}
+                {sensorStates.dhw_active !== undefined && (
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Chip
+                      icon={sensorStates.dhw_active ? <CheckCircleIcon /> : undefined}
+                      label={t('opentherm.dhwActive', 'Hot Water Active')}
+                      color={sensorStates.dhw_active ? 'info' : 'default'}
+                      variant={sensorStates.dhw_active ? 'filled' : 'outlined'}
+                      size="small"
+                    />
+                  </Grid>
+                )}
+
+                {/* Fault */}
+                {sensorStates.fault && (
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Chip
+                      icon={<ErrorIcon />}
+                      label={t('opentherm.fault', 'FAULT')}
+                      color="error"
+                      size="small"
+                    />
+                  </Grid>
+                )}
+
+                {/* Diagnostic */}
+                {sensorStates.diagnostic && (
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Chip
+                      icon={<WarningIcon />}
+                      label={t('opentherm.diagnostic', 'Diagnostic')}
+                      color="warning"
+                      size="small"
+                    />
+                  </Grid>
+                )}
+
+                {/* Low Water Pressure */}
+                {sensorStates.low_water_pressure && (
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Chip
+                      icon={<ErrorIcon />}
+                      label={t('opentherm.lowWaterPressure', 'Low Water Pressure')}
+                      color="error"
+                      size="small"
+                    />
+                  </Grid>
+                )}
+
+                {/* Gas Fault */}
+                {sensorStates.gas_fault && (
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Chip
+                      icon={<ErrorIcon />}
+                      label={t('opentherm.gasFault', 'Gas Fault')}
+                      color="error"
+                      size="small"
+                    />
+                  </Grid>
+                )}
+
+                {/* Air Pressure Fault */}
+                {sensorStates.air_pressure_fault && (
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Chip
+                      icon={<ErrorIcon />}
+                      label={t('opentherm.airPressureFault', 'Air Pressure Fault')}
+                      color="error"
+                      size="small"
+                    />
+                  </Grid>
+                )}
+
+                {/* Water Overtemperature */}
+                {sensorStates.water_overtemp && (
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Chip
+                      icon={<ErrorIcon />}
+                      label={t('opentherm.waterOvertemp', 'Water Overtemp')}
+                      color="error"
+                      size="small"
+                    />
+                  </Grid>
+                )}
+
+                {/* Service Required */}
+                {sensorStates.service_required && (
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Chip
+                      icon={<BuildIcon />}
+                      label={t('opentherm.serviceRequired', 'Service Required')}
+                      color="warning"
+                      size="small"
+                    />
+                  </Grid>
+                )}
+              </Grid>
+            </Box>
+          )}
         </Paper>
       )}
 

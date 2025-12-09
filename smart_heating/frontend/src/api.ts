@@ -694,6 +694,15 @@ export const getOpenThermSensorStates = async (): Promise<{
   room_setpoint?: number
   flame_on?: boolean
   ch_pressure?: number
+  ch_active?: boolean
+  dhw_active?: boolean
+  fault?: boolean
+  diagnostic?: boolean
+  low_water_pressure?: boolean
+  gas_fault?: boolean
+  air_pressure_fault?: boolean
+  water_overtemp?: boolean
+  service_required?: boolean
 }> => {
   // Get multiple sensor states in parallel
   const sensorIds = [
@@ -705,6 +714,15 @@ export const getOpenThermSensorStates = async (): Promise<{
     'sensor.opentherm_thermostaat_room_setpoint_1',  // Room setpoint
     'binary_sensor.opentherm_ketel_vlam',  // Flame status
     'sensor.opentherm_ketel_waterdruk_centrale_verwarming',  // CH pressure
+    'binary_sensor.opentherm_ketel_centrale_verwarming_1',  // CH active
+    'binary_sensor.opentherm_ketel_heet_water',  // DHW active
+    'binary_sensor.opentherm_ketel_storingsindicatie',  // Fault indicator
+    'binary_sensor.opentherm_ketel_diagnostische_indicatie',  // Diagnostic indicator
+    'binary_sensor.opentherm_ketel_lage_waterdruk',  // Low water pressure
+    'binary_sensor.opentherm_ketel_gasstoring',  // Gas fault
+    'binary_sensor.opentherm_ketel_luchtdrukfout',  // Air pressure fault
+    'binary_sensor.opentherm_ketel_water_overtemperature',  // Water overtemperature
+    'binary_sensor.opentherm_ketel_service_vereist',  // Service required
   ]
 
   const results = await Promise.allSettled(
@@ -735,6 +753,24 @@ export const getOpenThermSensorStates = async (): Promise<{
         states.flame_on = value === 'on'
       } else if (sensorId.includes('waterdruk')) {
         states.ch_pressure = Number.parseFloat(value)
+      } else if (sensorId.includes('centrale_verwarming_1')) {
+        states.ch_active = value === 'on'
+      } else if (sensorId.includes('heet_water')) {
+        states.dhw_active = value === 'on'
+      } else if (sensorId.includes('storingsindicatie')) {
+        states.fault = value === 'on'
+      } else if (sensorId.includes('diagnostische')) {
+        states.diagnostic = value === 'on'
+      } else if (sensorId.includes('lage_waterdruk')) {
+        states.low_water_pressure = value === 'on'
+      } else if (sensorId.includes('gasstoring')) {
+        states.gas_fault = value === 'on'
+      } else if (sensorId.includes('luchtdrukfout')) {
+        states.air_pressure_fault = value === 'on'
+      } else if (sensorId.includes('water_overtemperature')) {
+        states.water_overtemp = value === 'on'
+      } else if (sensorId.includes('service_vereist')) {
+        states.service_required = value === 'on'
       }
     }
   }
