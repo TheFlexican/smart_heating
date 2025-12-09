@@ -684,3 +684,56 @@ export const setOpenthermGateway = async (gatewayId: string, enabled: boolean): 
     enabled: enabled
   })
 }
+
+export const getOpenThermSensorStates = async (): Promise<{
+  control_setpoint?: number
+  modulation_level?: number
+  ch_water_temp?: number
+  flow_temp?: number
+  room_temp?: number
+  room_setpoint?: number
+  boiler_status?: string
+  flame_on?: boolean
+}> => {
+  // Get multiple sensor states in parallel
+  const sensorIds = [
+    'sensor.opentherm_ketel_regel_instelpunt_1',
+    'sensor.opentherm_ketel_modulatie_niveau',
+    'sensor.opentherm_ketel_cv_watertemperatuur',
+    'sensor.opentherm_ketel_aanvoertemperatuur',
+    'sensor.opentherm_thermostaat_kamertemperatuur',
+    'sensor.opentherm_thermostaat_kamer_instelpunt',
+    'binary_sensor.opentherm_ketel_vlam_status',
+  ]
+
+  const results = await Promise.allSettled(
+    sensorIds.map(id => getEntityState(id).catch(() => null))
+  )
+
+  const states: any = {}
+
+  results.forEach((result, index) => {
+    if (result.status === 'fulfilled' && result.value) {
+      const sensorId = sensorIds[index]
+      const value = result.value.state
+
+      if (sensorId.includes('regel_instelpunt')) {
+        states.control_setpoint = parseFloat(value)
+      } else if (sensorId.includes('modulatie')) {
+        states.modulation_level = parseFloat(value)
+      } else if (sensorId.includes('cv_water')) {
+        states.ch_water_temp = parseFloat(value)
+      } else if (sensorId.includes('aanvoer')) {
+        states.flow_temp = parseFloat(value)
+      } else if (sensorId.includes('kamertemperatuur')) {
+        states.room_temp = parseFloat(value)
+      } else if (sensorId.includes('kamer_instelpunt')) {
+        states.room_setpoint = parseFloat(value)
+      } else if (sensorId.includes('vlam')) {
+        states.flame_on = value === 'on'
+      }
+    }
+  })
+
+  return states
+}

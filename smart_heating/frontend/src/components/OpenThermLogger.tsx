@@ -16,6 +16,9 @@ import {
   TableRow,
   IconButton,
   Collapse,
+  Grid,
+  Card,
+  CardContent,
 } from '@mui/material'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import DeleteIcon from '@mui/icons-material/Delete'
@@ -25,12 +28,16 @@ import FireplaceIcon from '@mui/icons-material/Fireplace'
 import ThermostatIcon from '@mui/icons-material/Thermostat'
 import HomeIcon from '@mui/icons-material/Home'
 import InfoIcon from '@mui/icons-material/Info'
+import WhatshotIcon from '@mui/icons-material/Whatshot'
+import SpeedIcon from '@mui/icons-material/Speed'
+import OpacityIcon from '@mui/icons-material/Opacity'
 import { useTranslation } from 'react-i18next'
 import {
   getOpenThermLogs,
   getOpenThermCapabilities,
   discoverOpenThermCapabilities,
   clearOpenThermLogs,
+  getOpenThermSensorStates,
 } from '../api'
 
 interface OpenThermLog {
@@ -44,6 +51,7 @@ export default function OpenThermLogger() {
   const { t } = useTranslation()
   const [logs, setLogs] = useState<OpenThermLog[]>([])
   const [capabilities, setCapabilities] = useState<any>(null)
+  const [sensorStates, setSensorStates] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
@@ -57,6 +65,15 @@ export default function OpenThermLogger() {
     } catch (err) {
       setError(t('opentherm.error.fetchLogs', 'Failed to load OpenTherm logs'))
       console.error(err)
+    }
+  }
+
+  const fetchSensorStates = async () => {
+    try {
+      const data = await getOpenThermSensorStates()
+      setSensorStates(data)
+    } catch (err) {
+      console.error('Failed to load sensor states:', err)
     }
   }
 
@@ -104,7 +121,7 @@ export default function OpenThermLogger() {
   useEffect(() => {
     const loadData = async () => {
       setLoading(true)
-      await Promise.all([fetchLogs(), fetchCapabilities()])
+      await Promise.all([fetchLogs(), fetchCapabilities(), fetchSensorStates()])
       setLoading(false)
     }
     loadData()
@@ -115,6 +132,7 @@ export default function OpenThermLogger() {
 
     const interval = setInterval(() => {
       fetchLogs()
+      fetchSensorStates()
     }, 5000) // Refresh every 5 seconds
 
     return () => clearInterval(interval)
@@ -219,6 +237,163 @@ export default function OpenThermLogger() {
         <Alert severity="error" onClose={() => setError(null)}>
           {error}
         </Alert>
+      )}
+
+      {/* Live Sensor Status Dashboard */}
+      {sensorStates && (
+        <Paper sx={{ p: 2 }}>
+          <Typography variant="subtitle1" gutterBottom sx={{ mb: 2 }}>
+            {t('opentherm.liveStatus', 'Live Boiler Status')}
+          </Typography>
+          <Grid container spacing={2}>
+            {/* Control Setpoint */}
+            {sensorStates.control_setpoint !== undefined && (
+              <Grid item xs={12} sm={6} md={4}>
+                <Card variant="outlined">
+                  <CardContent>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <ThermostatIcon color="primary" />
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">
+                          {t('opentherm.controlSetpoint', 'Control Setpoint')}
+                        </Typography>
+                        <Typography variant="h6">
+                          {sensorStates.control_setpoint.toFixed(1)}°C
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Grid>
+            )}
+
+            {/* Modulation Level */}
+            {sensorStates.modulation_level !== undefined && (
+              <Grid item xs={12} sm={6} md={4}>
+                <Card variant="outlined">
+                  <CardContent>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <SpeedIcon color="warning" />
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">
+                          {t('opentherm.modulation', 'Modulation Level')}
+                        </Typography>
+                        <Typography variant="h6">
+                          {sensorStates.modulation_level.toFixed(0)}%
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Grid>
+            )}
+
+            {/* Flame Status */}
+            {sensorStates.flame_on !== undefined && (
+              <Grid item xs={12} sm={6} md={4}>
+                <Card variant="outlined">
+                  <CardContent>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <WhatshotIcon color={sensorStates.flame_on ? 'error' : 'disabled'} />
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">
+                          {t('opentherm.flameStatus', 'Flame Status')}
+                        </Typography>
+                        <Typography variant="h6">
+                          {sensorStates.flame_on ? 'ON' : 'OFF'}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Grid>
+            )}
+
+            {/* CH Water Temperature */}
+            {sensorStates.ch_water_temp !== undefined && (
+              <Grid item xs={12} sm={6} md={4}>
+                <Card variant="outlined">
+                  <CardContent>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <OpacityIcon color="info" />
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">
+                          {t('opentherm.chWaterTemp', 'CH Water Temp')}
+                        </Typography>
+                        <Typography variant="h6">
+                          {sensorStates.ch_water_temp.toFixed(1)}°C
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Grid>
+            )}
+
+            {/* Flow Temperature */}
+            {sensorStates.flow_temp !== undefined && (
+              <Grid item xs={12} sm={6} md={4}>
+                <Card variant="outlined">
+                  <CardContent>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <OpacityIcon color="primary" />
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">
+                          {t('opentherm.flowTemp', 'Flow Temperature')}
+                        </Typography>
+                        <Typography variant="h6">
+                          {sensorStates.flow_temp.toFixed(1)}°C
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Grid>
+            )}
+
+            {/* Room Temperature */}
+            {sensorStates.room_temp !== undefined && (
+              <Grid item xs={12} sm={6} md={4}>
+                <Card variant="outlined">
+                  <CardContent>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <HomeIcon color="success" />
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">
+                          {t('opentherm.roomTemp', 'Room Temperature')}
+                        </Typography>
+                        <Typography variant="h6">
+                          {sensorStates.room_temp.toFixed(1)}°C
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Grid>
+            )}
+
+            {/* Room Setpoint */}
+            {sensorStates.room_setpoint !== undefined && (
+              <Grid item xs={12} sm={6} md={4}>
+                <Card variant="outlined">
+                  <CardContent>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <ThermostatIcon color="action" />
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">
+                          {t('opentherm.roomSetpoint', 'Room Setpoint')}
+                        </Typography>
+                        <Typography variant="h6">
+                          {sensorStates.room_setpoint.toFixed(1)}°C
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Grid>
+            )}
+          </Grid>
+        </Paper>
       )}
 
       {/* Gateway Capabilities */}
