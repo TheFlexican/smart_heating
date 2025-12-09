@@ -7,6 +7,22 @@ en dit project volgt [Semantic Versioning](https://semver.org/).
 
 ## [Niet Uitgebracht]
 
+### 🐛 Bugfixes
+
+**Nacht Boost Kritieke Fix**
+- **Nacht boost werkt nu correct**: Nacht boost activeert nu correct tijdens actieve schema's
+  - Vorig gedrag: Nacht boost werd geblokkeerd wanneer ER EEN schema actief was
+  - Nieuw gedrag: Nacht boost werkt additief bovenop actieve schema's (bijv. slaap preset)
+  - Voorbeeld: Slaap preset (18.5°C) + Nacht boost (0.2°C) = 18.7°C tijdens nachturen
+  - Dit maakt geleidelijk voorverwarmen mogelijk voordat het ochtendschema start
+- **Verbeterde smart night boost logging**: Betere foutmeldingen wanneer voorspelling faalt
+  - Legt uit wanneer temperatuursensoren nog bezig zijn met initialiseren
+  - Verduidelijkt wanneer leergegevens nog niet beschikbaar zijn (heeft meerdere verwarmingscycli nodig)
+  - Toont huidige en doeltemperaturen voor debugging
+- **Verhoogde night boost zichtbaarheid**: Logging niveau veranderd van DEBUG naar INFO wanneer actief
+  - Maakt het makkelijker om te verifiëren dat night boost werkt in productie logs
+  - Logt wanneer night boost inactief is (DEBUG niveau) om ruis te verminderen
+
 ### ✨ Functies
 
 **Geschiedenisgegevens Beheer Verbetering**

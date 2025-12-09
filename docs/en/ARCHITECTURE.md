@@ -302,6 +302,33 @@ should_stop = current_temp >= target_temp
 target_temp = area.get_effective_target_temperature()
 ```
 
+**Night Boost Behavior:**
+
+Night boost adds a small temperature offset during configured hours to pre-heat spaces before morning schedules activate.
+
+**How it Works:**
+- Works **additively** on top of active schedules (e.g., sleep preset)
+- Example: Sleep preset (18.5°C) + Night boost (0.2°C) = 18.7°C during boost hours
+- Configured per area with start/end times and temperature offset
+- Typically configured for 03:00-07:00 to gradually warm up before wake time
+
+**Smart Night Boost (AI-Powered):**
+- Uses learning engine to predict heating time needed
+- Requires historical data (several heating cycles) to make predictions
+- Falls back to regular night boost if no learning data available
+- Automatically calculates optimal start time based on:
+  - Current temperature
+  - Target temperature (from morning schedule or configured wake time)
+  - Predicted heating duration
+  - Safety margin (10 minutes)
+
+**Priority Order for Effective Temperature:**
+1. Boost mode (if active)
+2. Window open (reduce temperature)
+3. Preset mode or schedule temperature
+4. Night boost adjustment (+offset during configured hours)
+5. Base target temperature
+
 ### 4. Schedule Executor (`scheduler.py`)
 
 Time-based temperature control.

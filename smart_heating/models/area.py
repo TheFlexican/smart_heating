@@ -602,6 +602,10 @@ class Area:
     def _apply_night_boost(self, target: float, current_time: datetime) -> float:
         """Apply night boost to target temperature if applicable.
 
+        Night boost adds a small temperature offset during configured hours to
+        pre-heat the space before the morning schedule. It works additively on
+        top of any active schedule (e.g., sleep preset).
+
         Args:
             target: Current target temperature
             current_time: Current time
@@ -617,28 +621,11 @@ class Area:
             current_time, self.night_boost_start_time, self.night_boost_end_time
         )
 
-        # Important: Only apply night boost if we're NOT in a schedule period
-        # This allows schedules (like "sleep" preset from 22:00-06:30) to take precedence
-        # Night boost is meant to pre-heat BEFORE the morning schedule starts
-        in_schedule = self.get_active_schedule_temperature(current_time) is not None
-
-        # Debug logging for troubleshooting
-        _LOGGER.debug(
-            "Night boost check for %s at %02d:%02d: period=%s-%s, is_active=%s, in_schedule=%s",
-            self.area_id,
-            current_time.hour,
-            current_time.minute,
-            self.night_boost_start_time,
-            self.night_boost_end_time,
-            is_active,
-            in_schedule,
-        )
-
-        if is_active and not in_schedule:
+        if is_active:
             old_target = target
             target += self.night_boost_offset
-            _LOGGER.debug(
-                "Night boost active for area %s (%s-%s): %.1f°C + %.1f°C = %.1f°C",
+            _LOGGER.info(
+                "Night boost active for %s (%s-%s): %.1f°C + %.1f°C = %.1f°C",
                 self.area_id,
                 self.night_boost_start_time,
                 self.night_boost_end_time,
@@ -664,6 +651,15 @@ class Area:
                             "current_time": f"{current_time.hour:02d}:{current_time.minute:02d}",
                         },
                     )
+        else:
+            _LOGGER.debug(
+                "Night boost inactive for %s at %02d:%02d (period: %s-%s)",
+                self.area_id,
+                current_time.hour,
+                current_time.minute,
+                self.night_boost_start_time,
+                self.night_boost_end_time,
+            )
 
         return target
 

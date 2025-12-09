@@ -439,7 +439,8 @@ class ScheduleExecutor:
 
         if current_temp is None:
             _LOGGER.warning(
-                "Cannot predict smart night boost for %s: no temperature data",
+                "Cannot predict smart night boost for %s: no temperature data available yet. "
+                "Will use regular night boost if enabled. Temperature sensors may still be initializing.",
                 area.area_id,
             )
             return
@@ -453,9 +454,12 @@ class ScheduleExecutor:
         )
 
         if predicted_minutes is None:
-            _LOGGER.debug(
-                "No prediction available for area %s, using default night boost",
+            _LOGGER.info(
+                "No learning data available for %s yet (needs several heating cycles). "
+                "Falling back to regular night boost if enabled. Current: %.1f°C, Target: %.1f°C",
                 area.area_id,
+                current_temp,
+                target_temp,
             )
             return
 

@@ -113,14 +113,14 @@ Navigeer naar: `http://your-home-assistant:8123/api/smart_heating/`
 - **Doeltemperatuur** - Basis temperatuur voor de zone
 - **Apparaten** - Wijs thermostaten, sensoren, kleppen, schakelaars toe
 - **Schema's** - Tijdgebaseerde temperatuur of preset profielen
-- **Nacht Boost** - Voorverwarming tijdens configureerbare nachtelijke uren
+- **Nacht Boost** - Voorverwarming met additieve offset tijdens geconfigureerde uren (werkt met schema's)
 - **Boost Modus** - Tijdelijke hoge-temperatuur boost (configureerbare duur)
 - **Raam Sensoren** - Auto-aanpassen bij open ramen/deuren
 - **Aanwezigheidsdetectie** - Kies globale of zone-specifieke sensoren
 - **Schakelaar Controle** - Auto-uitschakeling pompen bij niet verwarmen
 
 ### Geavanceerde Functies
-- **Adaptief Leren** - Activeer slimme nacht boost met weervoorspelling
+- **Slimme Nacht Boost (AI)** - Voorspelt optimale verwarmingsstarttijd met leergegevens
 - **Handmatige Override** - Systeem respecteert externe thermostaat aanpassingen
 - **Vakantiemodus** - Stel start/eind datums in met weg temperatuur
 - **Hysterese Override** - Per-zone aangepaste waarden (nuttig voor vloerverwarming)

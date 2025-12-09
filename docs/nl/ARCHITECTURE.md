@@ -302,6 +302,33 @@ should_stop = current_temp >= target_temp
 target_temp = area.get_effective_target_temperature()
 ```
 
+**Nacht Boost Gedrag:**
+
+Nacht boost voegt een kleine temperatuur offset toe tijdens geconfigureerde uren om ruimtes voor te verwarmen voordat ochtend schema's activeren.
+
+**Hoe het Werkt:**
+- Werkt **additief** bovenop actieve schema's (bijv. slaap preset)
+- Voorbeeld: Slaap preset (18.5°C) + Nacht boost (0.2°C) = 18.7°C tijdens boost uren
+- Geconfigureerd per zone met start/eind tijden en temperatuur offset
+- Meestal geconfigureerd voor 03:00-07:00 om geleidelijk op te warmen voor wektijd
+
+**Smart Night Boost (AI-Aangedreven):**
+- Gebruikt leer-engine om benodigde verwarmingstijd te voorspellen
+- Vereist historische data (meerdere verwarmingscycli) voor voorspellingen
+- Valt terug op reguliere nacht boost als geen leergegevens beschikbaar
+- Berekent automatisch optimale starttijd gebaseerd op:
+  - Huidige temperatuur
+  - Doel temperatuur (van ochtend schema of geconfigureerde wektijd)
+  - Voorspelde verwarmingsduur
+  - Veiligheidsmarge (10 minuten)
+
+**Prioriteits Volgorde voor Effectieve Temperatuur:**
+1. Boost modus (indien actief)
+2. Raam open (verlaag temperatuur)
+3. Preset modus of schema temperatuur
+4. Nacht boost aanpassing (+offset tijdens geconfigureerde uren)
+5. Basis doel temperatuur
+
 ### 4. Schedule Executor (`scheduler.py`)
 
 Tijd-gebaseerde temperatuur controle.

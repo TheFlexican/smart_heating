@@ -480,6 +480,91 @@ class TestAreaNightBoost:
         target = area._apply_night_boost(20.0, current_time)
         assert target == 22.0
 
+    def test_night_boost_active_during_period(self):
+        """Test night boost applies offset during configured period."""
+        area = Area(TEST_AREA_ID, TEST_AREA_NAME)
+        area.night_boost_enabled = True
+        area.night_boost_offset = 0.5
+        area.night_boost_start_time = "03:00"
+        area.night_boost_end_time = "07:00"
+        
+        # Test during boost period
+        current_time = datetime(2024, 1, 1, 5, 30)  # 5:30 AM
+        target = area._apply_night_boost(18.5, current_time)
+        assert target == 19.0  # 18.5 + 0.5
+        
+    def test_night_boost_inactive_outside_period(self):
+        """Test night boost doesn't apply outside configured period."""
+        area = Area(TEST_AREA_ID, TEST_AREA_NAME)
+        area.night_boost_enabled = True
+        area.night_boost_offset = 0.5
+        area.night_boost_start_time = "03:00"
+        area.night_boost_end_time = "07:00"
+        
+        # Test outside boost period
+        current_time = datetime(2024, 1, 1, 10, 0)  # 10 AM
+        target = area._apply_night_boost(18.5, current_time)
+        assert target == 18.5  # No change
+        
+    def test_night_boost_works_with_schedule(self):
+        """Test night boost works additively on top of active schedule."""
+        area = Area(TEST_AREA_ID, TEST_AREA_NAME)
+        area.night_boost_enabled = True
+        area.night_boost_offset = 0.2
+        area.night_boost_start_time = "03:00"
+        area.night_boost_end_time = "07:00"
+        area.target_temperature = 20.0
+        
+        # Add a sleep schedule that overlaps with night boost
+        schedule = Schedule(
+            schedule_id="sleep1",
+            start_time="22:00",
+            end_time="06:30",
+            day="Monday",
+            preset_mode="sleep",
+        )
+        area.add_schedule(schedule)
+        area.sleep_temp = 18.5
+        
+        # Test at 5 AM - during both sleep schedule AND night boost
+        current_time = datetime(2024, 1, 1, 5, 0)  # Monday 5 AM
+        
+        # Night boost should work on top of sleep temperature
+        # Sleep schedule gives 18.5°C, night boost adds 0.2°C = 18.7°C
+        target = area._apply_night_boost(18.5, current_time)
+        assert target == 18.7
+        
+    def test_night_boost_disabled(self):
+        """Test night boost doesn't apply when disabled."""
+        area = Area(TEST_AREA_ID, TEST_AREA_NAME)
+        area.night_boost_enabled = False
+        area.night_boost_offset = 2.0
+        area.night_boost_start_time = "03:00"
+        area.night_boost_end_time = "07:00"
+        
+        # Test during what would be boost period
+        current_time = datetime(2024, 1, 1, 5, 0)
+        target = area._apply_night_boost(20.0, current_time)
+        assert target == 20.0  # No change when disabled
+        
+    def test_night_boost_crosses_midnight(self):
+        """Test night boost works correctly when period crosses midnight."""
+        area = Area(TEST_AREA_ID, TEST_AREA_NAME)
+        area.night_boost_enabled = True
+        area.night_boost_offset = 0.3
+        area.night_boost_start_time = "22:00"
+        area.night_boost_end_time = "06:00"
+        
+        # Test late night (before midnight)
+        current_time = datetime(2024, 1, 1, 23, 30)  # 11:30 PM
+        target = area._apply_night_boost(18.0, current_time)
+        assert target == 18.3
+        
+        # Test early morning (after midnight)
+        current_time = datetime(2024, 1, 2, 4, 0)  # 4 AM
+        target = area._apply_night_boost(18.0, current_time)
+        assert target == 18.3
+
 
 class TestAreaState:
     """Test area state property."""

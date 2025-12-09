@@ -113,14 +113,14 @@ Navigate to: `http://your-home-assistant:8123/api/smart_heating/`
 - **Target Temperature** - Base temperature for the zone
 - **Devices** - Assign thermostats, sensors, valves, switches
 - **Schedules** - Time-based temperature or preset profiles
-- **Night Boost** - Pre-heating during configurable night hours
+- **Night Boost** - Pre-heating with additive offset during configured hours (works with schedules)
 - **Boost Mode** - Temporary high-temperature boost (configurable duration)
 - **Window Sensors** - Auto-adjust when windows/doors open
 - **Presence Detection** - Choose global or zone-specific sensors
 - **Switch Control** - Auto-shutdown pumps when not heating
 
 ### Advanced Features
-- **Adaptive Learning** - Enable smart night boost with weather prediction
+- **Smart Night Boost (AI)** - Predicts optimal heating start time using learning data
 - **Manual Override** - System respects external thermostat adjustments
 - **Vacation Mode** - Set start/end dates with away temperature
 - **Hysteresis Override** - Per-zone custom values (useful for floor heating)

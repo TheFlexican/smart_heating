@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### 🐛 Bug Fixes
+
+**Night Boost Critical Fix**
+- **Fixed night boost not activating**: Night boost now works correctly during active schedules
+  - Previous behavior: Night boost was blocked when ANY schedule was active
+  - New behavior: Night boost works additively on top of active schedules (e.g., sleep preset)
+  - Example: Sleep preset (18.5°C) + Night boost (0.2°C) = 18.7°C during night hours
+  - This allows gradual pre-heating before morning schedule starts
+- **Improved smart night boost logging**: Better error messages when prediction fails
+  - Explains when temperature sensors are still initializing
+  - Clarifies when learning data is not yet available (needs several heating cycles)
+  - Shows current and target temperatures for debugging
+- **Enhanced night boost visibility**: Changed logging level from DEBUG to INFO when active
+  - Makes it easier to verify night boost is working in production logs
+  - Logs when night boost is inactive (DEBUG level) to reduce noise
+
 ### ✨ Features
 
 **History Data Management Enhancement**

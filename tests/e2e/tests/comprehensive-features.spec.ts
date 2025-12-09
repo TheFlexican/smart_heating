@@ -35,7 +35,7 @@ test.describe('Comprehensive Feature Tests', () => {
   test.describe('Core Temperature and Area Management', () => {
     
     test('should adjust area temperature and verify backend logs', async ({ page }) => {
-      await navigateToArea(page, 'Living Room')
+      await navigateToArea(page, 'Woonkamer')
       await dismissSnackbar(page)
       
       // Enable area first
@@ -66,7 +66,7 @@ test.describe('Comprehensive Feature Tests', () => {
     })
 
     test('should enable/disable area and verify state changes', async ({ page }) => {
-      await navigateToArea(page, 'Living Room')
+      await navigateToArea(page, 'Woonkamer')
       await dismissSnackbar(page)
       
       // Find the enable/disable switch in top right (near "Area is being controlled" text)
@@ -93,7 +93,7 @@ test.describe('Comprehensive Feature Tests', () => {
     })
 
     test('should show current temperature from devices', async ({ page }) => {
-      await navigateToArea(page, 'Living Room')
+      await navigateToArea(page, 'Woonkamer')
       await dismissSnackbar(page)
       
       // Check that current temperature is displayed (shown below target temp)
@@ -102,7 +102,7 @@ test.describe('Comprehensive Feature Tests', () => {
     })
 
     test('should display area heating state correctly', async ({ page }) => {
-      await navigateToArea(page, 'Living Room')
+      await navigateToArea(page, 'Woonkamer')
       await dismissSnackbar(page)
       
       // Look for heating status indicator
@@ -114,7 +114,7 @@ test.describe('Comprehensive Feature Tests', () => {
   test.describe('Preset Modes', () => {
     
     test('should change preset mode to Eco and verify temperature', async ({ page }) => {
-      await navigateToArea(page, 'Living Room')
+      await navigateToArea(page, 'Woonkamer')
       await switchToTab(page, 'Settings')
       await dismissSnackbar(page)
       
@@ -134,7 +134,7 @@ test.describe('Comprehensive Feature Tests', () => {
     })
 
     test('should cycle through all preset modes', async ({ page }) => {
-      await navigateToArea(page, 'Living Room')
+      await navigateToArea(page, 'Woonkamer')
       await switchToTab(page, 'Settings')
       await dismissSnackbar(page)
       
@@ -169,7 +169,7 @@ test.describe('Comprehensive Feature Tests', () => {
     })
 
     test('should configure custom preset temperatures', async ({ page }) => {
-      await navigateToArea(page, 'Living Room')
+      await navigateToArea(page, 'Woonkamer')
       await switchToTab(page, 'Settings')
       await dismissSnackbar(page)
       
@@ -201,7 +201,7 @@ test.describe('Comprehensive Feature Tests', () => {
   test.describe('HVAC Modes', () => {
     
     test('should change HVAC mode to heat', async ({ page }) => {
-      await navigateToArea(page, 'Living Room')
+      await navigateToArea(page, 'Woonkamer')
       await switchToTab(page, 'Settings')
       await dismissSnackbar(page)
       
@@ -223,7 +223,7 @@ test.describe('Comprehensive Feature Tests', () => {
     })
 
     test('should change HVAC mode to cool', async ({ page }) => {
-      await navigateToArea(page, 'Living Room')
+      await navigateToArea(page, 'Woonkamer')
       await switchToTab(page, 'Settings')
       await dismissSnackbar(page)
       
@@ -239,7 +239,7 @@ test.describe('Comprehensive Feature Tests', () => {
     })
 
     test('should change HVAC mode to auto', async ({ page }) => {
-      await navigateToArea(page, 'Living Room')
+      await navigateToArea(page, 'Woonkamer')
       await switchToTab(page, 'Settings')
       await dismissSnackbar(page)
       
@@ -255,7 +255,7 @@ test.describe('Comprehensive Feature Tests', () => {
     })
 
     test('should turn off HVAC', async ({ page }) => {
-      await navigateToArea(page, 'Living Room')
+      await navigateToArea(page, 'Woonkamer')
       await switchToTab(page, 'Settings')
       await dismissSnackbar(page)
       
@@ -287,7 +287,7 @@ test.describe('Comprehensive Feature Tests', () => {
   test.describe('Night Boost Settings', () => {
     
     test('should enable night boost', async ({ page }) => {
-      await navigateToArea(page, 'Living Room')
+      await navigateToArea(page, 'Woonkamer')
       await switchToTab(page, 'Settings')
       await dismissSnackbar(page)
       
@@ -310,7 +310,7 @@ test.describe('Comprehensive Feature Tests', () => {
     })
 
     test('should configure night boost time range', async ({ page }) => {
-      await navigateToArea(page, 'Living Room')
+      await navigateToArea(page, 'Woonkamer')
       await switchToTab(page, 'Settings')
       await dismissSnackbar(page)
       
@@ -333,7 +333,7 @@ test.describe('Comprehensive Feature Tests', () => {
     })
 
     test('should configure night boost temperature offset', async ({ page }) => {
-      await navigateToArea(page, 'Living Room')
+      await navigateToArea(page, 'Woonkamer')
       await switchToTab(page, 'Settings')
       await dismissSnackbar(page)
       
@@ -352,7 +352,7 @@ test.describe('Comprehensive Feature Tests', () => {
   test.describe('Smart Night Boost (ML Learning)', () => {
     
     test('should enable smart night boost', async ({ page }) => {
-      await navigateToArea(page, 'Living Room')
+      await navigateToArea(page, 'Woonkamer')
       await switchToTab(page, 'Settings')
       await dismissSnackbar(page)
       
@@ -375,7 +375,7 @@ test.describe('Comprehensive Feature Tests', () => {
     })
 
     test('should configure wake-up target time', async ({ page }) => {
-      await navigateToArea(page, 'Living Room')
+      await navigateToArea(page, 'Woonkamer')
       await switchToTab(page, 'Settings')
       await dismissSnackbar(page)
       
@@ -398,7 +398,7 @@ test.describe('Comprehensive Feature Tests', () => {
     })
 
     test('should view learning engine statistics', async ({ page }) => {
-      await navigateToArea(page, 'Living Room')
+      await navigateToArea(page, 'Woonkamer')
       await switchToTab(page, 'History')
       await dismissSnackbar(page)
       
@@ -414,7 +414,7 @@ test.describe('Comprehensive Feature Tests', () => {
   test.describe('Schedule Management', () => {
     
     test('should navigate to schedule tab', async ({ page }) => {
-      await navigateToArea(page, 'Living Room')
+      await navigateToArea(page, 'Woonkamer')
       await switchToTab(page, 'Schedule')
       await dismissSnackbar(page)
       
@@ -423,7 +423,7 @@ test.describe('Comprehensive Feature Tests', () => {
     })
 
     test('should display existing schedules', async ({ page }) => {
-      await navigateToArea(page, 'Living Room')
+      await navigateToArea(page, 'Woonkamer')
       await switchToTab(page, 'Schedule')
       await dismissSnackbar(page)
       
@@ -439,7 +439,7 @@ test.describe('Comprehensive Feature Tests', () => {
   test.describe('History and Monitoring', () => {
     
     test('should navigate to history tab', async ({ page }) => {
-      await navigateToArea(page, 'Living Room')
+      await navigateToArea(page, 'Woonkamer')
       await switchToTab(page, 'History')
       await dismissSnackbar(page)
       
@@ -448,7 +448,7 @@ test.describe('Comprehensive Feature Tests', () => {
     })
 
     test('should display history chart', async ({ page }) => {
-      await navigateToArea(page, 'Living Room')
+      await navigateToArea(page, 'Woonkamer')
       await switchToTab(page, 'History')
       await dismissSnackbar(page)
       
@@ -461,7 +461,7 @@ test.describe('Comprehensive Feature Tests', () => {
     })
 
     test('should show history retention settings', async ({ page }) => {
-      await navigateToArea(page, 'Living Room')
+      await navigateToArea(page, 'Woonkamer')
       await switchToTab(page, 'History')
       await dismissSnackbar(page)
       
@@ -476,7 +476,7 @@ test.describe('Comprehensive Feature Tests', () => {
   test.describe('Device Management', () => {
     
     test('should display all devices in area', async ({ page }) => {
-      await navigateToArea(page, 'Living Room')
+      await navigateToArea(page, 'Woonkamer')
       await switchToTab(page, 'Overview')
       await dismissSnackbar(page)
       
@@ -486,7 +486,7 @@ test.describe('Comprehensive Feature Tests', () => {
     })
 
     test('should show device real-time status', async ({ page }) => {
-      await navigateToArea(page, 'Living Room')
+      await navigateToArea(page, 'Woonkamer')
       await dismissSnackbar(page)
       
       // Look for device status in Device Status section
@@ -496,7 +496,7 @@ test.describe('Comprehensive Feature Tests', () => {
     })
 
     test('should display device heating indicators', async ({ page }) => {
-      await navigateToArea(page, 'Living Room')
+      await navigateToArea(page, 'Woonkamer')
       await switchToTab(page, 'Overview')
       await dismissSnackbar(page)
       
@@ -509,7 +509,7 @@ test.describe('Comprehensive Feature Tests', () => {
   test.describe('Real-time WebSocket Updates', () => {
     
     test('should receive temperature updates via WebSocket', async ({ page }) => {
-      await navigateToArea(page, 'Living Room')
+      await navigateToArea(page, 'Woonkamer')
       await dismissSnackbar(page)
       
       // Get initial temperature from Current Temperature display
@@ -527,7 +527,7 @@ test.describe('Comprehensive Feature Tests', () => {
     })
 
     test('should update UI when area state changes', async ({ page }) => {
-      await navigateToArea(page, 'Living Room')
+      await navigateToArea(page, 'Woonkamer')
       await dismissSnackbar(page)
       
       // Toggle area state using the switch in top right
