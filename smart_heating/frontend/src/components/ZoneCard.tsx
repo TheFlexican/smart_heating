@@ -237,7 +237,8 @@ const ZoneCard = ({ area, onUpdate, index }: ZoneCardProps) => {
     if (device.target_temperature !== undefined && device.target_temperature !== null &&
         device.current_temperature !== undefined && device.current_temperature !== null &&
         device.target_temperature > device.current_temperature) {
-      parts.push(`→ ${device.target_temperature.toFixed(1)}°C`)
+      const targetTemp = formatTemperature(device.target_temperature)
+      if (targetTemp) parts.push(`→ ${targetTemp}`)
     }
 
     if (parts.length === 0 && device.state) {
