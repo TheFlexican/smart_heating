@@ -50,6 +50,15 @@ Een Home Assistant custom integratie voor intelligente multi-zone verwarmingsreg
 
 ### 📊 Monitoring & Debugging
 - **Temperatuur geschiedenis** - Volg en visualiseer trends (5-min resolutie, 1-365 dagen bewaring)
+  - **JSON opslag** (standaard) - Eenvoudige bestandsopslag voor alle HA installaties
+  - **Database opslag** (optioneel) - MariaDB/PostgreSQL/MySQL ondersteuning voor power users
+    - Automatische database detectie via Home Assistant's recorder configuratie
+    - Geoptimaliseerd schema met geïndexeerde kolommen voor snelle queries
+    - Niet-blokkerende operaties via recorder's database engine
+  - **Naadloze migratie** - Schakel tussen opslag backends zonder dataverlies
+    - Bidirectionele migratie API (JSON ↔ Database)
+    - Automatische validatie voor migratie
+    - Data blijft behouden na herstarts
 - **Ontwikkelings logs** - Per-zone logging met gedetailleerde strategie beslissingen
 - **Interactieve grafieken** - Aanpasbare tijdsbereiken met preset filters
 - **Event filtering** - Kleur-gecodeerde event types met één-klik filtering

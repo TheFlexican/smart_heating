@@ -13,6 +13,7 @@ from ..const import (
     ATTR_FROST_PROTECTION_ENABLED,
     ATTR_FROST_PROTECTION_TEMP,
     ATTR_HISTORY_RETENTION_DAYS,
+    ATTR_HISTORY_STORAGE_BACKEND,
     ATTR_HVAC_MODE,
     ATTR_HYSTERESIS,
     ATTR_NIGHT_BOOST_ENABLED,
@@ -189,6 +190,7 @@ HISTORY_RETENTION_SCHEMA = vol.Schema(
         vol.Required(ATTR_HISTORY_RETENTION_DAYS): vol.All(
             vol.Coerce(int), vol.Range(min=1, max=365)
         ),
+        vol.Optional(ATTR_HISTORY_STORAGE_BACKEND): vol.In(["json", "database"]),
     }
 )
 

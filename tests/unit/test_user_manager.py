@@ -9,7 +9,7 @@ import pytest
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.smart_heating.user_manager import UserManager
+from smart_heating.user_manager import UserManager
 
 
 @pytest.fixture

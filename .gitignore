@@ -69,7 +69,7 @@ nosetests.xml
 coverage.xml
 *.cover
 .hypothesis/
-coverate_html/
+coverage_html/
 
 # Other files
 .ha_token

@@ -44,6 +44,10 @@ from .api_handlers import (
     # History
     handle_get_history,
     handle_get_history_config,
+    handle_get_history_storage_info,
+    handle_get_database_stats,
+    handle_migrate_history_storage,
+    handle_cleanup_history,
     handle_get_hysteresis,
     handle_get_learning_stats,
     handle_get_presence_state,
@@ -180,6 +184,10 @@ class SmartHeatingAPIView(HomeAssistantView):
                 return await handle_get_safety_sensor(self.area_manager)
             elif endpoint == "history/config":
                 return await handle_get_history_config(self.hass)
+            elif endpoint == "history/storage/info":
+                return await handle_get_history_storage_info(self.hass)
+            elif endpoint == "history/storage/database/stats":
+                return await handle_get_database_stats(self.hass)
             # Import/Export endpoints
             elif endpoint == "export":
                 config_manager = self.hass.data[DOMAIN]["config_manager"]
@@ -391,6 +399,10 @@ class SmartHeatingAPIView(HomeAssistantView):
                 return await handle_set_frost_protection(self.area_manager, data)
             elif endpoint == "history/config":
                 return await handle_set_history_config(self.hass, data)
+            elif endpoint == "history/storage/migrate":
+                return await handle_migrate_history_storage(self.hass, data)
+            elif endpoint == "history/cleanup":
+                return await handle_cleanup_history(self.hass)
             elif endpoint == "global_presets":
                 return await handle_set_global_presets(self.area_manager, data)
             elif endpoint == "global_presence":

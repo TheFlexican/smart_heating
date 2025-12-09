@@ -28,6 +28,7 @@ def mock_history_tracker():
         }
     ])
     tracker.get_retention_days = MagicMock(return_value=30)
+    tracker.get_storage_backend = MagicMock(return_value="json")
     tracker.set_retention_days = MagicMock()
     tracker.async_save = AsyncMock()
     tracker._async_cleanup_old_entries = AsyncMock()

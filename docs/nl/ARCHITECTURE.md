@@ -320,19 +320,57 @@ Tijd-gebaseerde temperatuur controle.
 
 ### 5. History Tracker (`history.py`)
 
-Temperatuur logging en retentie.
+Temperatuur logging en retentie met dubbele opslag backend ondersteuning.
 
 **Verantwoordelijkheden:**
 - Registreert temperatuur elke 5 minuten
 - Slaat op: current_temp, target_temp, state, timestamp
-- 7-dagen automatische retentie
-- Persistente opslag in `.storage/smart_heating_history`
+- Configureerbare retentie: 1-365 dagen
+- Dubbele opslag backends: JSON (standaard) of Database (optioneel)
 - Automatische opschoning van oude entries
-- 1000 entry limiet per zone
+- 1000 entry in-memory cache per zone
 
-**Opslag:**
+**Opslag Backends:**
+
+**JSON Opslag (Standaard):**
+- Eenvoudige bestandsopslag in `.storage/smart_heating_history`
+- Werkt met alle Home Assistant installaties
+- Geen extra configuratie vereist
+- Geschikt voor de meeste gebruikers
+
+**Database Opslag (Optioneel - Power Users):**
+- Ondersteunt MariaDB, MySQL, PostgreSQL
+- Automatische detectie via Home Assistant's recorder configuratie
+- Niet-blokkerende operaties via recorder's database engine
+- Geoptimaliseerd schema met geïndexeerde kolommen (area_id, timestamp)
+- Valt terug naar JSON voor SQLite databases (niet ondersteund)
+- Vereist recorder configuratie in `configuration.yaml`:
+  ```yaml
+  recorder:
+    db_url: mysql://user:pass@host/database
+  ```
+
+**Migratie:**
+- Naadloze bidirectionele migratie tussen JSON ↔ Database
+- Behoudt alle historische data tijdens migratie
+- Automatische validatie voor migratie
+- API endpoint: `POST /api/smart_heating/history/storage/migrate`
+- Backend voorkeur blijft behouden na herstarts
+
+**Database Validatie:**
+- Draait asynchroon tijdens `async_load()`
+- Laadt opgeslagen backend voorkeur uit JSON
+- Valideert database beschikbaarheid via `get_instance(hass)`
+- Creëert automatisch tabel als deze niet bestaat
+- Valt terug naar JSON als database niet beschikbaar
+
+**Opslag Formaat:**
+
+JSON:
 ```json
 {
+  "storage_backend": "json",
+  "retention_days": 90,
   "history": {
     "living_room": [
       {
@@ -345,6 +383,27 @@ Temperatuur logging en retentie.
   }
 }
 ```
+
+Database Tabel (`smart_heating_history`):
+```sql
+CREATE TABLE smart_heating_history (
+  id INTEGER PRIMARY KEY AUTO_INCREMENT,
+  area_id VARCHAR(255) NOT NULL,
+  timestamp DATETIME NOT NULL,
+  current_temperature FLOAT NOT NULL,
+  target_temperature FLOAT NOT NULL,
+  state VARCHAR(50) NOT NULL,
+  INDEX idx_area_timestamp (area_id, timestamp)
+);
+```
+
+**API Endpoints:**
+- `GET /api/smart_heating/history/config` - Haal retentie en backend instellingen op
+- `POST /api/smart_heating/history/config` - Update retentie (1-365 dagen)
+- `GET /api/smart_heating/history/storage/info` - Huidige backend en statistieken
+- `GET /api/smart_heating/history/storage/database/stats` - Database metrieken
+- `POST /api/smart_heating/history/storage/migrate` - Migreer tussen backends
+- `POST /api/smart_heating/history/cleanup` - Handmatige opschoning trigger
 
 ### 6. Safety Monitor (`safety_monitor.py`)
 

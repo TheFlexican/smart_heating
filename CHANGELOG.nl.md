@@ -7,7 +7,52 @@ en dit project volgt [Semantic Versioning](https://semver.org/).
 
 ## [Niet Uitgebracht]
 
+### ✨ Functies
+
+**Geschiedenisgegevens Beheer Verbetering**
+- **Verlengde bewaarperiode**: Geschiedenis bewaartermijn configureerbaar tot 365 dagen (voorheen max 30 dagen)
+- **Optionele database opslag**: Voor power users met MariaDB/PostgreSQL/MySQL
+  - Automatische database ondersteuning detectie (valt terug naar JSON voor SQLite)
+  - Niet-blokkerende database operaties via Home Assistant's recorder
+  - Behoudt in-memory cache voor snelle toegang (1000 entries per zone)
+  - Achterwaarts compatibel - JSON opslag blijft de standaard
+  - Automatische tabel aanmaak met geoptimaliseerd schema (geïndexeerde kolommen voor prestaties)
+- **Database migratie**: Naadloze migratie tussen JSON en database opslag
+  - Bidirectionele migratie (JSON ↔ Database)
+  - Behoudt alle historische data tijdens migratie
+  - API endpoint: POST /api/smart_heating/history/storage/migrate
+  - Automatische validatie voor migratie (controleert database beschikbaarheid)
+  - Data blijft behouden na Home Assistant herstarts
+- **Database onderhoud API**: Vier nieuwe endpoints voor database operaties
+  - GET /api/smart_heating/history/storage/info - Huidige backend en statistieken
+  - GET /api/smart_heating/history/storage/database/stats - Gedetailleerde database metrieken
+  - POST /api/smart_heating/history/storage/migrate - Migreer tussen backends
+  - POST /api/smart_heating/history/cleanup - Handmatige opschoning trigger
+- **Opslag backend configuratie**: Configureerbaar via geschiedenis config API
+  - Schema validatie voor zowel bewaartermijn (1-365 dagen) als opslag backend (json/database)
+  - Automatische terugval naar JSON als database niet ondersteund wordt
+  - Backend voorkeur opgeslagen en hersteld na herstarts
+
 ### 🐛 Bugfixes
+
+**Database Opslag Initialisatie Fix**
+- Database validatie timing probleem opgelost waarbij validatie liep voordat recorder volledig was geïnitialiseerd
+- Database validatie verplaatst van `__init__()` naar `async_load()` om te zorgen dat recorder beschikbaar is
+- Backend voorkeur wordt nu geladen uit opslag voor de validatie check
+- Database ondersteuning wordt correct gedetecteerd bij opstarten voor MariaDB/MySQL/PostgreSQL
+- Deadlock-veroorzakende `async_block_till_done()` aanroep verwijderd tijdens validatie
+
+**Database Migratie Fix**
+- Migratie API aangepast om bron en doel backends correct bij te houden
+- Migratie rapporteert nu correct de bron backend (toonde voorheen twee keer het doel)
+- `_db_validated` vlag toegevoegd om dubbele validatie tijdens migratie te voorkomen
+- Migratie workflow werkt nu betrouwbaar: JSON ↔ Database ↔ JSON
+
+**SQLAlchemy 2.0 Compatibiliteit Fix**
+- Database query syntax bijgewerkt voor SQLAlchemy 2.0 compatibiliteit
+- Verouderde `select([columns])` syntax vervangen door `select(columns)`
+- Count queries aangepast om `func.count()` te gebruiken in plaats van `.count()` methode
+- Ontbrekende `func` import van sqlalchemy toegevoegd
 
 **Efficiëntie Calculator Databron Fix**
 - EfficiencyCalculator gebruikt nu HistoryTracker data in plaats van HA recorder

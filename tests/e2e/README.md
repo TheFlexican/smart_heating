@@ -11,6 +11,31 @@ End-to-end tests for the Smart Heating Home Assistant integration using Playwrig
 - ✅ **Comprehensive Features** - Preset modes, manual override, WebSocket updates
 - ✅ **Sensor Management** - Window sensors, presence sensors (basic operations)
 - ✅ **Backend Logging** - API error handling
+- ✅ **History Storage** - Database migration, storage backend switching (see unit tests for database logic)
+
+### Database Migration Testing
+
+**Unit Tests** (`tests/unit/test_history.py`):
+- JSON ↔ Database migration workflows
+- Database detection and validation
+- Storage backend persistence
+- SQLAlchemy 2.0 compatibility
+
+**Integration Testing** (Manual):
+1. Configure MariaDB/PostgreSQL in `configuration.yaml`:
+   ```yaml
+   recorder:
+     db_url: mysql://user:pass@host/database
+   ```
+2. Use API endpoints to test migration:
+   - `GET /api/smart_heating/history/storage/info`
+   - `POST /api/smart_heating/history/storage/migrate`
+   - `GET /api/smart_heating/history/storage/database/stats`
+3. Verify data persists across HA restarts
+
+**E2E Testing**:
+- History chart displays data from both backends
+- Storage backend changes reflected in UI (future enhancement)
 
 ### Manual Testing Required
 - ⚠️ **Global Presets** - See `GLOBAL_PRESETS_TEST_GUIDE.md`

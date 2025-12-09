@@ -50,6 +50,15 @@ A Home Assistant custom integration for intelligent multi-zone heating control w
 
 ### 📊 Monitoring & Debugging
 - **Temperature history** - Track and visualize trends (5-min resolution, 1-365 days retention)
+  - **JSON storage** (default) - Simple file-based storage for all HA installations
+  - **Database storage** (optional) - MariaDB/PostgreSQL/MySQL support for power users
+    - Automatic database detection via Home Assistant's recorder configuration
+    - Optimized schema with indexed columns for fast queries
+    - Non-blocking operations using recorder's database engine
+  - **Seamless migration** - Switch between storage backends without data loss
+    - Bidirectional migration API (JSON ↔ Database)
+    - Automatic validation before migration
+    - Data persists across restarts
 - **Development logs** - Per-zone logging with detailed strategy decisions
 - **Interactive charts** - Customizable time ranges with preset filters
 - **Event filtering** - Color-coded event types with one-click filtering

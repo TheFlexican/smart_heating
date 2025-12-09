@@ -60,6 +60,8 @@ import {
   removePresenceSensor,
   getHistoryConfig,
   setHistoryRetention as updateHistoryRetention,
+  migrateHistoryStorage,
+  getDatabaseStats,
   getDevices,
   addDeviceToZone,
   removeDeviceFromZone,
@@ -113,6 +115,9 @@ const ZoneDetail = () => {
   const [tabValue, setTabValue] = useState(0)
   const [temperature, setTemperature] = useState(21)
   const [historyRetention, setHistoryRetention] = useState(30)
+  const [storageBackend, setStorageBackend] = useState<string>('json')
+  const [databaseStats, setDatabaseStats] = useState<any>(null)
+  const [migrating, setMigrating] = useState(false)
   const [recordInterval, setRecordInterval] = useState(5)
   const [sensorDialogOpen, setSensorDialogOpen] = useState(false)
   const [sensorDialogType, setSensorDialogType] = useState<'window' | 'presence'>('window')
@@ -265,7 +270,18 @@ const ZoneDetail = () => {
     try {
       const config = await getHistoryConfig()
       setHistoryRetention(config.retention_days)
+      setStorageBackend(config.storage_backend || 'json')
       setRecordInterval(config.record_interval_minutes)
+      
+      // Load database stats if using database backend
+      if (config.storage_backend === 'database') {
+        try {
+          const stats = await getDatabaseStats()
+          setDatabaseStats(stats)
+        } catch (error) {
+          console.error('Failed to load database stats:', error)
+        }
+      }
     } catch (error) {
       console.error('Failed to load history config:', error)
     }
@@ -1389,6 +1405,89 @@ const ZoneDetail = () => {
               {t('settingsCards.dataRetentionDescription', { interval: recordInterval })}
             </Typography>
             
+            {/* Storage Backend Display */}
+            <Box sx={{ mb: 3, p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
+              <Typography variant="subtitle2" gutterBottom>
+                Storage Backend
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <Chip 
+                  label={storageBackend === 'database' ? 'Database (MariaDB/PostgreSQL)' : 'JSON (File)'}
+                  color={storageBackend === 'database' ? 'primary' : 'default'}
+                  size="small"
+                />
+                {storageBackend === 'database' && databaseStats?.total_entries !== undefined && (
+                  <Typography variant="caption" color="text.secondary">
+                    {databaseStats.total_entries.toLocaleString()} entries stored
+                  </Typography>
+                )}
+              </Box>
+              
+              {/* Migration Buttons */}
+              <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                {storageBackend === 'json' && (
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    disabled={migrating}
+                    onClick={async () => {
+                      if (!confirm('Migrate history data to database? This requires MariaDB, MySQL, or PostgreSQL. SQLite is not supported.')) return
+                      setMigrating(true)
+                      try {
+                        const result = await migrateHistoryStorage('database')
+                        if (result.success) {
+                          alert(`Successfully migrated ${result.migrated_entries} entries to database!`)
+                          await loadHistoryConfig()
+                        } else {
+                          alert(`Migration failed: ${result.message}`)
+                        }
+                      } catch (error: any) {
+                        alert(`Migration error: ${error.message}`)
+                      } finally {
+                        setMigrating(false)
+                      }
+                    }}
+                  >
+                    {migrating ? 'Migrating...' : 'Migrate to Database'}
+                  </Button>
+                )}
+                {storageBackend === 'database' && (
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    disabled={migrating}
+                    onClick={async () => {
+                      if (!confirm('Migrate history data back to JSON file storage?')) return
+                      setMigrating(true)
+                      try {
+                        const result = await migrateHistoryStorage('json')
+                        if (result.success) {
+                          alert(`Successfully migrated ${result.migrated_entries} entries to JSON!`)
+                          await loadHistoryConfig()
+                        } else {
+                          alert(`Migration failed: ${result.message}`)
+                        }
+                      } catch (error: any) {
+                        alert(`Migration error: ${error.message}`)
+                      } finally {
+                        setMigrating(false)
+                      }
+                    }}
+                  >
+                    {migrating ? 'Migrating...' : 'Migrate to JSON'}
+                  </Button>
+                )}
+              </Box>
+              
+              <Alert severity="info" sx={{ mt: 2 }} icon={false}>
+                <Typography variant="caption">
+                  <strong>Database storage</strong> requires MariaDB ≥10.3, MySQL ≥8.0, or PostgreSQL ≥12. 
+                  SQLite is not supported and will automatically fall back to JSON storage.
+                </Typography>
+              </Alert>
+            </Box>
+            
+            {/* Retention Period Slider */}
             <Typography variant="body2" color="text.secondary" gutterBottom>
               {t('settingsCards.dataRetentionPeriod', { days: historyRetention })}
             </Typography>
@@ -1397,11 +1496,14 @@ const ZoneDetail = () => {
                 value={historyRetention}
                 onChange={(_, value) => setHistoryRetention(value as number)}
                 min={1}
-                max={30}
+                max={365}
                 step={1}
                 marks={[
                   { value: 1, label: '1d' },
-                  { value: 30, label: '30d' }
+                  { value: 30, label: '30d' },
+                  { value: 90, label: '90d' },
+                  { value: 180, label: '180d' },
+                  { value: 365, label: '365d' }
                 ]}
                 valueLabelDisplay="auto"
                 valueLabelFormat={(value) => `${value}d`}

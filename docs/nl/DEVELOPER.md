@@ -591,6 +591,79 @@ mosquitto_pub -h localhost -p 1883 \
   -m '{"carbon_monoxide": true, "battery": 95, "linkquality": 115}'
 ```
 
+## Testen
+
+### API Testen
+
+Gebruik curl of Postman:
+
+```bash
+# Haal zones op
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+  http://localhost:8123/api/smart_heating/areas
+
+# Creëer zone
+curl -X POST \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"area_id":"test","area_name":"Test","temperature":20}' \
+  http://localhost:8123/api/smart_heating/areas
+
+# Geschiedenis opslag beheer
+curl http://localhost:8123/api/smart_heating/history/storage/info | jq
+
+# Database migratie
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"target_backend": "database"}' \
+  http://localhost:8123/api/smart_heating/history/storage/migrate | jq
+
+# Database statistieken
+curl http://localhost:8123/api/smart_heating/history/storage/database/stats | jq
+```
+
+### Unit Testen
+
+Voer Python unit tests uit met pytest:
+
+```bash
+# Voer alle tests uit
+./run_tests.sh
+
+# Voer specifiek test bestand uit
+pytest tests/unit/test_history.py -v
+
+# Voer uit met coverage
+pytest tests/unit --cov=smart_heating --cov-report=html
+
+# Bekijk coverage rapport
+open coverage_html/index.html
+```
+
+**Belangrijke Test Bestanden:**
+- `tests/unit/test_history.py` - History tracker en database migratie tests
+- `tests/unit/test_area_manager.py` - Zone beheer tests
+- `tests/unit/test_coordinator.py` - Data coördinatie tests
+- Zie `tests/README.md` voor complete test documentatie
+
+### E2E Testen
+
+Voer Playwright tests uit voor volledige gebruikerswerkstroom validatie:
+
+```bash
+cd tests/e2e
+npm test                 # Headless
+npm run test:headed     # Met browser
+npm run test:ui         # Interactieve modus
+```
+
+**Test Coverage:**
+- Navigatie en UI interacties
+- Temperatuur controle en boost modus
+- Sensor beheer
+- Geschiedenis visualisatie
+- Zie `tests/e2e/README.md` voor details
+
 ### Documentatie
 
 **ALTIJD bijwerken bij wijzigingen:**

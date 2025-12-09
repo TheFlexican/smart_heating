@@ -7,7 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### ✨ Features
+
+**History Data Management Enhancement**
+- **Extended retention period**: History retention configurable up to 365 days (previously 30 days max)
+- **Optional database storage**: For power users with MariaDB/PostgreSQL/MySQL
+  - Automatic database support detection (falls back to JSON for SQLite)
+  - Non-blocking database operations using Home Assistant's recorder
+  - Maintains in-memory cache for fast access (1000 entries per area)
+  - Backward compatible - JSON storage remains the default
+  - Automatic table creation with optimized schema (indexed columns for performance)
+- **Database migration**: Seamless migration between JSON and database storage
+  - Bidirectional migration (JSON ↔ Database)
+  - Preserves all historical data during migration
+  - API endpoint: POST /api/smart_heating/history/storage/migrate
+  - Automatic validation before migration (checks database availability)
+  - Data persists across Home Assistant restarts
+- **Database maintenance API**: Four new endpoints for database operations
+  - GET /api/smart_heating/history/storage/info - Current backend and statistics
+  - GET /api/smart_heating/history/storage/database/stats - Detailed database metrics
+  - POST /api/smart_heating/history/storage/migrate - Migrate between backends
+  - POST /api/smart_heating/history/cleanup - Manual cleanup trigger
+- **Storage backend configuration**: Configurable through history config API
+  - Schema validation for both retention (1-365 days) and storage backend (json/database)
+  - Automatic fallback to JSON if database not supported
+  - Backend preference stored and restored across restarts
+
 ### 🐛 Bug Fixes
+
+**Database Storage Initialization Fix**
+- Fixed database validation timing issue where validation ran before recorder was fully initialized
+- Moved database validation from `__init__()` to `async_load()` to ensure recorder is available
+- Backend preference now loaded from storage before validation check
+- Database support properly detected on startup for MariaDB/MySQL/PostgreSQL
+- Removed deadlock-causing `async_block_till_done()` call during validation
+
+**Database Migration Fix**
+- Fixed migration API to properly track source and target backends
+- Migration now correctly reports source backend (was showing target twice)
+- Added `_db_validated` flag to prevent duplicate validation during migration
+- Migration workflow now works reliably: JSON ↔ Database ↔ JSON
+
+**SQLAlchemy 2.0 Compatibility Fix**
+- Updated database query syntax for SQLAlchemy 2.0 compatibility
+- Fixed deprecated `select([columns])` syntax to `select(columns)`
+- Fixed count queries to use `func.count()` instead of `.count()` method
+- Added missing `func` import from sqlalchemy
 
 **Efficiency Calculator Data Source Fix**
 - Fixed EfficiencyCalculator to use HistoryTracker data instead of HA recorder

@@ -83,6 +83,21 @@ Home Assistant integration for zone-based heating control with learning capabili
 - If a test is complex, take the time to implement it properly with mocks and fixtures
 - Token budget is 1,000,000 - don't stop until the work is complete or you hit actual limits
 
+**RULE #7: API Testing After Deployment**
+- **ALWAYS test API endpoints after deploying features/fixes** using curl commands
+- Test all new/modified endpoints with valid and invalid inputs
+- Verify error handling and validation rules
+- Test boundary conditions (min/max values, edge cases)
+- Example workflow after deployment:
+  1. Deploy changes: `bash scripts/deploy_test.sh`
+  2. Test GET endpoints: `curl -s http://localhost:8123/api/smart_heating/[endpoint] | jq`
+  3. Test POST endpoints with valid data: `curl -s -X POST ... -d '{...}' | jq`
+  4. Test validation with invalid data (above/below limits, wrong types)
+  5. Verify responses match expected schema
+  6. Check error messages are clear and helpful
+- Document test results showing successful validation and error handling
+- This ensures features work end-to-end before user testing
+
 **Python Unit Tests (pytest):**
 - Location: `tests/unit/` directory
 - Framework: pytest with pytest-asyncio, pytest-cov, pytest-homeassistant-custom-component

@@ -210,6 +210,7 @@ export const copySchedule = async (
 // History Management
 export const getHistoryConfig = async (): Promise<{
   retention_days: number
+  storage_backend: string
   record_interval_seconds: number
   record_interval_minutes: number
 }> => {
@@ -221,6 +222,53 @@ export const setHistoryRetention = async (days: number): Promise<void> => {
   await axios.post(`${API_BASE}/history/config`, {
     retention_days: days
   })
+}
+
+export const getHistoryStorageInfo = async (): Promise<{
+  storage_backend: string
+  retention_days: number
+  database_enabled?: boolean
+  database_stats?: {
+    total_entries: number
+    entries_by_area: Record<string, number>
+    oldest_entry?: string
+    newest_entry?: string
+  }
+}> => {
+  const response = await axios.get(`${API_BASE}/history/storage/info`)
+  return response.data
+}
+
+export const migrateHistoryStorage = async (targetBackend: 'json' | 'database'): Promise<{
+  success: boolean
+  message: string
+  migrated_entries: number
+  source_backend?: string
+  target_backend?: string
+}> => {
+  const response = await axios.post(`${API_BASE}/history/storage/migrate`, {
+    target_backend: targetBackend
+  })
+  return response.data
+}
+
+export const getDatabaseStats = async (): Promise<{
+  enabled: boolean
+  message?: string
+  total_entries?: number
+  entries_by_area?: Record<string, number>
+  oldest_entry?: string
+  newest_entry?: string
+  table_name?: string
+  backend?: string
+}> => {
+  const response = await axios.get(`${API_BASE}/history/storage/database/stats`)
+  return response.data
+}
+
+export const cleanupHistory = async (): Promise<{ success: boolean }> => {
+  const response = await axios.post(`${API_BASE}/history/cleanup`)
+  return response.data
 }
 
 export const getHistory = async (

@@ -47,9 +47,13 @@ from .efficiency import (
     handle_get_efficiency_report,
 )
 from .history import (
+    handle_cleanup_history,
+    handle_get_database_stats,
     handle_get_history,
     handle_get_history_config,
+    handle_get_history_storage_info,
     handle_get_learning_stats,
+    handle_migrate_history_storage,
     handle_set_history_config,
 )
 from .import_export import (
@@ -150,6 +154,10 @@ __all__ = [
     "handle_get_learning_stats",
     "handle_get_history_config",
     "handle_set_history_config",
+    "handle_get_history_storage_info",
+    "handle_migrate_history_storage",
+    "handle_get_database_stats",
+    "handle_cleanup_history",
     # Import/Export
     "handle_export_config",
     "handle_import_config",

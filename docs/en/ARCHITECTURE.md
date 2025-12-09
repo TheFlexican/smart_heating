@@ -320,19 +320,57 @@ Time-based temperature control.
 
 ### 5. History Tracker (`history.py`)
 
-Temperature logging and retention.
+Temperature logging and retention with dual storage backend support.
 
 **Responsibilities:**
 - Records temperature every 5 minutes
 - Stores: current_temp, target_temp, state, timestamp
-- 7-day automatic retention
-- Persistent storage in `.storage/smart_heating_history`
+- Configurable retention: 1-365 days
+- Dual storage backends: JSON (default) or Database (optional)
 - Automatic cleanup of old entries
-- 1000 entry limit per area
+- 1000 entry in-memory cache per area
 
-**Storage:**
+**Storage Backends:**
+
+**JSON Storage (Default):**
+- Simple file-based storage in `.storage/smart_heating_history`
+- Works with all Home Assistant installations
+- No additional configuration required
+- Suitable for most users
+
+**Database Storage (Optional - Power Users):**
+- Supports MariaDB, MySQL, PostgreSQL
+- Automatic detection via Home Assistant's recorder configuration
+- Non-blocking operations using recorder's database engine
+- Optimized schema with indexed columns (area_id, timestamp)
+- Falls back to JSON for SQLite databases (not supported)
+- Requires recorder configured in `configuration.yaml`:
+  ```yaml
+  recorder:
+    db_url: mysql://user:pass@host/database
+  ```
+
+**Migration:**
+- Seamless bidirectional migration between JSON ↔ Database
+- Preserves all historical data during migration
+- Automatic validation before migration
+- API endpoint: `POST /api/smart_heating/history/storage/migrate`
+- Backend preference persists across restarts
+
+**Database Validation:**
+- Runs asynchronously during `async_load()`
+- Loads stored backend preference from JSON
+- Validates database availability via `get_instance(hass)`
+- Automatically creates table if it doesn't exist
+- Falls back to JSON if database unavailable
+
+**Storage Format:**
+
+JSON:
 ```json
 {
+  "storage_backend": "json",
+  "retention_days": 90,
   "history": {
     "living_room": [
       {
@@ -345,6 +383,27 @@ Temperature logging and retention.
   }
 }
 ```
+
+Database Table (`smart_heating_history`):
+```sql
+CREATE TABLE smart_heating_history (
+  id INTEGER PRIMARY KEY AUTO_INCREMENT,
+  area_id VARCHAR(255) NOT NULL,
+  timestamp DATETIME NOT NULL,
+  current_temperature FLOAT NOT NULL,
+  target_temperature FLOAT NOT NULL,
+  state VARCHAR(50) NOT NULL,
+  INDEX idx_area_timestamp (area_id, timestamp)
+);
+```
+
+**API Endpoints:**
+- `GET /api/smart_heating/history/config` - Get retention and backend settings
+- `POST /api/smart_heating/history/config` - Update retention (1-365 days)
+- `GET /api/smart_heating/history/storage/info` - Current backend and statistics
+- `GET /api/smart_heating/history/storage/database/stats` - Database metrics
+- `POST /api/smart_heating/history/storage/migrate` - Migrate between backends
+- `POST /api/smart_heating/history/cleanup` - Manual cleanup trigger
 
 ### 6. Safety Monitor (`safety_monitor.py`)
 

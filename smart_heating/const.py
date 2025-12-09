@@ -86,7 +86,12 @@ HVAC_MODE_AUTO: Final = "auto"
 
 # History settings
 DEFAULT_HISTORY_RETENTION_DAYS: Final = 30  # Keep 30 days by default
+MAX_HISTORY_RETENTION_DAYS: Final = 365  # Maximum 1 year retention
 HISTORY_RECORD_INTERVAL_SECONDS: Final = 300  # Record every 5 minutes
+
+# History storage backends
+HISTORY_STORAGE_JSON: Final = "json"  # JSON file storage (default)
+HISTORY_STORAGE_DATABASE: Final = "database"  # Database storage (MariaDB/PostgreSQL)
 
 HVAC_MODES: Final = [
     HVAC_MODE_OFF,
@@ -208,11 +213,10 @@ ATTR_AC_MODE: Final = "ac_mode"
 
 # History settings
 ATTR_HISTORY_RETENTION_DAYS: Final = "history_retention_days"
+ATTR_HISTORY_STORAGE_BACKEND: Final = "storage_backend"
 ATTR_HOURS: Final = "hours"
 ATTR_START_TIME_PARAM: Final = "start_time"
 ATTR_END_TIME_PARAM: Final = "end_time"
-DEFAULT_HISTORY_RETENTION_DAYS: Final = 30  # Keep 30 days by default
-HISTORY_RECORD_INTERVAL_SECONDS: Final = 300  # Record every 5 minutes
 
 # Default preset temperatures
 DEFAULT_AWAY_TEMP: Final = 16.0

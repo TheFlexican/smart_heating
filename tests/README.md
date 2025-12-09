@@ -23,7 +23,12 @@ tests/
 │   ├── test_vacation_manager.py # Vacation Manager tests
 │   ├── test_models_area.py   # Area model tests
 │   ├── test_switch.py        # Switch platform tests
-│   └── test_utils.py         # Utility functions tests
+│   ├── test_utils.py         # Utility functions tests
+│   └── test_history.py       # History tracker tests (database migration)
+├── e2e/                       # Playwright end-to-end tests
+│   ├── tests/                 # E2E test files
+│   ├── playwright.config.ts   # Playwright configuration
+│   └── package.json           # E2E dependencies
 └── README.md
 ```
 
@@ -127,6 +132,7 @@ Tests are organized by module/component:
    - `test_area_manager.py` - Area management (create, update, delete, settings)
    - `test_coordinator.py` - Data coordination and updates
    - `test_models_area.py` - Area model functionality
+   - `test_history.py` - History tracker (database migration, dual storage backends)
 
 2. **Platform Tests**
    - `test_climate.py` - Climate entity (temperature, presets, HVAC modes)
@@ -139,6 +145,11 @@ Tests are organized by module/component:
 
 4. **Utility Tests**
    - `test_utils.py` - Validators and response builders
+
+5. **End-to-End Tests** (`tests/e2e/`)
+   - Browser-based testing with Playwright
+   - Full user workflow validation
+   - Run: `cd tests/e2e && npm test`
 
 ### Test Patterns
 
@@ -179,9 +190,43 @@ Target coverage by module:
 | scheduler.py | 85%+ |
 | safety_monitor.py | 85%+ |
 | vacation_manager.py | 85%+ |
+| history.py | 85%+ |
 | models/area.py | 90%+ |
 | utils/* | 90%+ |
 | **Overall** | **85%+** |
+
+## Test Coverage Highlights
+
+### History Tracker Tests (`test_history.py`)
+
+Comprehensive testing of dual storage backend system:
+
+**Database Migration Tests:**
+- JSON → Database migration with data preservation
+- Database → JSON migration with data preservation
+- Backend preference persistence across restarts
+- Migration validation (checks database availability)
+- Error handling for unsupported databases (SQLite)
+
+**Database Validation Tests:**
+- Automatic MariaDB/MySQL/PostgreSQL detection
+- Fallback to JSON for SQLite or unavailable databases
+- Table creation with optimized schema
+- Database engine initialization
+
+**Storage Backend Tests:**
+- JSON storage read/write operations
+- Database storage read/write operations
+- In-memory cache management (1000 entries per area)
+- Retention period enforcement (1-365 days)
+- Automatic cleanup of old entries
+
+**API Tests:**
+- Storage info endpoint
+- Database stats endpoint
+- Migration endpoint
+- Configuration endpoint
+- Cleanup endpoint
 
 ## Writing New Tests
 

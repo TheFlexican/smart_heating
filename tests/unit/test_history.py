@@ -389,3 +389,87 @@ class TestHistoryTrackerRetention:
         history_tracker._retention_days = 45
         
         assert history_tracker.get_retention_days() == 45
+
+
+class TestHistoryTrackerDatabaseStorage:
+    """Test database storage backend."""
+
+    @pytest.mark.asyncio
+    async def test_validate_database_support_sqlite_fallback(self, mock_hass, mock_store):
+        """Test that SQLite falls back to JSON storage."""
+        mock_recorder = MagicMock()
+        mock_recorder.db_url = "sqlite:///home-assistant_v2.db"
+        
+        with patch('smart_heating.history.Store', return_value=mock_store), \
+             patch('smart_heating.history.get_instance', return_value=mock_recorder):
+            tracker = HistoryTracker(mock_hass, storage_backend="database")
+            
+            # Should fall back to JSON
+            assert tracker._storage_backend == "json"
+
+    @pytest.mark.asyncio
+    async def test_validate_database_support_mysql(self, mock_hass, mock_store):
+        """Test that MySQL is supported for database storage."""
+        mock_recorder = MagicMock()
+        mock_recorder.db_url = "mysql://user:pass@localhost/homeassistant"
+        mock_engine = MagicMock()
+        mock_recorder.engine = mock_engine
+        
+        with patch('smart_heating.history.Store', return_value=mock_store), \
+             patch('smart_heating.history.get_instance', return_value=mock_recorder), \
+             patch('smart_heating.history.Table') as mock_table, \
+             patch('smart_heating.history.MetaData'):
+            tracker = HistoryTracker(mock_hass, storage_backend="database")
+            
+            # Should accept MySQL
+            assert tracker._storage_backend == "database"
+            assert tracker._db_table is not None
+
+    @pytest.mark.asyncio
+    async def test_validate_database_support_postgresql(self, mock_hass, mock_store):
+        """Test that PostgreSQL is supported for database storage."""
+        mock_recorder = MagicMock()
+        mock_recorder.db_url = "postgresql://user:pass@localhost/homeassistant"
+        mock_engine = MagicMock()
+        mock_recorder.engine = mock_engine
+        
+        with patch('smart_heating.history.Store', return_value=mock_store), \
+             patch('smart_heating.history.get_instance', return_value=mock_recorder), \
+             patch('smart_heating.history.Table') as mock_table, \
+             patch('smart_heating.history.MetaData'):
+            tracker = HistoryTracker(mock_hass, storage_backend="database")
+            
+            # Should accept PostgreSQL
+            assert tracker._storage_backend == "database"
+            assert tracker._db_table is not None
+
+    @pytest.mark.asyncio
+    async def test_get_storage_backend(self, history_tracker):
+        """Test getting storage backend."""
+        assert history_tracker.get_storage_backend() == "json"
+
+
+class TestHistoryTrackerMigration:
+    """Test storage backend migration."""
+
+    @pytest.mark.asyncio
+    async def test_migrate_invalid_backend(self, history_tracker):
+        """Test migrating to invalid backend."""
+        result = await history_tracker.async_migrate_storage("invalid")
+        
+        assert result["success"] is False
+        assert "message" in result
+
+
+class TestHistoryTrackerDatabaseStats:
+    """Test database statistics."""
+
+    @pytest.mark.asyncio
+    async def test_get_database_stats_json_backend(self, history_tracker):
+        """Test getting database stats with JSON backend."""
+        result = await history_tracker.async_get_database_stats()
+        
+        # Should return dict with enabled: False for JSON backend
+        assert result["enabled"] is False
+        assert "message" in result
+

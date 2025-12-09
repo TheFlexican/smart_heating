@@ -652,7 +652,61 @@ curl -X POST \
   -H "Content-Type: application/json" \
   -d '{"area_id":"test","area_name":"Test","temperature":20}' \
   http://localhost:8123/api/smart_heating/areas
+
+# History storage management
+curl http://localhost:8123/api/smart_heating/history/storage/info | jq
+
+# Database migration
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"target_backend": "database"}' \
+  http://localhost:8123/api/smart_heating/history/storage/migrate | jq
+
+# Database statistics
+curl http://localhost:8123/api/smart_heating/history/storage/database/stats | jq
 ```
+
+### Unit Testing
+
+Run Python unit tests with pytest:
+
+```bash
+# Run all tests
+./run_tests.sh
+
+# Run specific test file
+pytest tests/unit/test_history.py -v
+
+# Run with coverage
+pytest tests/unit --cov=smart_heating --cov-report=html
+
+# View coverage report
+open coverage_html/index.html
+```
+
+**Key Test Files:**
+- `tests/unit/test_history.py` - History tracker and database migration tests
+- `tests/unit/test_area_manager.py` - Area management tests
+- `tests/unit/test_coordinator.py` - Data coordination tests
+- See `tests/README.md` for complete test documentation
+
+### E2E Testing
+
+Run Playwright tests for full user workflow validation:
+
+```bash
+cd tests/e2e
+npm test                 # Headless
+npm run test:headed     # With browser
+npm run test:ui         # Interactive mode
+```
+
+**Test Coverage:**
+- Navigation and UI interactions
+- Temperature control and boost mode
+- Sensor management
+- History visualization
+- See `tests/e2e/README.md` for details
 
 ## Debugging
 
