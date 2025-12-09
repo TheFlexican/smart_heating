@@ -138,6 +138,11 @@ export const getBinarySensorEntities = async (): Promise<HassEntity[]> => {
   return response.data.entities
 }
 
+export const getWeatherEntities = async (): Promise<HassEntity[]> => {
+  const response = await axios.get(`${API_BASE}/entities/weather`)
+  return response.data.entities
+}
+
 export const addWindowSensor = async (
   areaId: string,
   config: WindowSensorConfig
@@ -588,7 +593,7 @@ export const getActivePreferences = async (areaId?: string): Promise<{
   active_user_preferences: { [preset: string]: number } | null
   combined_preferences: { [preset: string]: number } | null
 }> => {
-  const url = areaId 
+  const url = areaId
     ? `${API_BASE}/users/preferences?area_id=${encodeURIComponent(areaId)}`
     : `${API_BASE}/users/preferences`
   const response = await axios.get(url)

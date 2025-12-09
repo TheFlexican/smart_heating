@@ -77,6 +77,7 @@ from .sensors import (
     handle_add_presence_sensor,
     handle_add_window_sensor,
     handle_get_binary_sensor_entities,
+    handle_get_weather_entities,
     handle_remove_presence_sensor,
     handle_remove_window_sensor,
 )
@@ -130,6 +131,7 @@ __all__ = [
     "handle_add_presence_sensor",
     "handle_remove_presence_sensor",
     "handle_get_binary_sensor_entities",
+    "handle_get_weather_entities",
     # Config
     "handle_get_config",
     "handle_get_global_presets",

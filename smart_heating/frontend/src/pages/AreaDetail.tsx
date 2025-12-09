@@ -43,12 +43,12 @@ import SpeedIcon from '@mui/icons-material/Speed'
 import BookmarkIcon from '@mui/icons-material/Bookmark'
 import ArticleIcon from '@mui/icons-material/Article'
 import { useTranslation } from 'react-i18next'
-import { Zone, WindowSensorConfig, PresenceSensorConfig, Device, GlobalPresets } from '../types'
-import { 
-  getZones, 
-  setZoneTemperature, 
-  enableZone, 
-  disableZone, 
+import { Zone, WindowSensorConfig, PresenceSensorConfig, Device, GlobalPresets, HassEntity } from '../types'
+import {
+  getZones,
+  setZoneTemperature,
+  enableZone,
+  disableZone,
   setPresetMode,
   setBoostMode,
   cancelBoost,
@@ -72,6 +72,7 @@ import {
   getAreaLogs,
   AreaLogEntry,
   setPrimaryTemperatureSensor,
+  getWeatherEntities,
 } from '../api'
 import ScheduleEditor from '../components/ScheduleEditor'
 import HistoryChart from '../components/HistoryChart'
@@ -125,6 +126,8 @@ const ZoneDetail = () => {
   const [logs, setLogs] = useState<AreaLogEntry[]>([])
   const [logsLoading, setLogsLoading] = useState(false)
   const [logFilter, setLogFilter] = useState<string>('all')
+  const [weatherEntities, setWeatherEntities] = useState<HassEntity[]>([])
+  const [weatherEntitiesLoading, setWeatherEntitiesLoading] = useState(false)
 
   // WebSocket for real-time updates
   useWebSocket({
@@ -156,24 +159,24 @@ const ZoneDetail = () => {
 
   const loadData = async () => {
     if (!areaId) return
-    
+
     try {
       setLoading(true)
       const areasData = await getZones()
-      
+
       const currentZone = areasData.find(z => z.id === areaId)
       if (!currentZone) {
         navigate('/')
         return
       }
-      
+
       setArea(currentZone)
       // If preset is active, show effective temperature, otherwise base target
       const displayTemp = (currentZone.preset_mode && currentZone.preset_mode !== 'none' && currentZone.effective_target_temperature != null)
         ? currentZone.effective_target_temperature
         : currentZone.target_temperature
       setTemperature(displayTemp)
-      
+
       // Load global presets for preset configuration section
       try {
         const presets = await getGlobalPresets()
@@ -181,10 +184,10 @@ const ZoneDetail = () => {
       } catch (error) {
         console.error('Failed to load global presets:', error)
       }
-      
+
       // Load entity states for presence/window sensors
       await loadEntityStates(currentZone)
-      
+
       // Load available devices
       await loadAvailableDevices(currentZone)
     } catch (error) {
@@ -193,11 +196,11 @@ const ZoneDetail = () => {
       setLoading(false)
     }
   }
-  
+
   const loadEntityStates = async (currentZone: Zone) => {
     try {
       const states: Record<string, any> = {}
-      
+
       // Load presence sensor states and names
       if (currentZone.presence_sensors) {
         for (const sensor of currentZone.presence_sensors) {
@@ -210,7 +213,7 @@ const ZoneDetail = () => {
           }
         }
       }
-      
+
       // Load window sensor states and names
       if (currentZone.window_sensors) {
         for (const sensor of currentZone.window_sensors) {
@@ -223,32 +226,44 @@ const ZoneDetail = () => {
           }
         }
       }
-      
+
       setEntityStates(states)
     } catch (error) {
       console.error('Failed to load entity states:', error)
     }
   }
-  
+
+  const loadWeatherEntities = async () => {
+    setWeatherEntitiesLoading(true)
+    try {
+      const entities = await getWeatherEntities()
+      setWeatherEntities(entities)
+    } catch (error) {
+      console.error('Failed to load weather entities:', error)
+    } finally {
+      setWeatherEntitiesLoading(false)
+    }
+  }
+
   const loadAvailableDevices = async (currentZone: Zone) => {
     try {
       const allDevices = await getDevices()
-      
+
       // Filter devices:
       // 1. Must be assigned to the same HA area as this zone (by area_id OR name matching)
       // 2. Must NOT already be assigned to this zone
       const available = allDevices.filter(device => {
         // Check if already assigned
-        const alreadyAssigned = currentZone.devices.some(d => 
+        const alreadyAssigned = currentZone.devices.some(d =>
           (d.entity_id || d.id) === (device.entity_id || device.id)
         )
         if (alreadyAssigned) return false
-        
+
         // Method 1: Direct HA area match
         if (device.ha_area_id === currentZone.id) {
           return true
         }
-        
+
         // Method 2: Name-based matching (for MQTT devices without HA area assignment)
         // Check if device name contains the zone name
         const zoneName = currentZone.name.toLowerCase()
@@ -256,23 +271,23 @@ const ZoneDetail = () => {
         if (deviceName.includes(zoneName)) {
           return true
         }
-        
+
         return false
       })
-      
+
       setAvailableDevices(available)
     } catch (error) {
       console.error('Failed to load available devices:', error)
     }
   }
-  
+
   const loadHistoryConfig = async () => {
     try {
       const config = await getHistoryConfig()
       setHistoryRetention(config.retention_days)
       setStorageBackend(config.storage_backend || 'json')
       setRecordInterval(config.record_interval_minutes)
-      
+
       // Load database stats if using database backend
       if (config.storage_backend === 'database') {
         try {
@@ -289,7 +304,7 @@ const ZoneDetail = () => {
 
   const loadLogs = async () => {
     if (!areaId) return
-    
+
     try {
       setLogsLoading(true)
       const options: any = { limit: 100 }
@@ -318,7 +333,7 @@ const ZoneDetail = () => {
 
   const handleToggle = async () => {
     if (!area) return
-    
+
     try {
       if (area.enabled) {
         await disableZone(area.id)
@@ -337,7 +352,7 @@ const ZoneDetail = () => {
 
   const handleTemperatureCommit = async (_event: Event | React.SyntheticEvent, value: number | number[]) => {
     if (!area) return
-    
+
     try {
       await setZoneTemperature(area.id, value as number)
       await loadData()
@@ -349,10 +364,10 @@ const ZoneDetail = () => {
   const getDeviceStatusIcon = (device: any) => {
     if (device.type === 'thermostat') {
       // Check if should be heating based on area target temperature (not device's stale target)
-      const shouldHeat = area?.target_temperature !== undefined && 
-                        device.current_temperature !== undefined && 
+      const shouldHeat = area?.target_temperature !== undefined &&
+                        device.current_temperature !== undefined &&
                         area.target_temperature > device.current_temperature
-      
+
       if (shouldHeat) {
         return <LocalFireDepartmentIcon fontSize="small" sx={{ color: 'error.main' }} />
       } else if (device.state === 'heat') {
@@ -376,7 +391,7 @@ const ZoneDetail = () => {
         parts.push(`${device.current_temperature.toFixed(1)}°C`)
       }
       // Use area target temperature instead of device's stale target
-      if (area?.target_temperature !== undefined && area.target_temperature !== null && 
+      if (area?.target_temperature !== undefined && area.target_temperature !== null &&
           device.current_temperature !== undefined && device.current_temperature !== null &&
           area.target_temperature > device.current_temperature) {
         parts.push(`→ ${area.target_temperature.toFixed(1)}°C`)
@@ -422,7 +437,7 @@ const ZoneDetail = () => {
     const getPresetTemp = (presetKey: string, customTemp: number | undefined, fallback: number): string => {
       const useGlobalKey = `use_global_${presetKey}` as keyof Zone
       const useGlobal = (area[useGlobalKey] as boolean | undefined) ?? true
-      
+
       if (useGlobal && globalPresets) {
         const globalKey = `${presetKey}_temp` as keyof GlobalPresets
         return `${globalPresets[globalKey]}°C (global)`
@@ -491,7 +506,7 @@ const ZoneDetail = () => {
               const useGlobalKey = `use_global_${preset.key}` as keyof Zone
               const useGlobal = (area[useGlobalKey] as boolean | undefined) ?? true
               const effectiveTemp = useGlobal ? preset.global : preset.custom
-              
+
               return (
                 <Box key={preset.key}>
                   <FormControlLabel
@@ -517,7 +532,7 @@ const ZoneDetail = () => {
                           {useGlobal ? t('settingsCards.presetUseGlobal', { preset: preset.label }) : t('settingsCards.presetUseCustom', { preset: preset.label })}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {useGlobal 
+                          {useGlobal
                             ? t('settingsCards.usingGlobalSetting', { temp: preset.global })
                             : t('settingsCards.usingCustomSetting', { temp: preset.custom ?? 'not set' })
                           }
@@ -558,7 +573,7 @@ const ZoneDetail = () => {
                 </Box>
               )
             })}
-            
+
             <Alert severity="info" sx={{ mt: 2 }}>
               {t('settingsCards.presetConfigInfo')}
             </Alert>
@@ -577,8 +592,8 @@ const ZoneDetail = () => {
             <Alert severity="warning" sx={{ mb: 2 }}>
               Boost mode is <strong>ACTIVE</strong>! Temperature: {area.boost_temp}°C, Duration: {area.boost_duration} minutes
             </Alert>
-            <Button 
-              variant="outlined" 
+            <Button
+              variant="outlined"
               color="error"
               onClick={async () => {
                 try {
@@ -610,8 +625,8 @@ const ZoneDetail = () => {
               sx={{ flex: 1 }}
               id="boost-duration-input"
             />
-            <Button 
-              variant="contained" 
+            <Button
+              variant="contained"
               color="primary"
               onClick={async () => {
                 try {
@@ -704,10 +719,10 @@ const ZoneDetail = () => {
             {area.window_sensors && area.window_sensors.length > 0 ? (
               <List dense>
                 {area.window_sensors.map((sensor) => {
-                  const sensorConfig = typeof sensor === 'string' 
+                  const sensorConfig = typeof sensor === 'string'
                     ? { entity_id: sensor, action_when_open: 'reduce_temperature', temp_drop: 5 }
                     : sensor
-                  
+
                   let secondaryText = ''
                   if (sensorConfig.action_when_open === 'turn_off') {
                     secondaryText = 'Turn off heating when open'
@@ -716,7 +731,7 @@ const ZoneDetail = () => {
                   } else {
                     secondaryText = 'No action when open'
                   }
-                  
+
                   return (
                     <ListItem
                       key={sensorConfig.entity_id}
@@ -736,7 +751,7 @@ const ZoneDetail = () => {
                         </IconButton>
                       }
                     >
-                      <ListItemText 
+                      <ListItemText
                         primary={sensorConfig.entity_id}
                         secondary={secondaryText}
                       />
@@ -749,7 +764,7 @@ const ZoneDetail = () => {
                 No window sensors configured. Add binary sensors to enable window detection.
               </Alert>
             )}
-            
+
             <Button
               variant="outlined"
               fullWidth
@@ -796,7 +811,7 @@ const ZoneDetail = () => {
                     {area.use_global_presence ? t('settingsCards.useGlobalPresence') : t('settingsCards.useAreaSpecificSensors')}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {area.use_global_presence 
+                    {area.use_global_presence
                       ? t('settingsCards.useGlobalPresenceDescription')
                       : t('settingsCards.useAreaSpecificDescription')
                     }
@@ -804,7 +819,7 @@ const ZoneDetail = () => {
                 </Box>
               }
             />
-            
+
             <Alert severity="info">
               {t('settingsCards.presenceToggleInfo')}
             </Alert>
@@ -824,13 +839,13 @@ const ZoneDetail = () => {
               <List dense>
                 {area.presence_sensors.map((sensor) => {
                   const entity_id = typeof sensor === 'string' ? sensor : sensor.entity_id
-                  
+
                   const entityState = entityStates[entity_id]
                   const friendlyName = entityState?.attributes?.friendly_name || entity_id
                   const state = entityState?.state || 'unknown'
                   const isAway = state === 'not_home' || state === 'off' || state === 'away'
                   const isActive = isAway || state === 'home' || state === 'on'
-                  
+
                   return (
                     <ListItem
                       key={entity_id}
@@ -850,14 +865,14 @@ const ZoneDetail = () => {
                         </IconButton>
                       }
                     >
-                      <ListItemText 
+                      <ListItemText
                         primary={
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Typography>{friendlyName}</Typography>
                             {isActive && (
-                              <Chip 
-                                label={isAway ? t('settingsCards.awayChip') : t('settingsCards.homeChip')} 
-                                size="small" 
+                              <Chip
+                                label={isAway ? t('settingsCards.awayChip') : t('settingsCards.homeChip')}
+                                size="small"
                                 color={isAway ? 'warning' : 'success'}
                                 sx={{ height: '20px', fontSize: '0.7rem' }}
                               />
@@ -879,7 +894,7 @@ const ZoneDetail = () => {
                 {t('settingsCards.noPresenceSensors')}
               </Alert>
             )}
-            
+
             <Button
               variant="outlined"
               fullWidth
@@ -935,7 +950,7 @@ const ZoneDetail = () => {
                 <Alert severity="info" sx={{ mb: 3 }}>
                   {t('settingsCards.autoPresetExplanation')}
                 </Alert>
-                
+
                 <Box sx={{ mb: 3 }}>
                   <FormControl fullWidth sx={{ mb: 2 }}>
                     <InputLabel>{t('settingsCards.presetWhenHome')}</InputLabel>
@@ -1212,30 +1227,53 @@ const ZoneDetail = () => {
               sx={{ mb: 3 }}
             />
 
-            <TextField
-              label={t('settingsCards.outdoorTemperatureSensor')}
-              value={area.weather_entity_id ?? ''}
-              onChange={async (e) => {
-                try {
-                  await fetch('/api/smart_heating/call_service', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      service: 'set_night_boost',
-                      area_id: area.id,
-                      weather_entity_id: e.target.value
+            <FormControl fullWidth sx={{ mb: 3 }} disabled={!area.smart_night_boost_enabled}>
+              <InputLabel>{t('settingsCards.outdoorTemperatureSensor')}</InputLabel>
+              <Select
+                value={area.weather_entity_id ?? ''}
+                onChange={async (e) => {
+                  try {
+                    await fetch('/api/smart_heating/call_service', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        service: 'set_night_boost',
+                        area_id: area.id,
+                        weather_entity_id: e.target.value
+                      })
                     })
-                  })
-                  loadData()
-                } catch (error) {
-                  console.error('Failed to update weather entity:', error)
-                }
-              }}
-              disabled={!area.smart_night_boost_enabled}
-              fullWidth
-              placeholder={t('settingsCards.outdoorTemperatureSensorPlaceholder')}
-              helperText={t('settingsCards.outdoorTemperatureSensorHelper')}
-            />
+                    loadData()
+                  } catch (error) {
+                    console.error('Failed to update weather entity:', error)
+                  }
+                }}
+                onOpen={() => {
+                  if (weatherEntities.length === 0) {
+                    loadWeatherEntities()
+                  }
+                }}
+                label={t('settingsCards.outdoorTemperatureSensor')}
+              >
+                <MenuItem value="">
+                  <em>{t('settingsCards.outdoorTemperatureSensorPlaceholder')}</em>
+                </MenuItem>
+                {weatherEntitiesLoading ? (
+                  <MenuItem disabled>
+                    <CircularProgress size={20} sx={{ mr: 1 }} />
+                    Loading...
+                  </MenuItem>
+                ) : (
+                  weatherEntities.map((entity) => (
+                    <MenuItem key={entity.entity_id} value={entity.entity_id}>
+                      {entity.attributes?.friendly_name || entity.entity_id}
+                    </MenuItem>
+                  ))
+                )}
+              </Select>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                {t('settingsCards.outdoorTemperatureSensorHelper')}
+              </Typography>
+            </FormControl>
 
             {area.smart_night_boost_enabled && (
               <Box sx={{ mt: 3, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
@@ -1267,21 +1305,21 @@ const ZoneDetail = () => {
             <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
               {t('settingsCards.temperatureHysteresisDescription')}
             </Typography>
-            
+
             <FormControlLabel
               control={
                 <Switch
                   checked={area.hysteresis_override === null || area.hysteresis_override === undefined}
                   onChange={async (e) => {
                     const useGlobal = e.target.checked
-                    
+
                     // Optimistic update
                     const updatedArea = {
                       ...area,
                       hysteresis_override: useGlobal ? null : 0.5
                     }
                     setArea(updatedArea)
-                    
+
                     try {
                       const response = await fetch(`/api/smart_heating/areas/${area.id}/hysteresis`, {
                         method: 'POST',
@@ -1308,7 +1346,7 @@ const ZoneDetail = () => {
               label={t('settingsCards.useGlobalHysteresis')}
               sx={{ mb: 2 }}
             />
-            
+
             {(area.hysteresis_override === null || area.hysteresis_override === undefined) ? (
               <Alert severity="info" sx={{ mb: 2 }}>
                 {t('settingsCards.usingGlobalHysteresis')}
@@ -1328,7 +1366,7 @@ const ZoneDetail = () => {
                         hysteresis_override: typeof value === 'number' ? value : 0.5
                       }
                       setArea(updatedArea)
-                      
+
                       try {
                         const response = await fetch(`/api/smart_heating/areas/${area.id}/hysteresis`, {
                           method: 'POST',
@@ -1404,14 +1442,14 @@ const ZoneDetail = () => {
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               {t('settingsCards.dataRetentionDescription', { interval: recordInterval })}
             </Typography>
-            
+
             {/* Storage Backend Display */}
             <Box sx={{ mb: 3, p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
               <Typography variant="subtitle2" gutterBottom>
                 Storage Backend
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                <Chip 
+                <Chip
                   label={storageBackend === 'database' ? 'Database (MariaDB/PostgreSQL)' : 'JSON (File)'}
                   color={storageBackend === 'database' ? 'primary' : 'default'}
                   size="small"
@@ -1422,7 +1460,7 @@ const ZoneDetail = () => {
                   </Typography>
                 )}
               </Box>
-              
+
               {/* Migration Buttons */}
               <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
                 {storageBackend === 'json' && (
@@ -1478,15 +1516,15 @@ const ZoneDetail = () => {
                   </Button>
                 )}
               </Box>
-              
+
               <Alert severity="info" sx={{ mt: 2 }} icon={false}>
                 <Typography variant="caption">
-                  <strong>Database storage</strong> requires MariaDB ≥10.3, MySQL ≥8.0, or PostgreSQL ≥12. 
+                  <strong>Database storage</strong> requires MariaDB ≥10.3, MySQL ≥8.0, or PostgreSQL ≥12.
                   SQLite is not supported and will automatically fall back to JSON storage.
                 </Typography>
               </Alert>
             </Box>
-            
+
             {/* Retention Period Slider */}
             <Typography variant="body2" color="text.secondary" gutterBottom>
               {t('settingsCards.dataRetentionPeriod', { days: historyRetention })}
@@ -1524,7 +1562,7 @@ const ZoneDetail = () => {
                 {t('common.save')}
               </Button>
             </Box>
-            
+
             <Alert severity="info" sx={{ mt: 2 }}>
               <strong>Note:</strong> {t('settingsCards.historyNote', { interval: recordInterval })}
             </Alert>
@@ -1613,8 +1651,8 @@ const ZoneDetail = () => {
           bgcolor: 'background.paper',
         }}
       >
-        <Tabs 
-          value={tabValue} 
+        <Tabs
+          value={tabValue}
           onChange={handleTabChange}
           variant="scrollable"
           scrollButtons="auto"
@@ -1780,7 +1818,7 @@ const ZoneDetail = () => {
                 </Select>
               </FormControl>
             </Paper>
-            
+
             {/* Assigned Devices */}
             <Paper sx={{ p: 3, mb: 3 }}>
               <Typography variant="h6" gutterBottom color="text.primary">
@@ -1806,8 +1844,8 @@ const ZoneDetail = () => {
                         mb: 1,
                       }}
                       secondaryAction={
-                        <IconButton 
-                          edge="end" 
+                        <IconButton
+                          edge="end"
                           aria-label="remove"
                           onClick={async () => {
                             try {
@@ -1831,12 +1869,12 @@ const ZoneDetail = () => {
                             <Typography variant="body1" color="text.primary">
                               {device.name || device.id}
                             </Typography>
-                            {device.type === 'thermostat' && area?.target_temperature !== undefined && 
-                             device.current_temperature !== undefined && 
+                            {device.type === 'thermostat' && area?.target_temperature !== undefined &&
+                             device.current_temperature !== undefined &&
                              area.target_temperature > device.current_temperature && (
-                              <Chip 
-                                label="heating" 
-                                size="small" 
+                              <Chip
+                                label="heating"
+                                size="small"
                                 color="error"
                                 sx={{ height: 20, fontSize: '0.7rem' }}
                               />
@@ -1937,8 +1975,8 @@ const ZoneDetail = () => {
                         mb: 1,
                       }}
                       secondaryAction={
-                        <Button 
-                          variant="contained" 
+                        <Button
+                          variant="contained"
                           size="small"
                           onClick={async () => {
                             try {
@@ -2003,7 +2041,7 @@ const ZoneDetail = () => {
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                 {t('areaDetail.historyDescription')}
               </Typography>
-              
+
               {area.id && (
                 <HistoryChart areaId={area.id} />
               )}
@@ -2014,9 +2052,9 @@ const ZoneDetail = () => {
         {/* Settings Tab */}
         <TabPanel value={tabValue} index={4}>
           <Box sx={{ maxWidth: 1600, mx: 'auto', px: 2 }}>
-            <DraggableSettings 
+            <DraggableSettings
               key={`settings-${area.id}-${area.presence_sensors?.length || 0}-${area.window_sensors?.length || 0}`}
-              sections={getSettingsSections()} 
+              sections={getSettingsSections()}
               storageKey={`area-settings-order-${area.id}`}
               expandedCard={expandedCard}
               onExpandedChange={setExpandedCard}
@@ -2108,12 +2146,6 @@ const ZoneDetail = () => {
                       {t('settingsCards.learningStep5')}
                     </Typography>
                   </Box>
-
-                  <Box sx={{ mt: 3, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
-                    <Typography variant="caption" color="text.secondary">
-                      <strong>{t('areaDetail.apiEndpointLabel')}</strong> /api/smart_heating/areas/{area.id}/learning
-                    </Typography>
-                  </Box>
                 </Box>
               ) : (
                 <Box sx={{ mt: 3, textAlign: 'center', py: 4 }}>
@@ -2142,9 +2174,9 @@ const ZoneDetail = () => {
                 <Typography variant="h6" color="text.primary">
                   {t('areaDetail.heatingStrategyLogs')}
                 </Typography>
-                <Button 
-                  variant="outlined" 
-                  size="small" 
+                <Button
+                  variant="outlined"
+                  size="small"
                   onClick={loadLogs}
                   disabled={logsLoading}
                 >
@@ -2216,7 +2248,7 @@ const ZoneDetail = () => {
                     </Box>
                   )
                 }
-                
+
                 if (logs.length === 0) {
                   return (
                     <Box sx={{ textAlign: 'center', py: 4 }}>
@@ -2226,18 +2258,18 @@ const ZoneDetail = () => {
                     </Box>
                   )
                 }
-                
+
                 return (
                   <List sx={{ bgcolor: 'background.paper' }}>
                     {logs.map((log, index) => {
                     const timestamp = new Date(log.timestamp)
-                    const timeStr = timestamp.toLocaleTimeString('nl-NL', { 
-                      hour: '2-digit', 
+                    const timeStr = timestamp.toLocaleTimeString('nl-NL', {
+                      hour: '2-digit',
                       minute: '2-digit',
                       second: '2-digit'
                     })
                     const dateStr = timestamp.toLocaleDateString('nl-NL')
-                    
+
                     // Color coding by event type
                     const getEventColor = (type: string) => {
                       switch (type) {
@@ -2250,14 +2282,14 @@ const ZoneDetail = () => {
                         default: return 'default'
                       }
                     }
-                    
+
                     return (
                       <Box key={`${log.timestamp}-${index}`}>
                         {index > 0 && <Divider />}
                         <ListItem alignItems="flex-start" sx={{ py: 2 }}>
                           <ListItemIcon sx={{ minWidth: 40, mt: 0.5 }}>
-                            <Chip 
-                              label={log.type} 
+                            <Chip
+                              label={log.type}
                               color={getEventColor(log.type)}
                               size="small"
                               sx={{ fontSize: '0.7rem', height: 20 }}
@@ -2276,12 +2308,12 @@ const ZoneDetail = () => {
                             }
                             secondary={
                               log.details && Object.keys(log.details).length > 0 && (
-                                <Box 
-                                  component="pre" 
-                                  sx={{ 
-                                    mt: 1, 
-                                    p: 1, 
-                                    bgcolor: 'action.hover', 
+                                <Box
+                                  component="pre"
+                                  sx={{
+                                    mt: 1,
+                                    p: 1,
+                                    bgcolor: 'action.hover',
                                     borderRadius: 1,
                                     fontSize: '0.75rem',
                                     overflow: 'auto',

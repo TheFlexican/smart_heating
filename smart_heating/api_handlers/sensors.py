@@ -238,9 +238,7 @@ async def handle_get_binary_sensor_entities(hass: HomeAssistant) -> web.Response
                     "entity_id": entity_id,
                     "state": state.state,
                     "attributes": {
-                        "friendly_name": state.attributes.get(
-                            "friendly_name", entity_id
-                        ),
+                        "friendly_name": state.attributes.get("friendly_name", entity_id),
                         "device_class": state.attributes.get("device_class"),
                     },
                 }
@@ -255,9 +253,7 @@ async def handle_get_binary_sensor_entities(hass: HomeAssistant) -> web.Response
                     "entity_id": entity_id,
                     "state": state.state,
                     "attributes": {
-                        "friendly_name": state.attributes.get(
-                            "friendly_name", entity_id
-                        ),
+                        "friendly_name": state.attributes.get("friendly_name", entity_id),
                         "device_class": "presence",  # Virtual device class for filtering
                     },
                 }
@@ -272,10 +268,37 @@ async def handle_get_binary_sensor_entities(hass: HomeAssistant) -> web.Response
                     "entity_id": entity_id,
                     "state": state.state,
                     "attributes": {
-                        "friendly_name": state.attributes.get(
-                            "friendly_name", entity_id
-                        ),
+                        "friendly_name": state.attributes.get("friendly_name", entity_id),
                         "device_class": "presence",  # Virtual device class for filtering
+                    },
+                }
+            )
+
+    return web.json_response({"entities": entities})
+
+
+# noqa: ASYNC109 - Web API handlers must be async per aiohttp convention
+async def handle_get_weather_entities(hass: HomeAssistant) -> web.Response:
+    """Get all weather entities from Home Assistant.
+
+    Args:
+        hass: Home Assistant instance
+
+    Returns:
+        JSON response with list of weather entities
+    """
+    entities = []
+
+    # Get weather entities
+    for entity_id in hass.states.async_entity_ids("weather"):
+        state = hass.states.get(entity_id)
+        if state:
+            entities.append(
+                {
+                    "entity_id": entity_id,
+                    "state": state.state,
+                    "attributes": {
+                        "friendly_name": state.attributes.get("friendly_name", entity_id),
                     },
                 }
             )
