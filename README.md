@@ -51,6 +51,13 @@ A Home Assistant custom integration for intelligent multi-zone heating control w
 - **Material-UI design** - Clean, modern interface with dark mode support
 - **Drag-and-drop** - Easy device assignment and schedule management
 - **Real-time updates** - Live status via WebSocket, no page refresh needed
+- **Internationalization** - Full support for English and Dutch (Nederlands)
+
+### 🔄 Backup & Restore
+- **Configuration export** - Download complete settings as JSON
+- **Import with preview** - Review changes before applying
+- **Automatic backups** - Created before each import for safety
+- **Version compatibility** - Smart detection of configuration versions
 
 ## Quick Start
 
@@ -100,6 +107,7 @@ Navigate to: `http://your-home-assistant:8123/api/smart_heating/`
 - **Manual Override** - System respects external thermostat adjustments
 - **Vacation Mode** - Set start/end dates with away temperature
 - **Hysteresis Override** - Per-zone custom values (useful for floor heating)
+- **Import/Export** - Backup and restore complete configuration with one click
 
 ## Supported Devices
 

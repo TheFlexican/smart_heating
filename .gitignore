@@ -62,11 +62,6 @@ mosquitto-data/
 mosquitto-log/
 mosquitto-config/
 
-# Testing
-.coverage.*
-coverage.xml
-.cache
-
 # Exclude pytest related files
 .pytest_cache/
 .pytest_cache/*
@@ -74,6 +69,12 @@ nosetests.xml
 coverage.xml
 *.cover
 .hypothesis/
+coverate_html/
 
-# Tokens
+# Other files
 .ha_token
+deploy_production.sh
+create_backup.sh
+copilot-instructions.md
+.ruff_cache
+venv

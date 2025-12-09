@@ -51,6 +51,13 @@ Een Home Assistant custom integratie voor intelligente multi-zone verwarmingsreg
 - **Material-UI design** - Schone, moderne interface met dark mode ondersteuning
 - **Drag-and-drop** - Eenvoudige apparaat toewijzing en schema beheer
 - **Real-time updates** - Live status via WebSocket, geen pagina verversing nodig
+- **Internationalisatie** - Volledige ondersteuning voor Engels en Nederlands
+
+### 🔄 Back-up & Herstel
+- **Configuratie export** - Download complete instellingen als JSON
+- **Import met preview** - Bekijk wijzigingen voor toepassing
+- **Automatische backups** - Gemaakt voor elke import voor veiligheid
+- **Versie compatibiliteit** - Slimme detectie van configuratie versies
 
 ## Snel Starten
 
@@ -100,6 +107,7 @@ Navigeer naar: `http://your-home-assistant:8123/api/smart_heating/`
 - **Handmatige Override** - Systeem respecteert externe thermostaat aanpassingen
 - **Vakantiemodus** - Stel start/eind datums in met weg temperatuur
 - **Hysterese Override** - Per-zone aangepaste waarden (nuttig voor vloerverwarming)
+- **Importeren/Exporteren** - Back-up en herstel complete configuratie met één klik
 
 ## Ondersteunde Apparaten
 

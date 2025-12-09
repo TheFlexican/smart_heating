@@ -15,15 +15,15 @@ RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Check if virtual environment exists
-if [ ! -d "venv" ]; then
+# Check if virtual environment exists (in parent directory)
+if [ ! -d "../venv" ]; then
     echo -e "${YELLOW}Virtual environment not found. Creating...${NC}"
-    python3 -m venv venv
+    cd .. && python3 -m venv venv && cd tests
 fi
 
 # Activate virtual environment
 echo "Activating virtual environment..."
-source venv/bin/activate
+source ../venv/bin/activate
 
 # Install/update test dependencies
 echo -e "${YELLOW}Installing test dependencies...${NC}"
@@ -33,17 +33,17 @@ pip install -q -r requirements_test.txt
 echo -e "${GREEN}Running tests with coverage...${NC}"
 echo ""
 
-pytest tests/unit \
+pytest unit \
     --cov=smart_heating \
     --cov-report=term-missing \
-    --cov-report=html:coverage_html \
-    --cov-report=xml:coverage.xml \
+    --cov-report=html:../coverage_html \
+    --cov-report=xml:../coverage.xml \
     --cov-branch \
     -v
 
 # Check coverage
 echo ""
-echo -e "${GREEN}Coverage report generated in coverage_html/index.html${NC}"
+echo -e "${GREEN}Coverage report generated in ../coverage_html/index.html${NC}"
 
 # Check if coverage meets threshold
 COVERAGE=$(coverage report | grep TOTAL | awk '{print $NF}' | sed 's/%//')
