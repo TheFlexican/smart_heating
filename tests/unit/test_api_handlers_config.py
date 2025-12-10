@@ -66,6 +66,12 @@ def mock_area_manager():
     manager.get_safety_sensors.return_value = []
     manager.is_safety_alert_active.return_value = False
     manager.hide_devices_panel = False
+    manager.advanced_control_enabled = False
+    manager.heating_curve_enabled = False
+    manager.pwm_enabled = False
+    manager.pid_enabled = False
+    manager.overshoot_protection_enabled = False
+    manager.default_heating_curve_coefficient = 1.0
     manager.async_save = AsyncMock()
 
     # Mock area
@@ -379,7 +385,7 @@ class TestConfigHandlers:
         assert response.status == 200
         assert mock_area_manager.frost_protection_enabled is True
         # Temperature should remain unchanged
-        assert mock_area_manager.frost_protection_temp == 5.0
+        assert mock_area_manager.frost_protection_temp == pytest.approx(5.0)
 
     @pytest.mark.asyncio
     async def test_handle_set_frost_protection_temp_only(self, mock_area_manager):
@@ -389,7 +395,7 @@ class TestConfigHandlers:
         response = await handle_set_frost_protection(mock_area_manager, data)
 
         assert response.status == 200
-        assert mock_area_manager.frost_protection_temp == 6.0
+        assert mock_area_manager.frost_protection_temp == pytest.approx(6.0)
         # Enabled should remain unchanged
         assert mock_area_manager.frost_protection_enabled is False
 

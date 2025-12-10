@@ -48,6 +48,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   - Radiator: Fast response, higher overhead temperature (+20°C default)
   - Floor Heating: Slow response, lower overhead temperature (+5°C default)
 - **TypeScript integration**: Added `heating_type` to Zone interface
+  **Improved default heating curve and minimum setpoint for faster warm-up**
+  - Updated default heating curve base offsets and minimum setpoint behaviour to better match real-world systems:
+    - Underfloor systems: baseline flow temperature updated to 40°C (was 20°C)
+    - Radiator systems: baseline flow temperature updated to 55°C (was 27.2°C)
+    - Minimum setpoint enforced by the controller is now set per heating type: floor=40°C, radiators=55°C
+    These defaults should reduce the time it takes to reach target room temperatures for typical installations. Tweak the `heating_curve_coefficient` per-area if needed.
   - Type-safe selection: 'radiator' | 'floor_heating'
   - Frontend API: `setHeatingType(areaId, heatingType, customOverheadTemp?)`
 

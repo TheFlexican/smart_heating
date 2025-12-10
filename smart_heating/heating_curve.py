@@ -114,7 +114,13 @@ class HeatingCurve:
 
     @property
     def base_offset(self) -> float:
-        return 20.0 if self._heating_system == HEATING_SYSTEM_UNDERFLOOR else 27.2
+        # Use more realistic baseline flow temperatures per system type
+        # Underfloor systems typically use lower flow temperatures than radiators,
+        # but the app and device show target setpoints that were too low for
+        # effective heating; set defaults to practical ranges.
+        # - underfloor: ~40°C typical flow temperature
+        # - radiator: ~55°C typical flow temperature
+        return 40.0 if self._heating_system == HEATING_SYSTEM_UNDERFLOOR else 55.0
 
     @property
     def optimal_coefficient(self) -> Optional[float]:

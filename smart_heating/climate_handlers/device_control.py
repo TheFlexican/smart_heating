@@ -686,8 +686,16 @@ class DeviceControlHandler:
                     # Create or get existing MinimumSetpoint controller
                     minsp = self._min_setpoints.get(aid)
                     if not minsp:
+                        # Use different minimum setpoint default depending on heating
+                        # system type. Underfloor systems typically need higher flow
+                        # temperatures than the old defaults; use conservative
+                        # defaults that should result in faster heat-up times.
+                        default_min = (
+                            40.0 if area.heating_type == "floor_heating" else 55.0
+                        )
                         minsp = MinimumSetpoint(
-                            configured_minimum_setpoint=30.0, adjustment_factor=1.0
+                            configured_minimum_setpoint=default_min,
+                            adjustment_factor=1.0,
                         )
                         self._min_setpoints[aid] = minsp
 

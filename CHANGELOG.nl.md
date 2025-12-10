@@ -79,6 +79,13 @@ en dit project volgt [Semantic Versioning](https://semver.org/).
   - Verminderd schakelen, langere brandtijden, lager energieverbruik
   - Comfortabelere en stabielere vloerverwarming werking
 
+  **Verbeterde standaard verwarmingscurve en minimum setpoint voor snellere opwarming**
+  - Bijgewerkte standaard verwarmingscurve basis-offsets en minimum setpoints voor realistischere systeemrespons:
+    - Vloerverwarming: basis aanvoertemperatuur is 40°C (was 20°C)
+    - Radiatoren: basis aanvoertemperatuur is 55°C (was 27.2°C)
+    - De minimale setpoint die wordt afgedwongen door de controller is nu type-gebonden: vloer=40°C, radiatoren=55°C
+    Deze waarden verminderen doorgaans de tijd die nodig is om de target temperatuur te bereiken. Pas de `heating_curve_coefficient` per zone aan indien meer fijngevoeligheid gewenst is.
+
 **Mushroom-Stijl UI Verbeteringen**
 - **Mushroom-geïnspireerd kaart ontwerp geïmplementeerd**: Moderne, gepolijste interface met vloeiende transities
   - Afgeronde hoeken (borderRadius: 3) voor alle kaarten en componenten
