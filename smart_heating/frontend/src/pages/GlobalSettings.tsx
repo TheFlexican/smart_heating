@@ -46,7 +46,7 @@ import { VacationModeSettings } from '../components/VacationModeSettings'
 import HysteresisHelpModal from '../components/HysteresisHelpModal'
 import ImportExport from '../components/ImportExport'
 import OpenThermLogger from '../components/OpenThermLogger'
-import { getAdvancedControlConfig, setAdvancedControlConfig } from '../api'
+// additional advanced control apis already imported above
 
 interface TabPanelProps {
   children?: React.ReactNode
@@ -472,11 +472,7 @@ export default function GlobalSettings({ themeMode, onThemeChange }: { themeMode
           onChange={(_, newValue) => setActiveTab(newValue)}
           aria-label="global settings tabs"
         >
-          <Tab
-            icon={<FireplaceIcon />}
-            iconPosition="start"
-            label={t('globalSettings.tabs.advanced', 'Advanced Control')}
-          />
+          {/* Removed duplicate Advanced Control tab to keep tabs in the correct order */}
           <Tab
             icon={<ThermostatIcon />}
             iconPosition="start"

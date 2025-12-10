@@ -108,6 +108,8 @@ export interface Zone {
 
   // Primary temperature sensor (which device to use for temperature measurement)
   primary_temperature_sensor?: string | null
+  // Per-area heating curve coefficient (optional)
+  heating_curve_coefficient?: number | null
 }
 
 // Window sensor configuration

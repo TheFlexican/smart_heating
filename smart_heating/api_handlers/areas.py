@@ -588,64 +588,61 @@ async def handle_set_heating_type(
         _LOGGER.error("Error setting heating type for area %s: %s", area_id, err)
         return web.json_response({"error": str(err)}, status=500)
 
-    async def handle_set_area_heating_curve(
-        hass: HomeAssistant, area_manager: AreaManager, area_id: str, data: dict
-    ) -> web.Response:
-        """Set per-area heating curve coefficient and whether to use global default.
 
-        Args:
-            hass: Home Assistant instance
-            area_manager: Area manager
-            area_id: Area identifier
-            data: Dict containing `use_global` (bool) and/or `coefficient` (float)
+async def handle_set_area_heating_curve(
+    hass: HomeAssistant, area_manager: AreaManager, area_id: str, data: dict
+) -> web.Response:
+    """Set per-area heating curve coefficient and whether to use global default.
 
-        Returns:
-            web.Response
-        """
-        try:
-            area = area_manager.get_area(area_id)
-            if not area:
+    Args:
+        hass: Home Assistant instance
+        area_manager: Area manager
+        area_id: Area identifier
+        data: Dict containing `use_global` (bool) and/or `coefficient` (float)
+
+    Returns:
+        web.Response
+    """
+    try:
+        area = area_manager.get_area(area_id)
+        if not area:
+            return web.json_response({"error": f"Area {area_id} not found"}, status=404)
+
+        if "use_global" in data:
+            use_global = bool(data["use_global"])
+            if use_global:
+                area.heating_curve_coefficient = None
+            else:
+                # If toggling off and we have an existing coefficient, keep it
+                if area.heating_curve_coefficient is None:
+                    area.heating_curve_coefficient = float(
+                        area_manager.default_heating_curve_coefficient
+                    )
+
+        if "coefficient" in data:
+            try:
+                coeff = float(data["coefficient"])
+            except Exception:
+                return web.json_response({"error": "Invalid coefficient"}, status=400)
+            if coeff <= 0 or coeff > 10:
                 return web.json_response(
-                    {"error": f"Area {area_id} not found"}, status=404
+                    {"error": "Coefficient must be > 0 and <= 10"}, status=400
                 )
+            area.heating_curve_coefficient = coeff
 
-            if "use_global" in data:
-                use_global = bool(data["use_global"])
-                if use_global:
-                    area.heating_curve_coefficient = None
-                else:
-                    # If toggling off and we have an existing coefficient, keep it
-                    if area.heating_curve_coefficient is None:
-                        area.heating_curve_coefficient = float(
-                            area_manager.default_heating_curve_coefficient
-                        )
+        await area_manager.async_save()
 
-            if "coefficient" in data:
-                try:
-                    coeff = float(data["coefficient"])
-                except Exception:
-                    return web.json_response(
-                        {"error": "Invalid coefficient"}, status=400
-                    )
-                if coeff <= 0 or coeff > 10:
-                    return web.json_response(
-                        {"error": "Coefficient must be > 0 and <= 10"}, status=400
-                    )
-                area.heating_curve_coefficient = coeff
+        # Refresh coordinator
+        coordinator = get_coordinator(hass)
+        if coordinator:
+            from ..utils.coordinator_helpers import call_maybe_async
 
-            await area_manager.async_save()
+            await call_maybe_async(coordinator.async_request_refresh)
 
-            # Refresh coordinator
-            coordinator = get_coordinator(hass)
-            if coordinator:
-                from ..utils.coordinator_helpers import call_maybe_async
-
-                await call_maybe_async(coordinator.async_request_refresh)
-
-            return web.json_response({"success": True})
-        except Exception as err:
-            _LOGGER.error("Error setting area heating curve for %s: %s", area_id, err)
-            return web.json_response({"error": str(err)}, status=500)
+        return web.json_response({"success": True})
+    except Exception as err:
+        _LOGGER.error("Error setting area heating curve for %s: %s", area_id, err)
+        return web.json_response({"error": str(err)}, status=500)
 
 
 async def handle_set_area_preset_config(

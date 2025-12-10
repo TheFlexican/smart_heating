@@ -211,10 +211,8 @@
     "overshoot": "Overshoot Bescherming (OPV)",
     "defaultCoefficient": "Standaard verwarmingscurve coëfficiënt",
     "runCalibration": "Start OPV kalibratie",
-    "calibrationResult": "OPV: {{value}} °C"
-    ,
+    "calibrationResult": "OPV: {{value}} °C",
     "resetDefaults": "Terug naar standaardinstellingen"
-  }
   },
   "presetDescriptions": {
     "away": "Gebruikt wanneer niemand thuis is",
@@ -481,7 +479,6 @@
     "heatingControlTitle": "Verwarmingsregeling Instellingen",
     "heatingControlDescription": "Configureer temperatuurhysterese en limieten",
     "heatingTypeTitle": "Verwarmingssysteemtype",
-    "heatingTypeDescription": "Configureer verwarmingssysteemtype voor optimale ketelregeling",
     "historyManagementTitle": "Geschiedenisdatabeheer",
     "historyManagementDescription": "Configureer bewaarperiode en registratie van temperatuurgeschiedenis",
     "switchPumpControlTitle": "Schakelaar/Pomp Besturing",

@@ -39,6 +39,7 @@ import { useTranslation } from 'react-i18next'
 import {
   getOpenThermLogs,
   getOpenThermCapabilities,
+  getOpenthermGateways,
   discoverOpenThermCapabilities,
   clearOpenThermLogs,
   getOpenThermSensorStates,
@@ -56,6 +57,7 @@ export default function OpenThermLogger() {
   const [logs, setLogs] = useState<OpenThermLog[]>([])
   const [capabilities, setCapabilities] = useState<any>(null)
   const [sensorStates, setSensorStates] = useState<any>(null)
+  const [gatewayPresent, setGatewayPresent] = useState<boolean | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
@@ -74,6 +76,15 @@ export default function OpenThermLogger() {
 
   const fetchSensorStates = async () => {
     try {
+      // Check for configured OT gateways; if none, skip sensor state polling to avoid 404 noise
+      const gateways = await getOpenthermGateways()
+      if (!gateways || gateways.length === 0) {
+        setGatewayPresent(false)
+        setSensorStates(null)
+        setAutoRefresh(false)
+        return
+      }
+      setGatewayPresent(true)
       const data = await getOpenThermSensorStates()
       setSensorStates(data)
     } catch (err) {
@@ -240,6 +251,12 @@ export default function OpenThermLogger() {
       {error && (
         <Alert severity="error" onClose={() => setError(null)}>
           {error}
+        </Alert>
+      )}
+
+      {gatewayPresent === false && (
+        <Alert severity="info" sx={{ mt: 1 }}>
+          {t('opentherm.noGateways', 'No OpenTherm gateways found. Please add the OpenTherm Gateway integration in Home Assistant.')}
         </Alert>
       )}
 

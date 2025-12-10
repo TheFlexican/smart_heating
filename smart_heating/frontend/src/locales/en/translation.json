@@ -191,14 +191,13 @@
     "opentherm": {
       "title": "OpenTherm Gateway Configuration",
       "importantNote": "Important: Select an OpenTherm Gateway",
-      "description": "Select the integration 'ID' (slug) for your OpenTherm Gateway from the list below. Do not use the climate entity ID.",
+      "description": "Select the integration ID (slug) for your OpenTherm Gateway from the list below. Do not use the climate entity ID.",
       "findId": "Find the gateway integration entry in: Settings → Devices & Services → OpenTherm Gateway → Click \"Configure\" and view the ID field.",
       "gatewayId": "Gateway Integration ID (slug)",
       "gatewayIdHelp": "Select the gateway integration ID from the configured OpenTherm gateways.",
-      "save": "Save Configuration"
-    ,
-    "noGateways": "No OpenTherm gateways found. Please add the OpenTherm Gateway integration in Home Assistant.",
-    "openIntegrations": "Open Integrations"
+      "save": "Save Configuration",
+      "noGateways": "No OpenTherm gateways found. Please add the OpenTherm Gateway integration in Home Assistant.",
+      "openIntegrations": "Open Integrations"
     }
   },
   "advanced": {
@@ -214,7 +213,6 @@
     "calibrationResult": "OPV: {{value}} °C"
     ,
     "resetDefaults": "Reset to defaults"
-  }
   },
   "presetDescriptions": {
     "away": "Used when nobody is home",
@@ -481,7 +479,6 @@
     "heatingControlTitle": "Heating Control Settings",
     "heatingControlDescription": "Configure temperature hysteresis and limits",
     "heatingTypeTitle": "Heating System Type",
-    "heatingTypeDescription": "Configure heating system type for optimal boiler control",
     "historyManagementTitle": "History Data Management",
     "historyManagementDescription": "Configure temperature history retention and recording",
     "switchPumpControlTitle": "Switch/Pump Control",
