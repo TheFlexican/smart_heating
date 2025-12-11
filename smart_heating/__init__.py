@@ -104,6 +104,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 entry.options["opentherm_gateway_id"],
             )
 
+    # Store area_manager in hass.data for other components
+    hass.data[DOMAIN]["area_manager"] = area_manager
+
     # Create history tracker
     history_tracker = HistoryTracker(hass)
     await history_tracker.async_load()

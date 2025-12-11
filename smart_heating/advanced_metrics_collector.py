@@ -21,9 +21,10 @@ from sqlalchemy import (
     delete,
 )
 
-from .const import DOMAIN
-
 _LOGGER = logging.getLogger(__name__)
+
+# Domain constant for data storage
+DOMAIN = "smart_heating"
 
 # Collection interval (5 minutes)
 COLLECTION_INTERVAL = timedelta(minutes=5)
@@ -55,34 +56,46 @@ class AdvancedMetricsCollector:
         Returns:
             True if setup successful, False otherwise
         """
+        _LOGGER.warning("🔵 Advanced metrics collector async_setup called")
         try:
             # Initialize database table
+            _LOGGER.warning("🔵 Attempting to initialize database...")
             if not await self._async_init_database():
                 _LOGGER.warning(
                     "Advanced metrics collection disabled - database not available"
                 )
                 return False
 
+            _LOGGER.warning("🔵 Database initialized successfully")
+
             # Schedule periodic collection every 5 minutes
             self._collection_unsub = async_track_time_interval(
                 self.hass, self._async_collect_metrics, COLLECTION_INTERVAL
             )
+            _LOGGER.warning("🔵 Collection scheduled every 5 minutes")
 
             # Schedule daily cleanup at 3 AM
             self._cleanup_unsub = async_track_time_interval(
                 self.hass, self._async_cleanup_old_metrics, timedelta(hours=24)
             )
 
-            # Collect initial metrics
-            await self._async_collect_metrics(None)
-
+            # Mark as initialized BEFORE collecting initial metrics
             self._initialized = True
-            _LOGGER.info("Advanced metrics collector initialized (5-minute interval)")
+            _LOGGER.warning("🔵 Marked as initialized")
+
+            # Collect initial metrics
+            _LOGGER.warning("🔵 Collecting initial metrics...")
+            await self._async_collect_metrics(None)
+            _LOGGER.warning("🔵 Initial metrics collected")
+
+            _LOGGER.warning(
+                "🔵 Advanced metrics collector initialized (5-minute interval)"
+            )
             return True
 
         except Exception as err:  # pylint: disable=broad-except
             _LOGGER.error(
-                "Failed to setup advanced metrics collector: %s", err, exc_info=True
+                "❌ Failed to setup advanced metrics collector: %s", err, exc_info=True
             )
             return False
 
@@ -148,28 +161,37 @@ class AdvancedMetricsCollector:
         Args:
             _now: Current time (unused, required by async_track_time_interval)
         """
+        _LOGGER.warning("🔵 _async_collect_metrics called")
         try:
             if not self._initialized or self._db_table is None:
+                _LOGGER.warning("🔵 Skipping collection - not initialized or no table")
                 return
 
             # Get area manager and coordinator
-            area_manager = self.hass.data[DOMAIN].get("area_manager")
+            area_manager = self.hass.data.get(DOMAIN, {}).get("area_manager")
             if not area_manager:
+                _LOGGER.warning(
+                    "🔵 No area_manager found in hass.data - components still initializing, will retry on next cycle"
+                )
                 return
 
+            _LOGGER.warning("🔵 Collecting OpenTherm metrics...")
             # Collect global OpenTherm metrics
             opentherm_metrics = await self._async_get_opentherm_metrics()
+            _LOGGER.warning(f"🔵 OpenTherm metrics: {opentherm_metrics}")
 
             # Collect per-area metrics
+            _LOGGER.warning("🔵 Collecting area metrics...")
             area_metrics = await self._async_get_area_metrics(area_manager)
+            _LOGGER.warning(f"🔵 Area metrics count: {len(area_metrics)}")
 
             # Insert into database
+            _LOGGER.warning("🔵 Inserting metrics into database...")
             await self._async_insert_metrics(opentherm_metrics, area_metrics)
-
-            _LOGGER.debug("Collected and stored advanced metrics")
+            _LOGGER.warning("🔵 Metrics successfully inserted into database")
 
         except Exception as err:  # pylint: disable=broad-except
-            _LOGGER.error("Error collecting metrics: %s", err, exc_info=True)
+            _LOGGER.error("❌ Error collecting metrics: %s", err, exc_info=True)
 
     async def _async_get_opentherm_metrics(self) -> dict[str, Any]:
         """Get current OpenTherm gateway metrics.
