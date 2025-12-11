@@ -482,11 +482,11 @@ class DeviceControlHandler:
         if area.weather_entity_id:
             ws = self.hass.states.get(area.weather_entity_id)
             try:
-                outside_temp = (
-                    float(ws.state)
-                    if ws and ws.state not in ("unknown", "unavailable")
-                    else None
-                )
+                # For weather entities, temperature is in attributes, not state
+                if ws and ws.state not in ("unknown", "unavailable"):
+                    outside_temp = ws.attributes.get("temperature")
+                    if outside_temp is not None:
+                        outside_temp = float(outside_temp)
             except Exception:
                 outside_temp = None
 
