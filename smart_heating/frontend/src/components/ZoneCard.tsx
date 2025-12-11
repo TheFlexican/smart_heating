@@ -27,7 +27,6 @@ import SensorsIcon from '@mui/icons-material/Sensors'
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment'
 import AcUnitIcon from '@mui/icons-material/AcUnit'
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline'
-import PowerSettingsNewIcon from '@mui/icons-material/PowerSettingsNew'
 import TuneIcon from '@mui/icons-material/Tune'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
@@ -187,26 +186,6 @@ const ZoneCard = ({ area, onUpdate, index }: ZoneCardProps) => {
         return <AcUnitIcon />
       default:
         return <ThermostatIcon />
-    }
-  }
-
-  const getDeviceStatusIcon = (device: any) => {
-    if (device.type === 'thermostat') {
-      if (device.hvac_action === 'heating') {
-        return <LocalFireDepartmentIcon fontSize="small" sx={{ color: 'error.main' }} />
-      } else if (device.hvac_action === 'cooling') {
-        return <AcUnitIcon fontSize="small" sx={{ color: 'info.main' }} />
-      } else if (device.state === 'heat' || device.state === 'heat_cool') {
-        return <ThermostatIcon fontSize="small" sx={{ color: 'primary.main' }} />
-      } else {
-        return <ThermostatIcon fontSize="small" sx={{ color: 'text.secondary' }} />
-      }
-    } else if (device.type === 'valve') {
-      return <TuneIcon fontSize="small" sx={{ color: device.position > 0 ? 'warning.main' : 'text.secondary' }} />
-    } else if (device.type === 'temperature_sensor') {
-      return <SensorsIcon fontSize="small" sx={{ color: 'success.main' }} />
-    } else {
-      return <PowerSettingsNewIcon fontSize="small" sx={{ color: device.state === 'on' ? 'success.main' : 'text.secondary' }} />
     }
   }
 
@@ -548,34 +527,18 @@ const ZoneCard = ({ area, onUpdate, index }: ZoneCardProps) => {
                   pr: { xs: 5, sm: 6 }
                 }}
               >
-                <Box sx={{ mr: { xs: 0.5, sm: 1 }, display: 'flex', alignItems: 'center', minWidth: 24 }}>
-                  {getDeviceStatusIcon(device)}
-                </Box>
                 <ListItemText
                   primary={
-                    <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
-                      <Typography
-                        variant="body2"
-                        color="text.primary"
-                        sx={{
-                          fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                          wordBreak: 'break-word'
-                        }}
-                      >
-                        {device.name || device.id}
-                      </Typography>
-                      {device.type === 'thermostat' && device.hvac_action && (
-                        <Chip
-                          label={t(`area.${device.hvac_action}`, { defaultValue: device.hvac_action }).toUpperCase()}
-                          size="small"
-                          sx={{
-                            height: { xs: 16, sm: 18 },
-                            fontSize: { xs: '0.6rem', sm: '0.65rem' },
-                            bgcolor: device.hvac_action === 'heating' ? 'error.main' : 'info.main'
-                          }}
-                        />
-                      )}
-                    </Box>
+                    <Typography
+                      variant="body2"
+                      color="text.primary"
+                      sx={{
+                        fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                        wordBreak: 'break-word'
+                      }}
+                    >
+                      {device.name || device.id}
+                    </Typography>
                   }
                   secondary={getDeviceStatusText(device)}
                   slotProps={{
