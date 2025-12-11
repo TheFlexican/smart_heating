@@ -42,6 +42,9 @@ class SmartHeatingCoordinator(DataUpdateCoordinator):
         self.area_manager = area_manager
         self._unsub_state_listener = None
         self._debounce_tasks = {}  # Track debounce tasks per entity
+        self._startup_grace_period = (
+            True  # Skip manual override detection during startup
+        )
         _LOGGER.debug("Smart Heating coordinator initialized")
 
     async def async_setup(self) -> None:
@@ -70,6 +73,17 @@ class SmartHeatingCoordinator(DataUpdateCoordinator):
 
         # Do initial update
         await self.async_refresh()
+
+        # End startup grace period after 10 seconds
+        # This prevents false manual override triggers from stale thermostat states
+        async def end_grace_period():
+            await asyncio.sleep(10)
+            self._startup_grace_period = False
+            _LOGGER.info(
+                "Startup grace period ended - manual override detection now active"
+            )
+
+        self._grace_period_task = asyncio.create_task(end_grace_period())
         _LOGGER.debug("Coordinator async_setup completed")
 
     @callback
@@ -192,6 +206,14 @@ class SmartHeatingCoordinator(DataUpdateCoordinator):
             entity_id: Thermostat entity ID
             new_temp: New temperature set by user
         """
+        # Skip manual override detection during startup grace period
+        if self._startup_grace_period:
+            _LOGGER.info(
+                "Temperature change for %s ignored - still in startup grace period",
+                entity_id,
+            )
+            return
+
         # Update area target temperature AND set manual override flag
         # BUT only if this is truly a manual change (not from a schedule/preset)
         for area in self.area_manager.get_all_areas().values():
