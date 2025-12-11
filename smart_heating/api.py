@@ -82,6 +82,7 @@ from .api_handlers import (
     handle_set_hvac_mode,
     handle_set_hysteresis_value,
     handle_set_manual_override,
+    handle_set_advanced_control_config,
     handle_set_opentherm_gateway,
     handle_set_preset_mode,
     handle_set_primary_temperature_sensor,
@@ -489,6 +490,8 @@ class SmartHeatingAPIView(HomeAssistantView):
                 return await handle_set_global_presence(self.area_manager, data)
             elif endpoint == "hide_devices_panel":
                 return await handle_set_hide_devices_panel(self.area_manager, data)
+            elif endpoint == "config/advanced_control":
+                return await handle_set_advanced_control_config(self.area_manager, data)
             elif endpoint == "hysteresis":
                 # Get coordinator
                 entry_ids = [
