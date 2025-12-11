@@ -214,6 +214,14 @@ class SmartHeatingCoordinator(DataUpdateCoordinator):
             )
             return
 
+        # Skip if temperature is None (some devices report None during state changes)
+        if new_temp is None:
+            _LOGGER.debug(
+                "Temperature change for %s is None - ignoring",
+                entity_id,
+            )
+            return
+
         # Update area target temperature AND set manual override flag
         # BUT only if this is truly a manual change (not from a schedule/preset)
         for area in self.area_manager.get_all_areas().values():
