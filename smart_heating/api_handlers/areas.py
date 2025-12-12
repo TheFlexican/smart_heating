@@ -589,6 +589,23 @@ async def handle_set_heating_type(
         return web.json_response({"error": str(err)}, status=500)
 
 
+def _validate_heating_curve_coefficient(coeff_str: str) -> tuple[bool, str | float]:
+    """Validate heating curve coefficient value.
+
+    Returns:
+        Tuple of (is_valid, error_message_or_value)
+    """
+    try:
+        coeff = float(coeff_str)
+    except Exception:
+        return False, "Invalid coefficient"
+
+    if coeff <= 0 or coeff > 10:
+        return False, "Coefficient must be > 0 and <= 10"
+
+    return True, coeff
+
+
 async def handle_set_area_heating_curve(
     hass: HomeAssistant, area_manager: AreaManager, area_id: str, data: dict
 ) -> web.Response:
@@ -608,27 +625,23 @@ async def handle_set_area_heating_curve(
         if not area:
             return web.json_response({"error": f"Area {area_id} not found"}, status=404)
 
+        # Handle use_global flag
         if "use_global" in data:
             use_global = bool(data["use_global"])
             if use_global:
                 area.heating_curve_coefficient = None
-            else:
-                # If toggling off and we have an existing coefficient, keep it
-                if area.heating_curve_coefficient is None:
-                    area.heating_curve_coefficient = float(
-                        area_manager.default_heating_curve_coefficient
-                    )
-
-        if "coefficient" in data:
-            try:
-                coeff = float(data["coefficient"])
-            except Exception:
-                return web.json_response({"error": "Invalid coefficient"}, status=400)
-            if coeff <= 0 or coeff > 10:
-                return web.json_response(
-                    {"error": "Coefficient must be > 0 and <= 10"}, status=400
+            elif area.heating_curve_coefficient is None:
+                # If toggling off and we have no existing coefficient, use global default
+                area.heating_curve_coefficient = float(
+                    area_manager.default_heating_curve_coefficient
                 )
-            area.heating_curve_coefficient = coeff
+
+        # Handle coefficient value
+        if "coefficient" in data:
+            is_valid, result = _validate_heating_curve_coefficient(data["coefficient"])
+            if not is_valid:
+                return web.json_response({"error": result}, status=400)
+            area.heating_curve_coefficient = result
 
         await area_manager.async_save()
 
@@ -643,6 +656,39 @@ async def handle_set_area_heating_curve(
     except Exception as err:
         _LOGGER.error("Error setting area heating curve for %s: %s", area_id, err)
         return web.json_response({"error": str(err)}, status=500)
+
+
+def _update_area_global_flags(area: Area, data: dict) -> None:
+    """Update use_global_* flags on an area."""
+    flag_mapping = {
+        "use_global_away": "use_global_away",
+        "use_global_eco": "use_global_eco",
+        "use_global_comfort": "use_global_comfort",
+        "use_global_home": "use_global_home",
+        "use_global_sleep": "use_global_sleep",
+        "use_global_activity": "use_global_activity",
+        "use_global_presence": "use_global_presence",
+    }
+
+    for key, attr in flag_mapping.items():
+        if key in data:
+            setattr(area, attr, bool(data[key]))
+
+
+def _update_area_preset_temps(area: Area, data: dict) -> None:
+    """Update preset temperature values on an area."""
+    temp_mapping = {
+        "away_temp": "away_temp",
+        "eco_temp": "eco_temp",
+        "comfort_temp": "comfort_temp",
+        "home_temp": "home_temp",
+        "sleep_temp": "sleep_temp",
+        "activity_temp": "activity_temp",
+    }
+
+    for key, attr in temp_mapping.items():
+        if key in data:
+            setattr(area, attr, float(data[key]))
 
 
 async def handle_set_area_preset_config(
@@ -670,35 +716,9 @@ async def handle_set_area_preset_config(
     }
     _LOGGER.warning("⚙️  API: SET PRESET CONFIG for %s: %s", area.name, changes)
 
-    # Update use_global_* flags
-    if "use_global_away" in data:
-        area.use_global_away = bool(data["use_global_away"])
-    if "use_global_eco" in data:
-        area.use_global_eco = bool(data["use_global_eco"])
-    if "use_global_comfort" in data:
-        area.use_global_comfort = bool(data["use_global_comfort"])
-    if "use_global_home" in data:
-        area.use_global_home = bool(data["use_global_home"])
-    if "use_global_sleep" in data:
-        area.use_global_sleep = bool(data["use_global_sleep"])
-    if "use_global_activity" in data:
-        area.use_global_activity = bool(data["use_global_activity"])
-    if "use_global_presence" in data:
-        area.use_global_presence = bool(data["use_global_presence"])
-
-    # Update custom temperature values
-    if "away_temp" in data:
-        area.away_temp = float(data["away_temp"])
-    if "eco_temp" in data:
-        area.eco_temp = float(data["eco_temp"])
-    if "comfort_temp" in data:
-        area.comfort_temp = float(data["comfort_temp"])
-    if "home_temp" in data:
-        area.home_temp = float(data["home_temp"])
-    if "sleep_temp" in data:
-        area.sleep_temp = float(data["sleep_temp"])
-    if "activity_temp" in data:
-        area.activity_temp = float(data["activity_temp"])
+    # Update use_global_* flags and temperature values
+    _update_area_global_flags(area, data)
+    _update_area_preset_temps(area, data)
 
     # Save to storage
     await area_manager.async_save()
