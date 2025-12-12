@@ -66,7 +66,7 @@ curl -s "http://homeassistant.local:8123/api/states" \
 - Ensure code is clean, well-documented, and efficient
 - **Fix bugs in actual code, don't work around them in tests**
 - When HA test suite provides proper fixtures/helpers, use them instead of mocking HA internals
-- Always run SonarQube analysis after code changes and fix issues based on priority
+- Always use SonarQube mcp server analysis after code changes and fix issues based on priority
 
 **RULE #5.1: Never Stop Halfway During Tasks**
 - **ALWAYS complete assigned work fully** - No stopping to give summaries or status updates
@@ -197,10 +197,10 @@ Following this pattern will avoid unexpected comparisons and make tests determin
 bash tests/run_tests.sh
 
 # Run specific test file
-pytest tests/unit/test_area_manager.py -v
+source venv && pytest tests/unit/test_area_manager.py -v
 
 # Run with coverage report
-pytest tests/unit --cov=smart_heating --cov-report=html -v
+source venv && pytest tests/unit --cov=smart_heating --cov-report=html -v
 
 # Run E2E tests
 cd tests/e2e && npm test
@@ -331,5 +331,3 @@ import { Box, Typography, Button } from '@mui/material'
 ```
 
 ---
-
-**Version:** v0.3.17 | **Test URL:** http://localhost:8123

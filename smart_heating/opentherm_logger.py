@@ -84,52 +84,76 @@ class OpenThermLogger:
             floor_heating_count: Number of floor heating zones active
             radiator_count: Number of radiator zones active
         """
-        data = {
-            "state": state,
-        }
+        data = self._build_boiler_control_data(
+            state,
+            setpoint,
+            heating_areas,
+            max_target_temp,
+            overhead,
+            floor_heating_count,
+            radiator_count,
+        )
+        message = self._build_boiler_control_message(
+            state,
+            setpoint,
+            heating_areas,
+            overhead,
+            floor_heating_count,
+            radiator_count,
+        )
+        self.log_event("boiler_control", data, message)
 
+    def _build_boiler_control_data(
+        self,
+        state: str,
+        setpoint: Optional[float] = None,
+        heating_areas: Optional[list[str]] = None,
+        max_target_temp: Optional[float] = None,
+        overhead: Optional[float] = None,
+        floor_heating_count: Optional[int] = None,
+        radiator_count: Optional[int] = None,
+    ) -> dict[str, Any]:
+        data = {"state": state}
         if setpoint is not None:
             data["setpoint"] = round(setpoint, 1)
-
         if heating_areas is not None:
             data["heating_areas"] = heating_areas
             data["num_heating_areas"] = len(heating_areas)
-
         if max_target_temp is not None:
             data["max_target_temp"] = round(max_target_temp, 1)
-
         if overhead is not None:
             data["overhead"] = round(overhead, 1)
-
         if floor_heating_count is not None:
             data["floor_heating_count"] = floor_heating_count
-
         if radiator_count is not None:
             data["radiator_count"] = radiator_count
+        return data
 
-        # Build message with heating type context
-        if state == "ON":
-            parts = [f"Boiler ON - Setpoint: {setpoint:.1f}°C"]
-
-            if overhead is not None:
-                parts.append(f"overhead +{overhead:.0f}°C")
-
-            if floor_heating_count is not None and radiator_count is not None:
-                zone_info = []
-                if floor_heating_count > 0:
-                    zone_info.append(f"{floor_heating_count} floor heating")
-                if radiator_count > 0:
-                    zone_info.append(f"{radiator_count} radiator")
-                if zone_info:
-                    parts.append(" + ".join(zone_info))
-            elif heating_areas:
-                parts.append(f"{len(heating_areas)} zone(s)")
-
-            message = " | ".join(parts)
-        else:
-            message = "Boiler OFF - No heating demand"
-
-        self.log_event("boiler_control", data, message)
+    def _build_boiler_control_message(
+        self,
+        state: str,
+        setpoint: Optional[float] = None,
+        heating_areas: Optional[list[str]] = None,
+        overhead: Optional[float] = None,
+        floor_heating_count: Optional[int] = None,
+        radiator_count: Optional[int] = None,
+    ) -> str:
+        if state != "ON":
+            return "Boiler OFF - No heating demand"
+        parts = [f"Boiler ON - Setpoint: {setpoint:.1f}°C"]
+        if overhead is not None:
+            parts.append(f"overhead +{overhead:.0f}°C")
+        if floor_heating_count is not None and radiator_count is not None:
+            zone_info = []
+            if floor_heating_count > 0:
+                zone_info.append(f"{floor_heating_count} floor heating")
+            if radiator_count > 0:
+                zone_info.append(f"{radiator_count} radiator")
+            if zone_info:
+                parts.append(" + ".join(zone_info))
+        elif heating_areas:
+            parts.append(f"{len(heating_areas)} zone(s)")
+        return " | ".join(parts)
 
     def log_zone_demand(
         self,

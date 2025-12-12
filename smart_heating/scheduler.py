@@ -271,28 +271,55 @@ class ScheduleExecutor:
             Active schedule entry or None
         """
         previous_day = self._get_previous_day(current_day)
+        # Try previous day midnight-crossing schedules
+        schedule = self._find_previous_day_schedule(
+            schedules, previous_day, current_time
+        )
+        if schedule:
+            return schedule
+        # Try schedules starting today that cross midnight
+        schedule = self._find_midnight_crossing_today_schedule(
+            schedules, current_day, current_time
+        )
+        if schedule:
+            return schedule
+        # Finally, normal schedules today
+        return self._find_normal_schedule(schedules, current_day, current_time)
 
-        # FIRST: Check if a schedule from the previous day extends into today (higher priority)
+    def _find_previous_day_schedule(
+        self, schedules: dict, previous_day: str, current_time: time
+    ) -> Optional[dict]:
         for schedule in schedules.values():
-            if schedule.day == previous_day:
-                if self._is_time_in_midnight_crossing_schedule_from_previous_day(
+            if (
+                schedule.day == previous_day
+                and self._is_time_in_midnight_crossing_schedule_from_previous_day(
                     schedule, current_time
-                ):
-                    return schedule
+                )
+            ):
+                return schedule
+        return None
 
-        # SECOND: Check midnight-crossing schedules that start today (high priority)
+    def _find_midnight_crossing_today_schedule(
+        self, schedules: dict, current_day: str, current_time: time
+    ) -> Optional[dict]:
         for schedule in schedules.values():
-            if schedule.day == current_day and self._is_time_in_midnight_crossing_schedule_today(
+            if (
+                schedule.day == current_day
+                and self._is_time_in_midnight_crossing_schedule_today(
+                    schedule, current_time
+                )
+            ):
+                return schedule
+        return None
+
+    def _find_normal_schedule(
+        self, schedules: dict, current_day: str, current_time: time
+    ) -> Optional[dict]:
+        for schedule in schedules.values():
+            if schedule.day == current_day and self._is_time_in_normal_schedule(
                 schedule, current_time
             ):
                 return schedule
-
-        # THIRD: Check normal (non-midnight-crossing) schedules for current day
-        for schedule in schedules.values():
-            if schedule.day == current_day:
-                if self._is_time_in_normal_schedule(schedule, current_time):
-                    return schedule
-
         return None
 
     def _get_target_time_and_temp_from_schedule(

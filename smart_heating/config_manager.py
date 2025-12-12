@@ -265,69 +265,16 @@ class ConfigManager:
         # Create or update areas
         for area_id, area_data in areas_data.items():
             if area_id in existing_areas:
-                # Update existing area
                 area = self.area_manager.get_area(area_id)
                 if area:
-                    # Update area from dict
-                    area.name = area_data.get("name", area.name)
-                    area.enabled = area_data.get("enabled", True)
-                    area.target_temperature = area_data.get("target_temperature", 20.0)
-                    area.preset_mode = area_data.get("preset_mode", "home")
-                    area.night_boost_enabled = area_data.get(
-                        "night_boost_enabled", False
-                    )
-                    area.night_boost_offset = area_data.get("night_boost_offset", 0.5)
-                    area.night_boost_start_time = area_data.get(
-                        "night_boost_start_time"
-                    )
-                    area.night_boost_end_time = area_data.get("night_boost_end_time")
-                    area.smart_night_boost_enabled = area_data.get(
-                        "smart_night_boost_enabled", False
-                    )
-                    area.weather_entity_id = area_data.get("weather_entity_id")
-
-                    # Update devices
-                    if "devices" in area_data:
-                        area.heating_devices = area_data["devices"]
-
-                    # Update sensors
-                    if "temperature_sensors" in area_data:
-                        area.temperature_sensors = area_data["temperature_sensors"]
-
-                    # Update schedules
-                    if "schedules" in area_data:
-                        area.schedules = area_data["schedules"]
-
+                    self._apply_update_to_area(area, area_data)
                     changes["areas_updated"] += 1
             else:
-                # Create new area
+                # Create new area and apply configuration
                 self.area_manager.create_area(area_id, area_data.get("name", area_id))
                 area = self.area_manager.get_area(area_id)
                 if area:
-                    # Set all properties (same as update above)
-                    area.enabled = area_data.get("enabled", True)
-                    area.target_temperature = area_data.get("target_temperature", 20.0)
-                    area.preset_mode = area_data.get("preset_mode", "home")
-                    area.night_boost_enabled = area_data.get(
-                        "night_boost_enabled", False
-                    )
-                    area.night_boost_offset = area_data.get("night_boost_offset", 0.5)
-                    area.night_boost_start_time = area_data.get(
-                        "night_boost_start_time"
-                    )
-                    area.night_boost_end_time = area_data.get("night_boost_end_time")
-                    area.smart_night_boost_enabled = area_data.get(
-                        "smart_night_boost_enabled", False
-                    )
-                    area.weather_entity_id = area_data.get("weather_entity_id")
-
-                    if "devices" in area_data:
-                        area.heating_devices = area_data["devices"]
-                    if "temperature_sensors" in area_data:
-                        area.temperature_sensors = area_data["temperature_sensors"]
-                    if "schedules" in area_data:
-                        area.schedules = area_data["schedules"]
-
+                    self._apply_update_to_area(area, area_data)
                     changes["areas_created"] += 1
 
         # Note: We don't automatically delete areas that aren't in the import
@@ -342,6 +289,28 @@ class ConfigManager:
             changes["areas_updated"],
         )
         return changes
+
+    def _apply_update_to_area(self, area: Any, area_data: dict[str, Any]) -> None:
+        """Apply area_data onto the passed area object (in-place)."""
+        area.name = area_data.get("name", area.name)
+        area.enabled = area_data.get("enabled", True)
+        area.target_temperature = area_data.get("target_temperature", 20.0)
+        area.preset_mode = area_data.get("preset_mode", "home")
+        area.night_boost_enabled = area_data.get("night_boost_enabled", False)
+        area.night_boost_offset = area_data.get("night_boost_offset", 0.5)
+        area.night_boost_start_time = area_data.get("night_boost_start_time")
+        area.night_boost_end_time = area_data.get("night_boost_end_time")
+        area.smart_night_boost_enabled = area_data.get(
+            "smart_night_boost_enabled", False
+        )
+        area.weather_entity_id = area_data.get("weather_entity_id")
+
+        if "devices" in area_data:
+            area.heating_devices = area_data["devices"]
+        if "temperature_sensors" in area_data:
+            area.temperature_sensors = area_data["temperature_sensors"]
+        if "schedules" in area_data:
+            area.schedules = area_data["schedules"]
 
     async def _async_import_vacation_mode(self, vacation_data: dict[str, Any]) -> None:
         """Import vacation mode configuration.

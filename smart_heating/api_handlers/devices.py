@@ -59,79 +59,18 @@ async def _discover_devices(
     await asyncio.sleep(0)  # Minimal async operation to satisfy async requirement
     global _devices_cache, _cache_timestamp
 
-    devices = []
     entity_reg = er.async_get(hass)
     device_reg = dr.async_get(hass)
     area_registry = ar.async_get(hass)
 
     # Get all climate, switch, and temperature sensor entities
-    all_entities = []
-    for entry in entity_reg.entities.values():
-        if entry.domain in ("climate", "switch"):
-            all_entities.append(entry)
-        elif entry.domain == "sensor":
-            # Only include sensors with temperature device class
-            state = hass.states.get(entry.entity_id)
-            if state and state.attributes.get("device_class") == "temperature":
-                all_entities.append(entry)
+    all_entities = _get_discoverable_entities(entity_reg, hass)
+
+    devices = []
 
     for entry in all_entities:
-        # Determine device type from domain
-        if entry.domain == "climate":
-            device_type = "climate"  # Use 'climate' type for climate entities
-        elif entry.domain == "switch":
-            device_type = "switch"
-        else:  # sensor with temperature device_class
-            device_type = "temperature_sensor"
-
-        # Get device info if entity has a device_id
-        device_name = None
-        device_area_id = None
-        device_area_name = None
-
-        if entry.device_id:
-            device = device_reg.async_get(entry.device_id)
-            if device:
-                device_name = device.name_by_user or device.name
-
-                # Get device area
-                if device.area_id:
-                    device_area_id = device.area_id
-                    area = area_registry.async_get_area(device.area_id)
-                    if area:
-                        device_area_name = area.name
-
-        # Fallback to entry original_name or entity_id
-        if not device_name:
-            device_name = entry.original_name or entry.entity_id
-
-        # Get current state
-        state = hass.states.get(entry.entity_id)
-        current_state = state.state if state else "unavailable"
-
-        # Get current temperature if climate entity
-        current_temp = None
-        if device_type == "climate" and state:
-            current_temp = state.attributes.get("current_temperature")
-
-        # Check if already assigned to a area
-        assigned_to_area = None
-        for area_id, area in area_manager.get_all_areas().items():
-            if entry.entity_id in area.devices:
-                assigned_to_area = area_id
-                break
-
         devices.append(
-            {
-                "id": entry.entity_id,
-                "name": device_name,
-                "type": device_type,
-                "state": current_state,
-                "current_temperature": current_temp,
-                "area_id": device_area_id,
-                "area_name": device_area_name,
-                "assigned_to_area": assigned_to_area,
-            }
+            _build_device_payload(entry, device_reg, area_registry, hass, area_manager)
         )
 
     # Cache the results
@@ -139,7 +78,7 @@ async def _discover_devices(
     _cache_timestamp = time.time()
 
     # Count by type
-    thermostat_count = sum(1 for d in devices if d["type"] == "thermostat")
+    thermostat_count = sum(1 for d in devices if d["type"] == "climate")
     switch_count = sum(1 for d in devices if d["type"] == "switch")
     temp_sensor_count = sum(1 for d in devices if d["type"] == "temperature_sensor")
 
@@ -152,6 +91,97 @@ async def _discover_devices(
     )
 
     return web.json_response({"devices": devices})
+
+
+def _get_discoverable_entities(entity_reg, hass):
+    """Return a list of entities that we should consider for discovery.
+
+    This includes climate and switch entities and sensors with the temperature device class.
+    """
+    result = []
+    for entry in entity_reg.entities.values():
+        if entry.domain in ("climate", "switch"):
+            result.append(entry)
+        elif entry.domain == "sensor":
+            state = hass.states.get(entry.entity_id)
+            if state and state.attributes.get("device_class") == "temperature":
+                result.append(entry)
+    return result
+
+
+def _build_device_payload(entry, device_reg, area_registry, hass, area_manager):
+    """Build a device payload dict for a given registry entry.
+
+    Returns a dictionary suitable for API responses.
+    """
+    device_type = _determine_device_type(entry)
+
+    device_name, device_area_id, device_area_name = _get_device_name_and_area(
+        entry, device_reg, area_registry
+    )
+
+    if not device_name:
+        device_name = entry.original_name or entry.entity_id
+
+    current_state, current_temp = _get_current_state_and_temperature(entry, hass)
+
+    assigned_to_area = _find_assigned_to_area(entry.entity_id, area_manager)
+
+    return {
+        "id": entry.entity_id,
+        "name": device_name,
+        "type": device_type,
+        "state": current_state,
+        "current_temperature": current_temp,
+        "area_id": device_area_id,
+        "area_name": device_area_name,
+        "assigned_to_area": assigned_to_area,
+    }
+
+
+def _determine_device_type(entry):
+    if entry.domain == "climate":
+        return "climate"
+    if entry.domain == "switch":
+        return "switch"
+    return "temperature_sensor"
+
+
+def _get_device_name_and_area(entry, device_reg, area_registry):
+    device_name = None
+    device_area_id = None
+    device_area_name = None
+
+    if entry.device_id:
+        device = device_reg.async_get(entry.device_id)
+        if device:
+            device_name = device.name_by_user or device.name
+            if device.area_id:
+                device_area_id = device.area_id
+                area = area_registry.async_get_area(device.area_id)
+                if area:
+                    device_area_name = area.name
+
+    if not device_name:
+        device_name = entry.original_name or entry.entity_id
+
+    return device_name, device_area_id, device_area_name
+
+
+def _get_current_state_and_temperature(entry, hass):
+    state = hass.states.get(entry.entity_id)
+    current_state = state.state if state else "unavailable"
+    current_temp = None
+    if entry.domain == "climate" and state:
+        current_temp = state.attributes.get("current_temperature")
+    return current_state, current_temp
+
+
+def _find_assigned_to_area(entity_id, area_manager: AreaManager):
+    for area_id, area in area_manager.get_all_areas().items():
+        if entity_id in area.devices:
+            return area_id
+    return None
 
 
 async def handle_refresh_devices(

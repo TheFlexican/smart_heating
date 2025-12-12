@@ -405,36 +405,46 @@ class UserManager:
             # Use highest priority user
             return self.get_active_user_preferences(area_id)
 
-        # Average strategy
-        all_preferences = {}
-        user_count = 0
+        # Average strategy - collect relevant user IDs
+        filtered_users = self._get_users_for_area(users_home, area_id)
+        if not filtered_users:
+            return None
 
-        for user_id in users_home:
+        return self._average_user_preferences(filtered_users)
+
+    def _get_users_for_area(
+        self, user_ids: list[str], area_id: str | None
+    ) -> list[str]:
+        """Filter users that are relevant for given area (if area_id provided)."""
+        users = []
+        for user_id in user_ids:
             user_data = self._data["users"].get(user_id)
             if not user_data:
                 continue
+            if area_id and user_data.get("areas") and area_id not in user_data["areas"]:
+                continue
+            users.append(user_id)
+        return users
 
-            # Check if user cares about this area
-            if area_id and user_data.get("areas"):
-                if area_id not in user_data["areas"]:
-                    continue
-
+    def _average_user_preferences(self, user_ids: list[str]) -> dict[str, float] | None:
+        """Average preferences for the provided user IDs."""
+        if not user_ids:
+            return None
+        all_preferences = {}
+        for user_id in user_ids:
+            user_data = self._data["users"].get(user_id)
+            if not user_data:
+                continue
             prefs = user_data.get("preset_preferences", {})
             for preset, temp in prefs.items():
-                if preset not in all_preferences:
-                    all_preferences[preset] = []
-                all_preferences[preset].append(temp)
-            user_count += 1
+                all_preferences.setdefault(preset, []).append(temp)
 
-        if user_count == 0:
+        if not all_preferences:
             return None
 
-        # Calculate averages
-        averaged_preferences = {
+        return {
             preset: sum(temps) / len(temps) for preset, temps in all_preferences.items()
         }
-
-        return averaged_preferences
 
     async def cleanup(self) -> None:
         """Clean up resources."""
