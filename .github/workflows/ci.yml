@@ -34,6 +34,13 @@ jobs:
           python -m pip install -U pip setuptools wheel
           pip install -r tests/requirements_test.txt
 
+      - name: Debug Python package versions
+        run: |
+          python -V
+          pip --version
+          pip list
+          python -c "import homeassistant, aiohttp, aiodns, pycares; print('versions', homeassistant.__version__, aiohttp.__version__, aiodns.__version__, pycares.__version__)"
+
       - name: Run tests with coverage
         run: |
           pytest tests/unit --cov=smart_heating --cov-report=xml --cov-report=html

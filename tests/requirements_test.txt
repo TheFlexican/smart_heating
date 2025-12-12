@@ -7,8 +7,8 @@ pytest-cov>=4.1.0
 pytest-mock>=3.11.1
 
 # Home Assistant testing utilities
-pytest-homeassistant-custom-component>=0.13.0
-homeassistant>=2024.8.0
+pytest-homeassistant-custom-component==0.13.299
+homeassistant==2024.8.0
 # DNS resolver and low-level c-ares bindings for aiohttp-related dependencies
-aiodns>=3.1.0
-pycares>=5.0.0
+aiodns==3.1.1
+pycares==5.0.0
