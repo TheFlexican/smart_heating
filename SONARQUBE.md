@@ -54,3 +54,43 @@ Test files often have different quality standards than production code:
 - We want to focus quality metrics on code that runs in production
 
 Coverage metrics from tests are still reported to ensure production code is well-tested.
+
+## VS Code SonarLint Extension Configuration
+
+For local development with the SonarLint VS Code extension, add the following to your `.vscode/settings.json` (this file is gitignored and user-specific):
+
+```json
+{
+    "sonarlint.connectedMode.project": {
+        "connectionId": "theflexican",
+        "projectKey": "TheFlexican_smart-heating"
+    },
+    "sonarlint.rules": {
+        "python:S7503": {
+            "level": "off"
+        },
+        "python:S1244": {
+            "level": "off"
+        },
+        "python:S7493": {
+            "level": "off"
+        }
+    },
+    "sonarlint.testFilePattern": "**/{test_*,*_test,*Test*,*Spec*}.py",
+    "sonarlint.disableTelemetry": true
+}
+```
+
+### Disabled Rules Explanation
+
+- **S7503**: "Use asynchronous features or remove async keyword" - Disabled for test fixtures that are async but may not await
+- **S1244**: "Do not perform equality checks with floating point values" - Disabled as we use pytest.approx for float comparisons
+- **S7493**: "Use asynchronous file API" - Disabled as tests may use synchronous file I/O for simplicity
+
+### Test File Pattern
+
+The `sonarlint.testFilePattern` setting tells SonarLint to apply different rules to test files. This pattern matches:
+- `test_*.py` - Standard pytest naming
+- `*_test.py` - Alternative test naming
+- `*Test*.py` - Test classes
+- `*Spec*.py` - Spec files (e2e tests)
