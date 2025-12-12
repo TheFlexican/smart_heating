@@ -1,0 +1,46 @@
+{
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "sonarlint.connectedMode.project": {
+        "connectionId": "theflexican",
+        "projectKey": "TheFlexican_smart-heating"
+    },
+    "sonarlint.rules": {
+        "python:S7503": {
+            "level": "off"
+        },
+        "python:S1244": {
+            "level": "off"
+        },
+        "python:S7493": {
+            "level": "off"
+        }
+    },
+    "sonarlint.pathToNodeExecutable": "",
+    "sonarlint.disableTelemetry": true,
+    "sonarlint.testFilePattern": "**/{test_*,*_test,*Test*,*Spec*}.py",
+    "sonarlint.analyserProperties": {
+        "sonar.exclusions": "tests/**/*,**/test_*.py,**/*_test.py,**/conftest.py"
+    },
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/.pytest_cache": true
+    },
+    "files.watcherExclude": {
+        "**/__pycache__/**": true,
+        "**/.pytest_cache/**": true,
+        "**/venv/**": true,
+        "**/node_modules/**": true,
+        "**/coverage_html/**": true
+    },
+    "chat.mcp.serverSampling": {
+        "smart_heating/.vscode/mcp.json: sonarqube": {
+            "allowedModels": [
+                "copilot/oswe-vscode-prime"
+            ]
+        }
+    }
+}
