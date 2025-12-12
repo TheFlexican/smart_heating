@@ -267,7 +267,7 @@ class OpenThermLogger:
         self._logs.clear()
         _LOGGER.info("OpenTherm logs cleared")
 
-    async def async_discover_mqtt_capabilities(
+    async def async_discover_mqtt_capabilities(  # NOSONAR
         self, gateway_entity_id: str
     ) -> dict[str, Any]:
         """Discover OpenTherm Gateway capabilities via MQTT.

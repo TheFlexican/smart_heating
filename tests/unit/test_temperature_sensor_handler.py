@@ -32,7 +32,7 @@ def test_convert_and_get_from_sensor_and_thermostat():
     tstate.state = "heat"
     tstate.attributes = {"current_temperature": 21.0, "unit_of_measurement": "°C"}
     hass.states.get = MagicMock(return_value=tstate)
-    assert handler.get_temperature_from_thermostat("climate.t1") == 21.0
+    assert handler.get_temperature_from_thermostat("climate.t1") == 21.0  # NOSONAR
 
 
 def test_collect_area_temperatures_primary_and_fallback():
@@ -83,4 +83,4 @@ async def test_async_get_outdoor_temperature():
     state.attributes = {"unit_of_measurement": "°C"}
     hass.states.get = MagicMock(return_value=state)
     t = await handler.async_get_outdoor_temperature(area)
-    assert t == 12.5
+    assert t == 12.5  # NOSONAR

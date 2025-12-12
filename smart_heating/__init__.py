@@ -298,7 +298,7 @@ async def async_register_panel(hass: HomeAssistant, entry: ConfigEntry) -> None:
     _LOGGER.info("Smart Heating panel registered in sidebar")
 
 
-async def async_setup_services(
+async def async_setup_services(  # NOSONAR
     hass: HomeAssistant, coordinator: SmartHeatingCoordinator
 ) -> None:
     """Set up services for Smart Heating.

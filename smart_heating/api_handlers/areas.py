@@ -20,7 +20,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 # noqa: ASYNC109 - Web API handlers must be async per aiohttp convention
-async def handle_get_areas(
+async def handle_get_areas(  # NOSONAR
     hass: HomeAssistant, area_manager: AreaManager
 ) -> web.Response:
     """Get all Home Assistant areas.

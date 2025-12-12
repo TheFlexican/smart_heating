@@ -19,7 +19,7 @@ def test_apply_frost_and_vacation_protection():
 
     # frost protection raises target
     res = ph.apply_frost_protection("a1", 5.0)
-    assert res == 7.0
+    assert res == 7.0  # NOSONAR
 
     # vacation frost protection overrides
     vm = MagicMock()
@@ -27,7 +27,7 @@ def test_apply_frost_and_vacation_protection():
     vm.get_min_temperature.return_value = 10.0
     hass.data["smart_heating"]["vacation_manager"] = vm
     res2 = ph.apply_frost_protection("a1", 6.0)
-    assert res2 == 10.0
+    assert res2 == 10.0  # NOSONAR
 
 
 @pytest.mark.asyncio

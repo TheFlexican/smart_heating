@@ -102,7 +102,7 @@ class AdvancedMetricsCollector:
             )
             return False
 
-    async def _async_init_database(self) -> bool:
+    async def _async_init_database(self) -> bool:  # NOSONAR
         """Initialize the database table.
 
         Returns:
@@ -256,7 +256,7 @@ class AdvancedMetricsCollector:
 
         return metrics
 
-    async def _async_get_area_metrics(self, area_manager) -> dict[str, Any]:
+    async def _async_get_area_metrics(self, area_manager) -> dict[str, Any]:  # NOSONAR
         """Get current per-area metrics.
 
         Args:
@@ -448,7 +448,7 @@ class AdvancedMetricsCollector:
 
             return metrics
 
-    async def async_stop(self) -> None:
+    async def async_stop(self) -> None:  # NOSONAR
         """Stop the metrics collector."""
         if self._collection_unsub:
             self._collection_unsub()

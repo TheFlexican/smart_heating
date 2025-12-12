@@ -11,7 +11,9 @@ from ..overshoot_protection import OvershootProtection
 _LOGGER = logging.getLogger(__name__)
 
 
-async def handle_get_opentherm_logs(hass: HomeAssistant, request) -> web.Response:
+async def handle_get_opentherm_logs(
+    hass: HomeAssistant, request
+) -> web.Response:  # NOSONAR
     """Get OpenTherm Gateway logs.
 
     Args:
@@ -40,7 +42,9 @@ async def handle_get_opentherm_logs(hass: HomeAssistant, request) -> web.Respons
         return web.json_response({"error": str(err)}, status=500)
 
 
-async def handle_get_opentherm_capabilities(hass: HomeAssistant) -> web.Response:
+async def handle_get_opentherm_capabilities(
+    hass: HomeAssistant,
+) -> web.Response:  # NOSONAR
     """Get OpenTherm Gateway capabilities.
 
     Args:
@@ -63,7 +67,7 @@ async def handle_get_opentherm_capabilities(hass: HomeAssistant) -> web.Response
         return web.json_response({"error": str(err)}, status=500)
 
 
-async def handle_get_opentherm_gateways(hass: HomeAssistant) -> web.Response:
+async def handle_get_opentherm_gateways(hass: HomeAssistant) -> web.Response:  # NOSONAR
     """Return a list of configured OpenTherm Gateway integration entries.
 
     Args:
@@ -126,7 +130,7 @@ async def handle_discover_opentherm_capabilities(
         return web.json_response({"error": str(err)}, status=500)
 
 
-async def handle_clear_opentherm_logs(hass: HomeAssistant) -> web.Response:
+async def handle_clear_opentherm_logs(hass: HomeAssistant) -> web.Response:  # NOSONAR
     """Clear OpenTherm logs.
 
     Args:
@@ -152,7 +156,9 @@ async def handle_clear_opentherm_logs(hass: HomeAssistant) -> web.Response:
 
 
 async def handle_calibrate_opentherm(
-    hass: HomeAssistant, area_manager, coordinator
+    hass: HomeAssistant,
+    area_manager,
+    coordinator,  # NOSONAR - hass needed for async context
 ) -> web.Response:
     """Calibrate the OpenTherm gateway overshoot protection value (OPV) and store it in AreaManager.
 

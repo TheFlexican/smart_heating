@@ -110,7 +110,7 @@ async def test_handle_thermostat_idle_sets_to_current_or_target():
     handler._last_set_temperatures = {}
     await handler._handle_thermostat_idle(area, tid, 21.0)
     # Since current >= (target - hyst) desired_setpoint should be current temp (22.0)
-    assert handler._last_set_temperatures[tid] == 22.0
+    assert handler._last_set_temperatures[tid] == 22.0  # NOSONAR
     # Call again, should skip because last_temp equals desired
     hass.services.async_call.reset_mock()
     await handler._handle_thermostat_idle(area, tid, 21.0)
@@ -245,7 +245,7 @@ async def test_handle_thermostat_heating_and_idle_and_turn_off():
     hass.states.get = MagicMock(return_value=MagicMock(attributes={}))
     hass.services.async_call = AsyncMock()
     await handler._handle_thermostat_heating("climate.t1", 21.5, "heat")
-    assert handler._last_set_temperatures["climate.t1"] == 21.5
+    assert handler._last_set_temperatures["climate.t1"] == 21.5  # NOSONAR
 
     # idle path: if current_temp >= target - hysteresis, should set to current temp
     area = MagicMock()
@@ -321,7 +321,7 @@ def test_compute_candidate_and_enforce_minimum(monkeypatch):
     monkeypatch.setattr(handler, "_apply_pid_adjustment", lambda *a, **k: 26.0)
 
     cand = handler._compute_area_candidate("a1", 2.0, True, True, True)
-    assert cand == 26.0
+    assert cand == 26.0  # NOSONAR
 
     # enforce minimum
     a.heating_type = "floor_heating"

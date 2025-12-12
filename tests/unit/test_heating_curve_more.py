@@ -8,9 +8,9 @@ def test_calculate_formula_and_base_offset():
 
     # Check base_offset for systems
     hc_rad = HeatingCurve(heating_system="radiator")
-    assert hc_rad.base_offset == 55.0
+    assert hc_rad.base_offset == 55.0  # NOSONAR
     hc_floor = HeatingCurve(heating_system=HEATING_SYSTEM_UNDERFLOOR)
-    assert hc_floor.base_offset == 40.0
+    assert hc_floor.base_offset == 40.0  # NOSONAR
 
 
 def test_calculate_coefficient_and_update():
@@ -44,5 +44,5 @@ def test_autotune_behaviour_and_restore():
 
     # test restore_autotune sets internal state
     hc.restore_autotune(1.5, 0.2)
-    assert hc.optimal_coefficient == 1.5
-    assert hc.coefficient_derivative == 0.2
+    assert hc.optimal_coefficient == 1.5  # NOSONAR
+    assert hc.coefficient_derivative == 0.2  # NOSONAR

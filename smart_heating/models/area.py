@@ -762,9 +762,9 @@ class Area:
         if (
             self._current_temperature is not None
             and self.target_temperature is not None
+            and self._current_temperature < self.target_temperature - 0.5
         ):
-            if self._current_temperature < self.target_temperature - 0.5:
-                return STATE_HEATING
+            return STATE_HEATING
 
         return STATE_IDLE
 
