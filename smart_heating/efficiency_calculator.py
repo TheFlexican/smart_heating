@@ -41,7 +41,7 @@ class EfficiencyCalculator:
 
         Returns:
             Dictionary containing efficiency metrics
-        \"\"\"
+        """
         await asyncio.sleep(0)  # Minimal async operation to satisfy async requirement
         # Determine time range
         if start_time and end_time:

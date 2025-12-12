@@ -39,8 +39,7 @@ pytest tests/unit \
     --cov-report=html:coverage_html \
     --cov-report=xml:coverage.xml \
     --cov-branch \
-    -vv \
-    -s
+    -v
 
 # Check coverage
 echo ""

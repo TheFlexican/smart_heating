@@ -3,9 +3,6 @@
 import logging
 
 import aiofiles
-
-# Constants for repeated path segments
-_USERS_PATH = "users/"
 from aiohttp import web
 from homeassistant.components.http import HomeAssistantView
 from homeassistant.core import HomeAssistant
@@ -114,6 +111,7 @@ _LOGGER = logging.getLogger(__name__)
 # Constants for error messages and endpoints
 ERROR_UNKNOWN_ENDPOINT = "Unknown endpoint"
 ENDPOINT_PREFIX_AREAS = "areas/"
+_USERS_PATH = "users/"
 
 
 class SmartHeatingAPIView(HomeAssistantView):
