@@ -9,8 +9,4 @@ pytest-mock
 # Home Assistant testing utilities
 pytest-homeassistant-custom-component
 
-# DNS resolver and low-level c-ares bindings for aiohttp-related dependencies
-# Pin to compatible versions - pycares 5.1.0+ has ares_query_a_result attribute
-aiodns==3.2.0
-pycares==5.1.0
 aiofiles

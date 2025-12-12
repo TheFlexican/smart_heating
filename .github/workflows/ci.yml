@@ -26,49 +26,9 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Prepare system dependencies and install Python requirements
+      - name: Install Python requirements
         run: |
-          sudo apt-get update
-          # Install system libraries needed by some packages (pycares, Home Assistant deps)
-          sudo apt-get install -y libc-ares-dev build-essential libssl-dev libffi-dev
-          python -m pip install -U pip setuptools wheel
-          # Force rebuild pycares from source to ensure compatibility with system c-ares
-          pip install --no-binary pycares pycares==5.1.0
           pip install -r tests/requirements_test.txt
-
-      - name: Debug Python package versions (safe imports)
-        run: |
-          python -V
-          pip --version
-          pip list --format=columns
-          cat > /tmp/ci_debug.py <<'PY'
-          import traceback
-
-          def try_import(name):
-            try:
-              mod = __import__(name)
-              version = getattr(mod, '__version__', 'unknown')
-              print(f'OK: import {name} version={version}')
-              return mod
-            except Exception as e:
-              print(f'ERR: import {name} -> {e!r}')
-              traceback.print_exc()
-              return None
-
-          py = try_import('pycares')
-          if py:
-            print('pycares has ares_query_a_result attribute:', hasattr(py, 'ares_query_a_result'))
-          aiod = try_import('aiodns')
-          if aiod:
-            print('aiodns version:', getattr(aiod, '__version__', 'unknown'))
-          aio = try_import('aiohttp')
-          if aio:
-            print('aiohttp version:', getattr(aio, '__version__', 'unknown'))
-          ha = try_import('homeassistant')
-          if ha:
-            print('homeassistant version:', getattr(ha, '__version__', 'unknown'))
-          PY
-          python /tmp/ci_debug.py
 
       - name: Run tests with coverage
         run: |
