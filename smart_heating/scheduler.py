@@ -253,7 +253,7 @@ class ScheduleExecutor:
 
     def _find_active_schedule(
         self,
-        schedules: list[dict],
+        schedules: dict,
         current_day: str,
         current_time: time,
     ) -> Optional[dict]:
@@ -263,7 +263,7 @@ class ScheduleExecutor:
         Priority: midnight-crossing schedules checked first as they take precedence.
 
         Args:
-            schedules: List of schedule entries
+            schedules: Dictionary of schedule entries (schedule_id -> schedule)
             current_day: Current day name (e.g., "Monday")
             current_time: Current time
 
