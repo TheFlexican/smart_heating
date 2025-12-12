@@ -3,6 +3,9 @@
 import logging
 
 import aiofiles
+
+# Constants for repeated path segments
+_USERS_PATH = "users/"
 from aiohttp import web
 from homeassistant.components.http import HomeAssistantView
 from homeassistant.core import HomeAssistant
@@ -222,12 +225,12 @@ class SmartHeatingAPIView(HomeAssistantView):
 
         if endpoint == "users":
             return await handle_get_users(self.hass, user_manager, request)
-        elif endpoint.startswith("users/") and not endpoint.endswith("/"):
+        elif endpoint.startswith(_USERS_PATH) and not endpoint.endswith("/"):
             user_id = endpoint.split("/")[1]
             return await handle_get_user(self.hass, user_manager, request, user_id)
-        elif endpoint == "users/presence":
+        elif endpoint == f"{_USERS_PATH}presence":
             return await handle_get_presence_state(self.hass, user_manager, request)
-        elif endpoint == "users/preferences":
+        elif endpoint == f"{_USERS_PATH}preferences":
             return await handle_get_active_preferences(self.hass, user_manager, request)
 
         return None
@@ -683,11 +686,11 @@ class SmartHeatingAPIView(HomeAssistantView):
         elif endpoint == "users":
             user_manager = self.hass.data[DOMAIN]["user_manager"]
             return await handle_create_user(self.hass, user_manager, request)
-        elif endpoint.startswith("users/") and not endpoint.endswith("/settings"):
+        elif endpoint.startswith(_USERS_PATH) and not endpoint.endswith("/settings"):
             user_id = endpoint.split("/")[1]
             user_manager = self.hass.data[DOMAIN]["user_manager"]
             return await handle_update_user(self.hass, user_manager, request, user_id)
-        elif endpoint == "users/settings":
+        elif endpoint == f"{_USERS_PATH}settings":
             user_manager = self.hass.data[DOMAIN]["user_manager"]
             return await handle_update_user_settings(self.hass, user_manager, request)
 
@@ -811,7 +814,7 @@ class SmartHeatingAPIView(HomeAssistantView):
                     self.hass, self.area_manager, area_id, entity_id
                 )
             # User endpoints
-            elif endpoint.startswith("users/"):
+            elif endpoint.startswith(_USERS_PATH):
                 user_id = endpoint.split("/")[1]
                 user_manager = self.hass.data[DOMAIN]["user_manager"]
                 return await handle_delete_user(

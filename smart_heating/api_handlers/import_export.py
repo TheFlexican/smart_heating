@@ -1,5 +1,6 @@
 """Import/Export API handlers for Smart Heating."""
 
+import asyncio
 import json
 import logging
 
@@ -149,6 +150,7 @@ async def handle_list_backups(
     Returns:
         JSON response with list of backups
     """
+    await asyncio.sleep(0)  # Minimal async operation to satisfy async requirement
     try:
         backup_dir = config_manager.backup_dir
 

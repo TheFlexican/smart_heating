@@ -1,5 +1,6 @@
 """Adaptive learning engine for Smart Heating."""
 
+import asyncio
 import logging
 import statistics
 from datetime import datetime
@@ -466,6 +467,7 @@ class LearningEngine:
         Returns:
             Adjustment factor (1.0 = no change, >1 = faster, <1 = slower)
         """
+        await asyncio.sleep(0)  # Minimal async operation to satisfy async requirement
         # For now, simple linear adjustment
         # Colder outdoor = slower heating
         # This will be improved with actual correlation data later

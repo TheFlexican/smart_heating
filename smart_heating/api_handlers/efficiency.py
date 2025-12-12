@@ -186,16 +186,13 @@ async def handle_get_area_efficiency_history(
         end = dt_util.now()
 
         for i in range(periods):
-            if period_type == "day":
-                period_end = end - timedelta(days=i)
-                period_start = period_end - timedelta(days=1)
-            elif period_type == "week":
+            if period_type == "week":
                 period_end = end - timedelta(weeks=i)
                 period_start = period_end - timedelta(weeks=1)
             elif period_type == "month":
                 period_end = end - timedelta(days=30 * i)
                 period_start = period_end - timedelta(days=30)
-            else:
+            else:  # Default to "day" for any other period_type
                 period_end = end - timedelta(days=i)
                 period_start = period_end - timedelta(days=1)
 

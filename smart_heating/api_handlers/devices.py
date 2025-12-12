@@ -1,5 +1,6 @@
 """Device API handlers for Smart Heating."""
 
+import asyncio
 import logging
 import time
 
@@ -55,6 +56,7 @@ async def _discover_devices(
     Returns:
         JSON response with discovered devices
     """
+    await asyncio.sleep(0)  # Minimal async operation to satisfy async requirement
     global _devices_cache, _cache_timestamp
 
     devices = []

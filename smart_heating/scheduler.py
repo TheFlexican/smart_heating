@@ -282,11 +282,10 @@ class ScheduleExecutor:
 
         # SECOND: Check midnight-crossing schedules that start today (high priority)
         for schedule in schedules.values():
-            if schedule.day == current_day:
-                if self._is_time_in_midnight_crossing_schedule_today(
-                    schedule, current_time
-                ):
-                    return schedule
+            if schedule.day == current_day and self._is_time_in_midnight_crossing_schedule_today(
+                schedule, current_time
+            ):
+                return schedule
 
         # THIRD: Check normal (non-midnight-crossing) schedules for current day
         for schedule in schedules.values():
