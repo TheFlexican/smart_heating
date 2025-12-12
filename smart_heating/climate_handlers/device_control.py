@@ -630,6 +630,56 @@ class DeviceControlHandler:
             except Exception as err:
                 _LOGGER.error("Failed to control switch %s: %s", switch_id, err)
 
+    async def _control_valve_by_position(
+        self, valve_id: str, capabilities: dict, heating: bool
+    ) -> None:
+        """Control valve using position control (number or climate entity)."""
+        domain = capabilities["entity_domain"]
+
+        if domain == "number":
+            position = (
+                capabilities["position_max"]
+                if heating
+                else capabilities["position_min"]
+            )
+            await self._set_valve_number_position(valve_id, position)
+            action = "Opened" if heating else "Closed"
+            _LOGGER.debug(f"{action} valve %s to %.0f%%", valve_id, position)
+
+        elif (
+            domain == "climate"
+            and "position" in self.hass.states.get(valve_id).attributes
+        ):
+            position = (
+                capabilities["position_max"]
+                if heating
+                else capabilities["position_min"]
+            )
+            try:
+                await self._set_valve_climate_position(valve_id, position)
+                _LOGGER.debug("Set valve %s position to %.0f%%", valve_id, position)
+            except Exception:
+                _LOGGER.debug(
+                    "Valve %s doesn't support set_position, using temperature control",
+                    valve_id,
+                )
+                capabilities["supports_position"] = False
+                capabilities["supports_temperature"] = True
+
+    async def _control_valve_by_temperature(
+        self, valve_id: str, heating: bool, target_temp: Optional[float]
+    ) -> None:
+        """Control valve using temperature control."""
+        if heating and target_temp is not None:
+            offset = self.area_manager.trv_temp_offset
+            heating_temp = max(target_temp + offset, self.area_manager.trv_heating_temp)
+            await self._set_valve_temperature(valve_id, heating_temp)
+            _LOGGER.debug("Set TRV %s to heating temp %.1f°C", valve_id, heating_temp)
+        else:
+            idle_temp = self.area_manager.trv_idle_temp
+            await self._set_valve_temperature(valve_id, idle_temp)
+            _LOGGER.debug("Set TRV %s to idle temp %.1f°C", valve_id, idle_temp)
+
     async def async_control_valves(
         self, area: Area, heating: bool, target_temp: Optional[float]
     ) -> None:
@@ -642,71 +692,18 @@ class DeviceControlHandler:
 
                 # Prefer position control if available
                 if capabilities["supports_position"]:
-                    domain = capabilities["entity_domain"]
-
-                    if domain == "number":
-                        # Direct position control via number entity
-                        if heating:
-                            await self._set_valve_number_position(
-                                valve_id, capabilities["position_max"]
-                            )
-                            _LOGGER.debug(
-                                "Opened valve %s to %.0f%%",
-                                valve_id,
-                                capabilities["position_max"],
-                            )
-                        else:
-                            await self._set_valve_number_position(
-                                valve_id, capabilities["position_min"]
-                            )
-                            _LOGGER.debug(
-                                "Closed valve %s to %.0f%%",
-                                valve_id,
-                                capabilities["position_min"],
-                            )
-
-                    elif (
-                        domain == "climate"
-                        and "position" in self.hass.states.get(valve_id).attributes
-                    ):
-                        position = (
-                            capabilities["position_max"]
-                            if heating
-                            else capabilities["position_min"]
-                        )
-                        try:
-                            await self._set_valve_climate_position(valve_id, position)
-                            _LOGGER.debug(
-                                "Set valve %s position to %.0f%%", valve_id, position
-                            )
-                        except Exception:
-                            _LOGGER.debug(
-                                "Valve %s doesn't support set_position, using temperature control",
-                                valve_id,
-                            )
-                            capabilities["supports_position"] = False
-                            capabilities["supports_temperature"] = True
+                    await self._control_valve_by_position(
+                        valve_id, capabilities, heating
+                    )
 
                 # Fall back to temperature control
                 if (
                     not capabilities["supports_position"]
                     and capabilities["supports_temperature"]
                 ):
-                    if heating and target_temp is not None:
-                        offset = self.area_manager.trv_temp_offset
-                        heating_temp = max(
-                            target_temp + offset, self.area_manager.trv_heating_temp
-                        )
-                        await self._set_valve_temperature(valve_id, heating_temp)
-                        _LOGGER.debug(
-                            "Set TRV %s to heating temp %.1f°C", valve_id, heating_temp
-                        )
-                    else:
-                        idle_temp = self.area_manager.trv_idle_temp
-                        await self._set_valve_temperature(valve_id, idle_temp)
-                        _LOGGER.debug(
-                            "Set TRV %s to idle temp %.1f°C", valve_id, idle_temp
-                        )
+                    await self._control_valve_by_temperature(
+                        valve_id, heating, target_temp
+                    )
 
                 if (
                     not capabilities["supports_position"]
@@ -822,241 +819,287 @@ class DeviceControlHandler:
 
         return boiler_setpoint
 
+    def _get_heating_type_counts(self, heating_types: dict) -> tuple[int, int]:
+        """Get floor heating and radiator counts from heating types dict."""
+        floor_heating_count = sum(
+            1 for ht in heating_types.values() if ht == "floor_heating"
+        )
+        radiator_count = sum(1 for ht in heating_types.values() if ht == "radiator")
+        return floor_heating_count, radiator_count
+
+    def _calculate_pwm_duty(
+        self, boiler_setpoint: float, boiler_temp: float, heating_types: dict
+    ) -> float:
+        """Calculate PWM duty cycle based on boiler temperature."""
+        base_offset = (
+            20.0
+            if any(ht == "floor_heating" for ht in heating_types.values())
+            else 27.2
+        )
+        if (boiler_temp - base_offset) == 0:
+            return 1.0
+        duty = (boiler_setpoint - base_offset) / (boiler_temp - base_offset)
+        return min(max(duty, 0.0), 1.0)
+
+    def _apply_pwm_approximation(
+        self,
+        gateway_device_id: str,
+        boiler_setpoint: float,
+        heating_types: dict,
+    ) -> float:
+        """Apply PWM approximation if gateway doesn't support modulation."""
+        gateway_state = self.hass.states.get(gateway_device_id)
+        if not gateway_state or gateway_state.attributes.get("relative_mod_level"):
+            return boiler_setpoint
+
+        boiler_temp = gateway_state.attributes.get(
+            "boiler_water_temp"
+        ) or gateway_state.attributes.get("ch_water_temp")
+
+        try:
+            boiler_temp = float(boiler_temp)
+        except Exception:
+            return boiler_setpoint
+
+        if boiler_temp is None:
+            return boiler_setpoint
+
+        duty = self._calculate_pwm_duty(boiler_setpoint, boiler_temp, heating_types)
+
+        if duty < 0.5:
+            _LOGGER.debug("PWM approximation: duty=%.2f -> setpoint=0.0", duty)
+            return 0.0
+        else:
+            _LOGGER.debug(
+                "PWM approximation: duty=%.2f -> setpoint=%.1f",
+                duty,
+                boiler_setpoint,
+            )
+            return boiler_setpoint
+
+    async def _set_gateway_setpoint(
+        self, gateway_device_id: str, temperature: float
+    ) -> None:
+        """Set OpenTherm gateway setpoint via service call."""
+        try:
+            await self.hass.services.async_call(
+                "opentherm_gw",
+                "set_control_setpoint",
+                {
+                    "gateway_id": gateway_device_id,
+                    "temperature": float(temperature),
+                },
+                blocking=False,
+            )
+            _LOGGER.info(
+                "OpenTherm gateway: Set setpoint via gateway service (gateway_id=%s): %.1f°C",
+                gateway_device_id,
+                temperature,
+            )
+        except Exception as err:
+            _LOGGER.error(
+                "Failed to set OpenTherm Gateway setpoint (gateway_id=%s): %s",
+                gateway_device_id,
+                err,
+            )
+
+    def _log_boiler_on(
+        self,
+        boiler_setpoint: float,
+        overhead: float,
+        floor_heating_count: int,
+        radiator_count: int,
+        advanced_enabled: bool,
+        heating_curve_enabled: bool,
+    ) -> None:
+        """Log boiler ON message with appropriate context."""
+        if advanced_enabled and heating_curve_enabled:
+            _LOGGER.info(
+                "OpenTherm gateway: Boiler ON, setpoint=%.1f°C (heating curve, %d floor heating, %d radiator)",
+                boiler_setpoint,
+                floor_heating_count,
+                radiator_count,
+            )
+        else:
+            _LOGGER.info(
+                "OpenTherm gateway: Boiler ON, setpoint=%.1f°C (overhead=%.1f°C, %d floor heating, %d radiator)",
+                boiler_setpoint,
+                overhead,
+                floor_heating_count,
+                radiator_count,
+            )
+
+    async def _control_gateway_heating_on(
+        self,
+        heating_area_ids: list,
+        heating_types: dict,
+        overhead_temps: dict,
+        max_target_temp: float,
+        opentherm_logger,
+    ) -> None:
+        """Handle gateway control when heating is ON."""
+        overhead = max(overhead_temps.values()) if overhead_temps else 20.0
+
+        # Advanced control configuration
+        advanced_enabled = self.area_manager.advanced_control_enabled
+        heating_curve_enabled = self.area_manager.heating_curve_enabled
+        pid_enabled = self.area_manager.pid_enabled
+
+        # Collect setpoint candidates per area
+        setpoint_candidates = [
+            c
+            for c in (
+                self._compute_area_candidate(
+                    aid,
+                    overhead,
+                    advanced_enabled,
+                    heating_curve_enabled,
+                    pid_enabled,
+                )
+                for aid in heating_area_ids
+            )
+            if c is not None
+        ]
+
+        # Calculate boiler setpoint
+        boiler_setpoint = self._calculate_boiler_setpoint(
+            setpoint_candidates, max_target_temp, overhead
+        )
+
+        # Enforce minimum setpoints
+        gateway_device_id = self.area_manager.opentherm_gateway_id
+        boiler_setpoint = self._enforce_minimum_setpoints(
+            heating_area_ids, boiler_setpoint, gateway_device_id
+        )
+
+        # Get heating type counts
+        floor_heating_count, radiator_count = self._get_heating_type_counts(
+            heating_types
+        )
+
+        if not gateway_device_id:
+            _LOGGER.error(
+                "OpenTherm Gateway ID not configured. "
+                "Please set it via Global Settings or service call: smart_heating.set_opentherm_gateway"
+            )
+            return
+
+        # Apply PWM approximation if needed
+        if self.area_manager.pwm_enabled:
+            boiler_setpoint = self._apply_pwm_approximation(
+                gateway_device_id, boiler_setpoint, heating_types
+            )
+
+        # Set gateway setpoint
+        await self._set_gateway_setpoint(gateway_device_id, boiler_setpoint)
+
+        # Log boiler control
+        self._log_boiler_on(
+            boiler_setpoint,
+            overhead,
+            floor_heating_count,
+            radiator_count,
+            advanced_enabled,
+            heating_curve_enabled,
+        )
+
+        # Log with OpenTherm logger
+        if opentherm_logger:
+            opentherm_logger.log_boiler_control(
+                state="ON",
+                setpoint=boiler_setpoint,
+                heating_areas=heating_area_ids,
+                max_target_temp=max_target_temp,
+                overhead=overhead,
+                floor_heating_count=floor_heating_count,
+                radiator_count=radiator_count,
+            )
+
+    async def _control_gateway_heating_off(
+        self, gateway_device_id: str, opentherm_logger
+    ) -> None:
+        """Handle gateway control when heating is OFF."""
+        if not gateway_device_id:
+            _LOGGER.warning("OpenTherm Gateway ID not configured, cannot turn off")
+            return
+
+        try:
+            await self.hass.services.async_call(
+                "opentherm_gw",
+                "set_control_setpoint",
+                {
+                    "gateway_id": gateway_device_id,
+                    "temperature": 0.0,
+                },
+                blocking=False,
+            )
+            _LOGGER.info(
+                "OpenTherm gateway: Boiler OFF (setpoint=0 via service, gateway_id=%s)",
+                gateway_device_id,
+            )
+        except Exception as err:
+            _LOGGER.error(
+                "Failed to turn off OpenTherm Gateway (gateway_id=%s): %s",
+                gateway_device_id,
+                err,
+            )
+
+        if opentherm_logger:
+            opentherm_logger.log_boiler_control(
+                state="OFF",
+                heating_areas=[],
+            )
+
+    def _log_modulation_status(self, gateway_id: str, opentherm_logger) -> None:
+        """Log modulation status from gateway state."""
+        if not opentherm_logger:
+            return
+
+        gateway_state = self.hass.states.get(gateway_id)
+        if gateway_state and gateway_state.state != "unavailable":
+            attrs = gateway_state.attributes
+            opentherm_logger.log_modulation(
+                modulation_level=attrs.get("relative_mod_level"),
+                flame_on=attrs.get("flame_on"),
+                ch_water_temp=attrs.get("ch_water_temp"),
+                control_setpoint=attrs.get("control_setpoint"),
+                boiler_water_temp=attrs.get("boiler_water_temp"),
+            )
+
     async def async_control_opentherm_gateway(
         self, any_heating: bool, max_target_temp: float
     ) -> None:
         """Control the global OpenTherm gateway based on aggregated demands."""
-        # Only attempt control when a gateway ID is configured
         gateway_id = self.area_manager.opentherm_gateway_id
         if not gateway_id:
             return
-        if not gateway_id:
-            return
 
-        # Get OpenTherm logger from hass.data
+        # Get OpenTherm logger
         from ..const import DOMAIN
 
         opentherm_logger = self.hass.data.get(DOMAIN, {}).get("opentherm_logger")
 
         try:
-            # Collect heating areas and their types for logging
-            heating_area_ids = []
-            heating_types = {}  # area_id -> heating_type
-            overhead_temps = {}  # area_id -> overhead_temp
-
             if any_heating:
-                (
+                # Collect heating areas
+                heating_area_ids, heating_types, overhead_temps = (
+                    self._collect_heating_areas(opentherm_logger)
+                )
+
+                # Control boiler for heating
+                await self._control_gateway_heating_on(
                     heating_area_ids,
                     heating_types,
                     overhead_temps,
-                ) = self._collect_heating_areas(opentherm_logger)
-
-                # Control boiler
-            if any_heating:
-                # Calculate basic overhead
-                overhead = max(overhead_temps.values()) if overhead_temps else 20.0
-
-                # Advanced control: compute heating curve / PID / PWM setpoints if enabled
-                advanced_enabled = self.area_manager.advanced_control_enabled
-                heating_curve_enabled = self.area_manager.heating_curve_enabled
-                pid_enabled = self.area_manager.pid_enabled
-
-                # Collect candidates per area
-                setpoint_candidates = [
-                    c
-                    for c in (
-                        self._compute_area_candidate(
-                            aid,
-                            overhead,
-                            advanced_enabled,
-                            heating_curve_enabled,
-                            pid_enabled,
-                        )
-                        for aid in heating_area_ids
-                    )
-                    if c is not None
-                ]
-
-                # compute candidate helper moved above in class
-
-                # Choose the highest candidate setpoint
-                boiler_setpoint = self._calculate_boiler_setpoint(
-                    setpoint_candidates, max_target_temp, overhead
+                    max_target_temp,
+                    opentherm_logger,
                 )
-
-                # Minimum setpoint calculation
-                # Get configured gateway id once
-                gateway_device_id = self.area_manager.opentherm_gateway_id
-                # Enforce minimum setpoints by area and adjust boiler_setpoint if necessary
-                boiler_setpoint = self._enforce_minimum_setpoints(
-                    heating_area_ids, boiler_setpoint, gateway_device_id
-                )
-
-                # Determine heating type breakdown for logging
-                floor_heating_count = sum(
-                    1 for ht in heating_types.values() if ht == "floor_heating"
-                )
-                radiator_count = sum(
-                    1 for ht in heating_types.values() if ht == "radiator"
-                )
-
-                # Use OpenTherm Gateway integration service
-                # Get gateway_id directly from area_manager configuration
-                gateway_device_id = self.area_manager.opentherm_gateway_id
-
-                if not gateway_device_id:
-                    _LOGGER.error(
-                        "OpenTherm Gateway ID not configured. "
-                        "Please set it via Global Settings or service call: smart_heating.set_opentherm_gateway"
-                    )
-                    return
-
-                try:
-                    # Use the OpenTherm integration service directly and expect the
-                    # configured gateway_id (slug) to be provided by options.
-                    # If PWM is enabled and gateway does not support modulation, approximate duty using PWM
-                    gateway_state = self.hass.states.get(gateway_device_id)
-                    if (
-                        self.area_manager.pwm_enabled
-                        and gateway_state
-                        and not gateway_state.attributes.get("relative_mod_level")
-                    ):
-                        # Very rough PWM approximation: set to setpoint if duty > 0.5, else 0.0
-                        boiler_temp = gateway_state.attributes.get(
-                            "boiler_water_temp"
-                        ) or gateway_state.attributes.get("ch_water_temp")
-                        try:
-                            boiler_temp = float(boiler_temp)
-                        except Exception:
-                            boiler_temp = None
-
-                        if boiler_temp is not None:
-                            base_offset = (
-                                20.0
-                                if any(
-                                    ht == "floor_heating"
-                                    for ht in heating_types.values()
-                                )
-                                else 27.2
-                            )
-                            duty = (
-                                (boiler_setpoint - base_offset)
-                                / (boiler_temp - base_offset)
-                                if (boiler_temp - base_offset) != 0
-                                else 1.0
-                            )
-                            duty = min(max(duty, 0.0), 1.0)
-                            if duty < 0.5:
-                                _LOGGER.debug(
-                                    "PWM approximation: duty=%.2f -> setpoint=0.0", duty
-                                )
-                                boiler_setpoint = 0.0
-                            else:
-                                _LOGGER.debug(
-                                    "PWM approximation: duty=%.2f -> setpoint=%.1f",
-                                    duty,
-                                    boiler_setpoint,
-                                )
-
-                    await self.hass.services.async_call(
-                        "opentherm_gw",
-                        "set_control_setpoint",
-                        {
-                            "gateway_id": gateway_device_id,
-                            "temperature": float(boiler_setpoint),
-                        },
-                        blocking=False,
-                    )
-                    _LOGGER.info(
-                        "OpenTherm gateway: Set setpoint via gateway service (gateway_id=%s): %.1f°C",
-                        gateway_device_id,
-                        boiler_setpoint,
-                    )
-                except Exception as err:
-                    _LOGGER.error(
-                        "Failed to set OpenTherm Gateway setpoint (gateway_id=%s): %s",
-                        gateway_device_id,
-                        err,
-                    )
-
-                # Log with appropriate context based on whether heating curve is active
-                if advanced_enabled and heating_curve_enabled:
-                    _LOGGER.info(
-                        "OpenTherm gateway: Boiler ON, setpoint=%.1f°C (heating curve, %d floor heating, %d radiator)",
-                        boiler_setpoint,
-                        floor_heating_count,
-                        radiator_count,
-                    )
-                else:
-                    _LOGGER.info(
-                        "OpenTherm gateway: Boiler ON, setpoint=%.1f°C (overhead=%.1f°C, %d floor heating, %d radiator)",
-                        boiler_setpoint,
-                        overhead,
-                        floor_heating_count,
-                        radiator_count,
-                    )
-
-                # Log boiler control with heating type context
-                if opentherm_logger:
-                    opentherm_logger.log_boiler_control(
-                        state="ON",
-                        setpoint=boiler_setpoint,
-                        heating_areas=heating_area_ids,
-                        max_target_temp=max_target_temp,
-                        overhead=overhead,
-                        floor_heating_count=floor_heating_count,
-                        radiator_count=radiator_count,
-                    )
             else:
-                # Turn off boiler by setting setpoint to 0
-                gateway_device_id = self.area_manager.opentherm_gateway_id
+                # Turn off boiler
+                await self._control_gateway_heating_off(gateway_id, opentherm_logger)
 
-                if not gateway_device_id:
-                    _LOGGER.warning(
-                        "OpenTherm Gateway ID not configured, cannot turn off"
-                    )
-                    return
-
-                try:
-                    await self.hass.services.async_call(
-                        "opentherm_gw",
-                        "set_control_setpoint",
-                        {
-                            "gateway_id": gateway_device_id,
-                            "temperature": 0.0,
-                        },
-                        blocking=False,
-                    )
-                    _LOGGER.info(
-                        "OpenTherm gateway: Boiler OFF (setpoint=0 via service, gateway_id=%s)",
-                        gateway_device_id,
-                    )
-                except Exception as err:
-                    _LOGGER.error(
-                        "Failed to turn off OpenTherm Gateway (gateway_id=%s): %s",
-                        gateway_device_id,
-                        err,
-                    )
-
-                # Log boiler control
-                if opentherm_logger:
-                    opentherm_logger.log_boiler_control(
-                        state="OFF",
-                        heating_areas=[],
-                    )
-
-            # Get and log modulation status
-            if opentherm_logger:
-                gateway_state = self.hass.states.get(gateway_id)
-                if gateway_state and gateway_state.state != "unavailable":
-                    attrs = gateway_state.attributes
-                    opentherm_logger.log_modulation(
-                        modulation_level=attrs.get("relative_mod_level"),
-                        flame_on=attrs.get("flame_on"),
-                        ch_water_temp=attrs.get("ch_water_temp"),
-                        control_setpoint=attrs.get("control_setpoint"),
-                        boiler_water_temp=attrs.get("boiler_water_temp"),
-                    )
+            # Log modulation status
+            self._log_modulation_status(gateway_id, opentherm_logger)
 
         except Exception as err:
             _LOGGER.error("Failed to control OpenTherm gateway %s: %s", gateway_id, err)
