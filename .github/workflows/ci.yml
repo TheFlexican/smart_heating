@@ -34,17 +34,44 @@ jobs:
           python -m pip install -U pip setuptools wheel
           pip install -r tests/requirements_test.txt
 
-      - name: Debug Python package versions
+      - name: Debug Python package versions (safe imports)
         run: |
           python -V
           pip --version
-          pip list
-          python -c "import homeassistant, aiohttp, aiodns, pycares; print('versions', homeassistant.__version__, aiohttp.__version__, aiodns.__version__, pycares.__version__)"
+          pip list --format=columns
+          cat > /tmp/ci_debug.py <<'PY'
+          import traceback
+
+          def try_import(name):
+            try:
+              mod = __import__(name)
+              version = getattr(mod, '__version__', 'unknown')
+              print(f'OK: import {name} version={version}')
+              return mod
+            except Exception as e:
+              print(f'ERR: import {name} -> {e!r}')
+              traceback.print_exc()
+              return None
+
+          py = try_import('pycares')
+          if py:
+            print('pycares has ares_query_a_result attribute:', hasattr(py, 'ares_query_a_result'))
+          aiod = try_import('aiodns')
+          if aiod:
+            print('aiodns version:', getattr(aiod, '__version__', 'unknown'))
+          aio = try_import('aiohttp')
+          if aio:
+            print('aiohttp version:', getattr(aio, '__version__', 'unknown'))
+          ha = try_import('homeassistant')
+          if ha:
+            print('homeassistant version:', getattr(ha, '__version__', 'unknown'))
+          PY
+          python /tmp/ci_debug.py
 
       - name: Run tests with coverage
         run: |
           pytest tests/unit --cov=smart_heating --cov-report=xml --cov-report=html
-        continue-on-error: true
+        continue-on-error: false
 
       - name: Install node dependencies
         run: |
