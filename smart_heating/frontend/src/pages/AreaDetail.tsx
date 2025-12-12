@@ -445,22 +445,23 @@ const ZoneDetail = () => {
     }
   }
 
+  // Helper function to get effective preset temperature (global or custom)
+  const getPresetTemp = (presetKey: string, customTemp: number | undefined, fallback: number): string => {
+    if (!area) return `${fallback}°C`
+
+    const useGlobalKey = `use_global_${presetKey}` as keyof Zone
+    const useGlobal = (area[useGlobalKey] as boolean | undefined) ?? true
+
+    if (useGlobal && globalPresets) {
+      const globalKey = `${presetKey}_temp` as keyof GlobalPresets
+      return `${globalPresets[globalKey]}°C (global)`
+    }
+    return `${customTemp ?? fallback}°C (custom)`
+  }
+
   // Generate settings sections for draggable layout
   const getSettingsSections = (): SettingSection[] => {
     if (!area) return []
-
-    // Helper function to get effective preset temperature (global or custom)
-    const getPresetTemp = (presetKey: string, customTemp: number | undefined, fallback: number): string => {
-      const useGlobalKey = `use_global_${presetKey}` as keyof Zone
-      const useGlobal = (area[useGlobalKey] as boolean | undefined) ?? true
-
-      if (useGlobal && globalPresets) {
-        const globalKey = `${presetKey}_temp` as keyof GlobalPresets
-        return `${globalPresets[globalKey]}°C (global)`
-      } else {
-        return `${customTemp ?? fallback}°C (custom)`
-      }
-    }
 
     return [
       {

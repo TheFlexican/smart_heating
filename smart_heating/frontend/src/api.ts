@@ -776,6 +776,31 @@ export const getOpenThermSensorStates = async (): Promise<{
     sensorIds.map(id => getEntityState(id).catch(() => null))
   )
 
+  // Map sensor keywords to state properties and value parsers
+  const sensorMapping: Array<{
+    keyword: string
+    stateKey: string
+    parser: (value: string) => number | boolean
+  }> = [
+    { keyword: 'regel_instelpunt_1', stateKey: 'control_setpoint', parser: Number.parseFloat },
+    { keyword: 'relatief_modulatieniveau', stateKey: 'modulation_level', parser: Number.parseFloat },
+    { keyword: 'centrale_verwarming_1_watertemperatuur', stateKey: 'ch_water_temp', parser: Number.parseFloat },
+    { keyword: 'temperatuur_retourwater', stateKey: 'return_water_temp', parser: Number.parseFloat },
+    { keyword: 'kamertemperatuur', stateKey: 'room_temp', parser: Number.parseFloat },
+    { keyword: 'room_setpoint_1', stateKey: 'room_setpoint', parser: Number.parseFloat },
+    { keyword: 'vlam', stateKey: 'flame_on', parser: (v) => v === 'on' },
+    { keyword: 'waterdruk', stateKey: 'ch_pressure', parser: Number.parseFloat },
+    { keyword: 'centrale_verwarming_1', stateKey: 'ch_active', parser: (v) => v === 'on' },
+    { keyword: 'heet_water', stateKey: 'dhw_active', parser: (v) => v === 'on' },
+    { keyword: 'storingsindicatie', stateKey: 'fault', parser: (v) => v === 'on' },
+    { keyword: 'diagnostische', stateKey: 'diagnostic', parser: (v) => v === 'on' },
+    { keyword: 'lage_waterdruk', stateKey: 'low_water_pressure', parser: (v) => v === 'on' },
+    { keyword: 'gasstoring', stateKey: 'gas_fault', parser: (v) => v === 'on' },
+    { keyword: 'luchtdrukfout', stateKey: 'air_pressure_fault', parser: (v) => v === 'on' },
+    { keyword: 'water_overtemperature', stateKey: 'water_overtemp', parser: (v) => v === 'on' },
+    { keyword: 'service_vereist', stateKey: 'service_required', parser: (v) => v === 'on' },
+  ]
+
   const states: any = {}
 
   for (let i = 0; i < results.length; i++) {
@@ -784,40 +809,10 @@ export const getOpenThermSensorStates = async (): Promise<{
       const sensorId = sensorIds[i]
       const value = result.value.state
 
-      if (sensorId.includes('regel_instelpunt_1')) {
-        states.control_setpoint = Number.parseFloat(value)
-      } else if (sensorId.includes('relatief_modulatieniveau')) {
-        states.modulation_level = Number.parseFloat(value)
-      } else if (sensorId.includes('centrale_verwarming_1_watertemperatuur')) {
-        states.ch_water_temp = Number.parseFloat(value)
-      } else if (sensorId.includes('temperatuur_retourwater')) {
-        states.return_water_temp = Number.parseFloat(value)
-      } else if (sensorId.includes('kamertemperatuur')) {
-        states.room_temp = Number.parseFloat(value)
-      } else if (sensorId.includes('room_setpoint_1')) {
-        states.room_setpoint = Number.parseFloat(value)
-      } else if (sensorId.includes('vlam')) {
-        states.flame_on = value === 'on'
-      } else if (sensorId.includes('waterdruk')) {
-        states.ch_pressure = Number.parseFloat(value)
-      } else if (sensorId.includes('centrale_verwarming_1')) {
-        states.ch_active = value === 'on'
-      } else if (sensorId.includes('heet_water')) {
-        states.dhw_active = value === 'on'
-      } else if (sensorId.includes('storingsindicatie')) {
-        states.fault = value === 'on'
-      } else if (sensorId.includes('diagnostische')) {
-        states.diagnostic = value === 'on'
-      } else if (sensorId.includes('lage_waterdruk')) {
-        states.low_water_pressure = value === 'on'
-      } else if (sensorId.includes('gasstoring')) {
-        states.gas_fault = value === 'on'
-      } else if (sensorId.includes('luchtdrukfout')) {
-        states.air_pressure_fault = value === 'on'
-      } else if (sensorId.includes('water_overtemperature')) {
-        states.water_overtemp = value === 'on'
-      } else if (sensorId.includes('service_vereist')) {
-        states.service_required = value === 'on'
+      // Find matching sensor mapping
+      const mapping = sensorMapping.find(m => sensorId.includes(m.keyword))
+      if (mapping) {
+        states[mapping.stateKey] = mapping.parser(value)
       }
     }
   }
