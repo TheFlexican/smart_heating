@@ -48,7 +48,9 @@ async def async_handle_add_schedule(
     )
 
     try:
-        area_manager.add_schedule_to_area(area_id, schedule_id, time_str, temperature, days)
+        area_manager.add_schedule_to_area(
+            area_id, schedule_id, time_str, temperature, days
+        )
         await area_manager.async_save()
         await coordinator.async_request_refresh()
         _LOGGER.info("Added schedule %s to area %s", schedule_id, area_id)
@@ -237,7 +239,9 @@ async def async_handle_copy_schedule(
     try:
         source_schedule = source_area.schedules.get(source_schedule_id)
         if not source_schedule:
-            _LOGGER.error("Schedule %s not found in area %s", source_schedule_id, source_area_id)
+            _LOGGER.error(
+                "Schedule %s not found in area %s", source_schedule_id, source_area_id
+            )
             return
 
         # Create new schedule(s) for target days
@@ -268,6 +272,8 @@ async def async_handle_copy_schedule(
 
         await area_manager.async_save()
         await coordinator.async_request_refresh()
-        _LOGGER.info("Copied schedule from area %s to area %s", source_area_id, target_area_id)
+        _LOGGER.info(
+            "Copied schedule from area %s to area %s", source_area_id, target_area_id
+        )
     except Exception as err:
         _LOGGER.error("Failed to copy schedule: %s", err)

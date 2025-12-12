@@ -175,7 +175,6 @@ def test_compute_area_candidate_with_heating_curve_and_pid():
     assert abs(cand2 - (21.0 + 1.5)) < 1e-6
 
 
-
 @pytest.mark.asyncio
 async def test_get_valve_capability_missing_entity():
     hass = MagicMock()

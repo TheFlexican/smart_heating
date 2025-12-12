@@ -567,7 +567,9 @@ async def handle_remove_safety_sensor(
             if getattr(area_manager, "safety_sensors", None):
                 # We iterate over a copy here because `remove_safety_sensor`
                 # mutates `area_manager.safety_sensors` while iterating.
-                for s in list(area_manager.safety_sensors):  # NOSONAR - list() is required to avoid mutation during iteration
+                for s in list(
+                    area_manager.safety_sensors
+                ):  # NOSONAR - list() is required to avoid mutation during iteration
                     area_manager.remove_safety_sensor(s["sensor_id"])
     await area_manager.async_save()
 
