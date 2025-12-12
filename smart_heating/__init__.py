@@ -635,6 +635,135 @@ async def async_setup_services(  # NOSONAR
     _LOGGER.debug("All services registered")
 
 
+async def _shutdown_components(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Shutdown all integration components.
+
+    Args:
+        hass: Home Assistant instance
+        entry: Config entry
+    """
+    from smart_heating.utils.coordinator_helpers import call_maybe_async
+
+    # Shutdown safety monitor
+    if "safety_monitor" in hass.data[DOMAIN]:
+        await call_maybe_async(hass.data[DOMAIN]["safety_monitor"].async_shutdown)
+        _LOGGER.debug("Safety monitor stopped")
+
+    # Shutdown coordinator and remove state listeners
+    if entry.entry_id in hass.data[DOMAIN]:
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+        await call_maybe_async(coordinator.async_shutdown)
+        _LOGGER.debug("Coordinator state listeners removed")
+
+    # Stop climate controller
+    if "climate_unsub" in hass.data[DOMAIN]:
+        hass.data[DOMAIN]["climate_unsub"]()
+        _LOGGER.debug("Climate controller stopped")
+
+    # Stop schedule executor
+    if "schedule_executor" in hass.data[DOMAIN]:
+        await call_maybe_async(hass.data[DOMAIN]["schedule_executor"].async_stop)
+        _LOGGER.debug("Schedule executor stopped")
+
+    # Unload history tracker
+    if "history" in hass.data[DOMAIN]:
+        await call_maybe_async(hass.data[DOMAIN]["history"].async_unload)
+        _LOGGER.debug("History tracker unloaded")
+
+
+async def _cleanup_tasks(hass: HomeAssistant) -> None:
+    """Cancel background tasks and cleanup.
+
+    Args:
+        hass: Home Assistant instance
+    """
+    # Cancel tasks created with hass.async_create_task stored in hass.data
+    for task_key in (
+        "advanced_metrics_task",
+        "initial_control_task",
+        "discover_capabilities_task",
+    ):
+        try:
+            t = hass.data[DOMAIN].get(task_key)
+            if t and hasattr(t, "cancel"):
+                t.cancel()
+        except Exception:
+            pass
+
+    try:
+        await hass.async_block_till_done()
+    except Exception:
+        pass
+
+    # Shutdown area logger write tasks
+    if "area_logger" in hass.data[DOMAIN]:
+        try:
+            from smart_heating.utils.coordinator_helpers import call_maybe_async
+
+            await call_maybe_async(hass.data[DOMAIN]["area_logger"].async_shutdown)
+        except Exception:
+            pass
+
+
+def _remove_sidebar_panel(hass: HomeAssistant) -> None:
+    """Remove the sidebar panel.
+
+    Args:
+        hass: Home Assistant instance
+    """
+    try:
+        from homeassistant.components.frontend import async_remove_panel
+
+        async_remove_panel(hass, "smart_heating")
+        _LOGGER.debug("Smart Heating panel removed from sidebar")
+    except Exception as err:
+        _LOGGER.warning("Failed to remove panel: %s", err)
+
+
+def _remove_all_services(hass: HomeAssistant) -> None:
+    """Remove all integration services.
+
+    Args:
+        hass: Home Assistant instance
+    """
+    services_to_remove = [
+        SERVICE_REFRESH,
+        SERVICE_ADD_DEVICE_TO_AREA,
+        SERVICE_REMOVE_DEVICE_FROM_AREA,
+        SERVICE_SET_AREA_TEMPERATURE,
+        SERVICE_ENABLE_AREA,
+        SERVICE_DISABLE_AREA,
+        SERVICE_ADD_SCHEDULE,
+        SERVICE_REMOVE_SCHEDULE,
+        SERVICE_ENABLE_SCHEDULE,
+        SERVICE_DISABLE_SCHEDULE,
+        SERVICE_SET_NIGHT_BOOST,
+        SERVICE_SET_HYSTERESIS,
+        SERVICE_SET_OPENTHERM_GATEWAY,
+        SERVICE_SET_TRV_TEMPERATURES,
+        SERVICE_SET_PRESET_MODE,
+        SERVICE_SET_BOOST_MODE,
+        SERVICE_CANCEL_BOOST,
+        SERVICE_SET_FROST_PROTECTION,
+        SERVICE_ADD_WINDOW_SENSOR,
+        SERVICE_REMOVE_WINDOW_SENSOR,
+        SERVICE_ADD_PRESENCE_SENSOR,
+        SERVICE_REMOVE_PRESENCE_SENSOR,
+        SERVICE_SET_HVAC_MODE,
+        SERVICE_COPY_SCHEDULE,
+        SERVICE_SET_HISTORY_RETENTION,
+        SERVICE_ENABLE_VACATION_MODE,
+        SERVICE_DISABLE_VACATION_MODE,
+        SERVICE_SET_SAFETY_SENSOR,
+        SERVICE_REMOVE_SAFETY_SENSOR,
+    ]
+
+    for service in services_to_remove:
+        hass.services.async_remove(DOMAIN, service)
+
+    _LOGGER.debug("Smart Heating services removed")
+
+
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry.
 
@@ -651,108 +780,22 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
     if unload_ok:
-        # Shutdown safety monitor
-        if "safety_monitor" in hass.data[DOMAIN]:
-            from smart_heating.utils.coordinator_helpers import call_maybe_async
-
-            await call_maybe_async(hass.data[DOMAIN]["safety_monitor"].async_shutdown)
-            _LOGGER.debug("Safety monitor stopped")
-
-        # Shutdown coordinator and remove state listeners
-        if entry.entry_id in hass.data[DOMAIN]:
-            coordinator = hass.data[DOMAIN][entry.entry_id]
-            from smart_heating.utils.coordinator_helpers import call_maybe_async
-
-            await call_maybe_async(coordinator.async_shutdown)
-            _LOGGER.debug("Coordinator state listeners removed")
-
-        # Stop climate controller
-        if "climate_unsub" in hass.data[DOMAIN]:
-            hass.data[DOMAIN]["climate_unsub"]()
-            _LOGGER.debug("Climate controller stopped")
-
-        # Stop schedule executor
-        if "schedule_executor" in hass.data[DOMAIN]:
-            await call_maybe_async(hass.data[DOMAIN]["schedule_executor"].async_stop)
-            _LOGGER.debug("Schedule executor stopped")
-
-        # Unload history tracker
-        if "history" in hass.data[DOMAIN]:
-            await call_maybe_async(hass.data[DOMAIN]["history"].async_unload)
-            _LOGGER.debug("History tracker unloaded")
+        # Shutdown all components
+        await _shutdown_components(hass, entry)
 
         # Remove coordinator from hass.data
         hass.data[DOMAIN].pop(entry.entry_id)
         _LOGGER.debug("Smart Heating coordinator removed from hass.data")
 
-        # Cancel tasks created with hass.async_create_task stored in hass.data
-        for task_key in (
-            "advanced_metrics_task",
-            "initial_control_task",
-            "discover_capabilities_task",
-        ):
-            try:
-                t = hass.data[DOMAIN].get(task_key)
-                if t and hasattr(t, "cancel"):
-                    t.cancel()
-            except Exception:
-                pass
-        try:
-            await hass.async_block_till_done()
-        except Exception:
-            pass
-
-        # Shutdown area logger write tasks
-        if "area_logger" in hass.data[DOMAIN]:
-            try:
-                await call_maybe_async(hass.data[DOMAIN]["area_logger"].async_shutdown)
-            except Exception:
-                pass
+        # Cleanup background tasks
+        await _cleanup_tasks(hass)
 
         # Remove sidebar panel
-        try:
-            from homeassistant.components.frontend import async_remove_panel
-
-            async_remove_panel(
-                hass, "smart_heating"
-            )  # Not actually async despite the name
-            _LOGGER.debug("Smart Heating panel removed from sidebar")
-        except Exception as err:
-            _LOGGER.warning("Failed to remove panel: %s", err)
+        _remove_sidebar_panel(hass)
 
         # Remove services if no more instances
         if not hass.data[DOMAIN]:
-            hass.services.async_remove(DOMAIN, SERVICE_REFRESH)
-            hass.services.async_remove(DOMAIN, SERVICE_ADD_DEVICE_TO_AREA)
-            hass.services.async_remove(DOMAIN, SERVICE_REMOVE_DEVICE_FROM_AREA)
-            hass.services.async_remove(DOMAIN, SERVICE_SET_AREA_TEMPERATURE)
-            hass.services.async_remove(DOMAIN, SERVICE_ENABLE_AREA)
-            hass.services.async_remove(DOMAIN, SERVICE_DISABLE_AREA)
-            hass.services.async_remove(DOMAIN, SERVICE_ADD_SCHEDULE)
-            hass.services.async_remove(DOMAIN, SERVICE_REMOVE_SCHEDULE)
-            hass.services.async_remove(DOMAIN, SERVICE_ENABLE_SCHEDULE)
-            hass.services.async_remove(DOMAIN, SERVICE_DISABLE_SCHEDULE)
-            hass.services.async_remove(DOMAIN, SERVICE_SET_NIGHT_BOOST)
-            hass.services.async_remove(DOMAIN, SERVICE_SET_HYSTERESIS)
-            hass.services.async_remove(DOMAIN, SERVICE_SET_OPENTHERM_GATEWAY)
-            hass.services.async_remove(DOMAIN, SERVICE_SET_TRV_TEMPERATURES)
-            # Remove new services
-            hass.services.async_remove(DOMAIN, SERVICE_SET_PRESET_MODE)
-            hass.services.async_remove(DOMAIN, SERVICE_SET_BOOST_MODE)
-            hass.services.async_remove(DOMAIN, SERVICE_CANCEL_BOOST)
-            hass.services.async_remove(DOMAIN, SERVICE_SET_FROST_PROTECTION)
-            hass.services.async_remove(DOMAIN, SERVICE_ADD_WINDOW_SENSOR)
-            hass.services.async_remove(DOMAIN, SERVICE_REMOVE_WINDOW_SENSOR)
-            hass.services.async_remove(DOMAIN, SERVICE_ADD_PRESENCE_SENSOR)
-            hass.services.async_remove(DOMAIN, SERVICE_REMOVE_PRESENCE_SENSOR)
-            hass.services.async_remove(DOMAIN, SERVICE_SET_HVAC_MODE)
-            hass.services.async_remove(DOMAIN, SERVICE_COPY_SCHEDULE)
-            hass.services.async_remove(DOMAIN, SERVICE_SET_HISTORY_RETENTION)
-            hass.services.async_remove(DOMAIN, SERVICE_ENABLE_VACATION_MODE)
-            hass.services.async_remove(DOMAIN, SERVICE_DISABLE_VACATION_MODE)
-            hass.services.async_remove(DOMAIN, SERVICE_SET_SAFETY_SENSOR)
-            hass.services.async_remove(DOMAIN, SERVICE_REMOVE_SAFETY_SENSOR)
-            _LOGGER.debug("Smart Heating services removed")
+            _remove_all_services(hass)
 
     _LOGGER.info("Smart Heating integration unloaded")
 
