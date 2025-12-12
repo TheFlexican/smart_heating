@@ -2,6 +2,8 @@
 
 This directory contains the SonarQube configuration for the Smart Heating project.
 
+> **Note**: After updating `sonar-project.properties`, a new analysis must run for the changes to take effect. Push a commit to trigger the GitHub Action, or manually run the SonarCloud analysis.
+
 ## Files
 
 - `sonar-project.properties` - Main SonarQube configuration file
