@@ -79,6 +79,77 @@ runSubagent({
 })
 ```
 
+### 🎭 Playwright E2E Test Writer Agent
+**File:** `playwright-e2e-agent.md`
+
+**Purpose:** Write and maintain Playwright end-to-end tests for frontend workflows
+
+**Expertise:**
+- Playwright test framework and best practices
+- Page object pattern for maintainability
+- User workflow and journey testing
+- WebSocket real-time update testing
+- Responsive design and accessibility testing
+- Cross-browser compatibility testing
+
+**When to Use:**
+- "Write E2E tests for this feature"
+- "Test the user workflow"
+- "Add frontend integration tests"
+- "Test across browsers"
+- "Verify responsive behavior"
+- When adding new UI features
+
+**Tools:**
+- Playwright and @playwright/test
+- TypeScript for test code
+- Multiple browser engines (Chromium, Firefox, WebKit)
+- Visual regression testing
+
+**Example Delegation:**
+```typescript
+runSubagent({
+  description: "Write Playwright E2E tests",
+  prompt: "Write comprehensive E2E tests for the temperature control workflow. Test user interactions, WebSocket updates, and responsive behavior. See .github/agents/playwright-e2e-agent.md for guidelines."
+})
+```
+
+### ⚛️ TypeScript/React Development Agent
+**File:** `typescript-react-agent.md`
+
+**Purpose:** Develop type-safe React components and frontend features
+
+**Expertise:**
+- TypeScript type system and patterns
+- React 18+ functional components and hooks
+- Material-UI v5/v6 component library
+- State management and side effects
+- API integration and WebSocket handling
+- Internationalization (EN/NL)
+
+**When to Use:**
+- "Create a React component"
+- "Implement this frontend feature"
+- "Add TypeScript types"
+- "Migrate to new MUI patterns"
+- "Build a custom hook"
+- When developing UI features
+
+**Tools:**
+- TypeScript 5+
+- React 18+
+- Material-UI v5/v6
+- React Router, i18next
+- Vite build tool
+
+**Example Delegation:**
+```typescript
+runSubagent({
+  description: "TypeScript/React development",
+  prompt: "Create a temperature control component with MUI. Ensure type safety, responsive design, and EN/NL translations. See .github/agents/typescript-react-agent.md for guidelines."
+})
+```
+
 ## How to Use Agents
 
 ### From User Perspective
@@ -86,6 +157,8 @@ Simply mention what you want in natural language:
 - "Can you check the code quality?"
 - "Fix any SonarQube issues"
 - "Review this code for quality problems"
+- "Write E2E tests for this feature"
+- "Create a React component for temperature control"
 
 Copilot will automatically delegate to the appropriate agent.
 
@@ -211,14 +284,32 @@ All agents have access to project context:
 - **Test Requirements:** 80% coverage, all tests must pass
 - **Documentation:** English + Dutch (bilingual)
 
-## Future Agents
+## Current Agent Coverage
 
-Potential specialized agents for this project:
-- **Testing Agent** - Test generation, coverage improvement, test refactoring
-- **Documentation Agent** - Keep EN/NL docs in sync, API documentation
-- **Home Assistant Agent** - HA-specific integrations, entity management
-- **UI/UX Agent** - Material-UI patterns, responsive design, accessibility
-- **Performance Agent** - Optimization, profiling, bundle size
+The Smart Heating project has comprehensive agent coverage:
+
+**Backend Development:**
+- ✅ **Pytest Agent** - Python unit tests, HA integration tests
+- ✅ **SonarQube Agent** - Code quality, refactoring, security
+
+**Frontend Development:**
+- ✅ **TypeScript/React Agent** - Component development, type safety
+- ✅ **Playwright Agent** - E2E tests, user workflows
+
+**Coverage Areas:**
+- ✅ Code Quality & Security (SonarQube)
+- ✅ Backend Testing (Pytest)
+- ✅ Frontend Development (TypeScript/React)
+- ✅ User Journey Testing (Playwright)
+
+## Future Agent Possibilities
+
+Potential additional agents for this project:
+- **Documentation Agent** - Keep EN/NL docs in sync, API documentation, changelog maintenance
+- **Home Assistant Agent** - HA-specific patterns, entity management, integration best practices
+- **Accessibility Agent** - WCAG compliance, ARIA patterns, keyboard navigation
+- **Performance Agent** - Optimization, profiling, bundle size analysis
+- **Deployment Agent** - CI/CD, container management, release automation
 
 ## Maintenance
 
@@ -230,6 +321,6 @@ Agent documentation should be:
 
 ---
 
-**Version:** 1.0
+**Version:** 1.1
 **Last Updated:** 2025-12-13
 **Maintained By:** Smart Heating Development Team
