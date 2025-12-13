@@ -562,7 +562,7 @@ export default function OpenThermLogger() {
       )}
 
       {/* Gateway Capabilities */}
-      {capabilities && capabilities.available && (
+      {capabilities?.available && (
         <Paper sx={{ p: 2 }}>
           <Typography variant="subtitle1" gutterBottom>
             {t('opentherm.capabilities', 'Gateway Capabilities')}
