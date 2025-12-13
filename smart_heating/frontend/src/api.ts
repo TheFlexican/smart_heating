@@ -94,6 +94,14 @@ export const removeScheduleFromZone = async (
   await axios.delete(`${API_BASE}/areas/${areaId}/schedules/${scheduleId}`)
 }
 
+export const updateScheduleInZone = async (
+  areaId: string,
+  scheduleId: string,
+  update: Partial<Omit<ScheduleEntry, 'id'>>
+): Promise<void> => {
+  await axios.patch(`${API_BASE}/areas/${areaId}/schedules/${scheduleId}`, update)
+}
+
 export const getLearningStats = async (areaId: string): Promise<LearningStats> => {
   const response = await axios.get(`${API_BASE}/areas/${areaId}/learning`)
   return response.data.stats

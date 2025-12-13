@@ -20,7 +20,7 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import EventIcon from '@mui/icons-material/Event'
 import RepeatIcon from '@mui/icons-material/Repeat'
 import { Zone, ScheduleEntry } from '../types'
-import { addScheduleToZone, removeScheduleFromZone } from '../api'
+import { addScheduleToZone, removeScheduleFromZone, updateScheduleInZone } from '../api'
 import ScheduleEntryDialog from './ScheduleEntryDialog'
 import { format, parse } from 'date-fns'
 
@@ -61,9 +61,16 @@ const ScheduleEditor = ({ area, onUpdate }: ScheduleEditorProps) => {
     setDialogOpen(true)
   }
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, day?: string) => {
     try {
-      await removeScheduleFromZone(area.id, id)
+      const schedule = schedules.find(s => s.id === id)
+      // If a specific day is supplied and schedule exists + has >1 days, update days
+      if (day && schedule?.days?.length && schedule.days.length > 1) {
+        const newDays = schedule.days.filter(d => d !== day)
+        await updateScheduleInZone(area.id, id, { days: newDays })
+      } else {
+        await removeScheduleFromZone(area.id, id)
+      }
       onUpdate()
     } catch (error) {
       console.error('Failed to delete schedule:', error)
@@ -76,7 +83,7 @@ const ScheduleEditor = ({ area, onUpdate }: ScheduleEditorProps) => {
         // For updates, remove old and add new
         await removeScheduleFromZone(area.id, editingEntry.id)
       }
-      
+
       await addScheduleToZone(area.id, entry)
       onUpdate()
       setDialogOpen(false)
@@ -118,7 +125,7 @@ const ScheduleEditor = ({ area, onUpdate }: ScheduleEditorProps) => {
 
   // Get unique dates
   const uniqueDates = [...new Set(dateSpecificSchedules.map(s => s.date!))]
-    .sort()
+    .sort((a, b) => a.localeCompare(b))
     .reverse() // Most recent first
 
   const formatScheduleLabel = (schedule: ScheduleEntry) => {
@@ -162,7 +169,7 @@ const ScheduleEditor = ({ area, onUpdate }: ScheduleEditorProps) => {
               {t('scheduleDialog.dateSpecificSchedules')}
             </Typography>
           </Box>
-          
+
           <Stack spacing={2}>
             {uniqueDates.map(date => {
               const dateSchedules = getSchedulesForDate(date)
@@ -264,7 +271,7 @@ const ScheduleEditor = ({ area, onUpdate }: ScheduleEditorProps) => {
                           <Chip
                             key={schedule.id}
                             label={formatScheduleLabel(schedule)}
-                            onDelete={() => handleDelete(schedule.id)}
+                            onDelete={() => handleDelete(schedule.id, day)}
                             onClick={() => handleEdit(schedule)}
                             color="primary"
                             variant="outlined"

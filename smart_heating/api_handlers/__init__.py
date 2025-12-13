@@ -82,6 +82,7 @@ from .schedules import (
     handle_add_schedule,
     handle_cancel_boost,
     handle_remove_schedule,
+    handle_update_schedule,
     handle_set_boost_mode,
     handle_set_preset_mode,
 )
@@ -136,6 +137,7 @@ __all__ = [
     # Schedules
     "handle_add_schedule",
     "handle_remove_schedule",
+    "handle_update_schedule",
     "handle_set_preset_mode",
     "handle_set_boost_mode",
     "handle_cancel_boost",

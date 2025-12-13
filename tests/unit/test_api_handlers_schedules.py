@@ -11,6 +11,7 @@ from smart_heating.api_handlers.schedules import (
     handle_remove_schedule,
     handle_set_boost_mode,
     handle_set_preset_mode,
+    handle_update_schedule,
 )
 from smart_heating.const import DOMAIN
 
@@ -332,6 +333,50 @@ class TestScheduleHandlers:
         assert response.status == 404
         body = json.loads(response.body.decode())
         assert "error" in body
+
+    @pytest.mark.asyncio
+    async def test_handle_update_schedule_remove_single_day(self, mock_hass, mock_area_manager):
+        """Test updating a schedule by removing a single day from its days list."""
+        from smart_heating.models.schedule import Schedule
+
+        # Create a real schedule in area with multiple days
+        schedule = Schedule(
+            "sched_123", "08:00", temperature=21.0, days=["Monday", "Tuesday", "Wednesday"]
+        )
+        mock_area_manager.get_area.return_value.schedules = {"sched_123": schedule}
+
+        # Update to remove Monday
+        response = await handle_update_schedule(
+            mock_hass,
+            mock_area_manager,
+            "living_room",
+            "sched_123",
+            {"days": ["Tuesday", "Wednesday"]},
+        )
+
+        assert response.status == 200
+        body = json.loads(response.body.decode())
+        assert body["success"] is True
+        assert body["schedule"]["days"] == ["Tuesday", "Wednesday"]
+
+    @pytest.mark.asyncio
+    async def test_handle_update_schedule_delete_if_empty_days(self, mock_hass, mock_area_manager):
+        """If the updated days list is empty, treat as delete and remove schedule."""
+        from smart_heating.models.schedule import Schedule
+
+        schedule = Schedule(
+            "sched_del", "08:00", temperature=21.0, days=["Monday"]
+        )  # 1-day schedule
+        mock_area_manager.get_area.return_value.schedules = {"sched_del": schedule}
+
+        response = await handle_update_schedule(
+            mock_hass, mock_area_manager, "living_room", "sched_del", {"days": []}
+        )
+
+        assert response.status == 200
+        body = json.loads(response.body.decode())
+        assert body["success"] is True
+        assert body.get("deleted") is True
 
     @pytest.mark.asyncio
     async def test_handle_set_preset_mode_success(self, mock_hass, mock_area_manager):

@@ -12,6 +12,7 @@ from .api_handlers import (
     handle_add_presence_sensor,
     # Schedules
     handle_add_schedule,
+    handle_update_schedule,
     # Sensors
     handle_add_window_sensor,
     handle_call_service,
@@ -459,6 +460,32 @@ class SmartHeatingAPIView(HomeAssistantView):
                 return web.json_response({"error": ERROR_UNKNOWN_ENDPOINT}, status=404)
         except Exception as err:
             _LOGGER.error("Error handling GET %s: %s", endpoint, err)
+            return web.json_response({"error": str(err)}, status=500)
+
+    async def patch(self, request: web.Request, endpoint: str) -> web.Response:
+        """Handle PATCH requests used to update resources.
+
+        Args:
+            request: Request object
+            endpoint: Endpoint path
+
+        Returns:
+            JSON response
+        """
+        try:
+            # Area schedule update
+            if endpoint.startswith(ENDPOINT_PREFIX_AREAS) and "/schedules/" in endpoint:
+                parts = endpoint.split("/")
+                area_id = parts[1]
+                schedule_id = parts[3]
+                data = await request.json()
+                return await handle_update_schedule(
+                    self.hass, self.area_manager, area_id, schedule_id, data
+                )
+
+            return web.json_response({"error": ERROR_UNKNOWN_ENDPOINT}, status=404)
+        except Exception as err:
+            _LOGGER.error("Error handling PATCH %s: %s", endpoint, err)
             return web.json_response({"error": str(err)}, status=500)
 
     async def _handle_area_action_post(

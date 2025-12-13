@@ -127,6 +127,74 @@ async def handle_remove_schedule(
         return web.json_response({"error": str(err)}, status=404)
 
 
+async def handle_update_schedule(
+    _hass: HomeAssistant,
+    area_manager: AreaManager,
+    area_id: str,
+    schedule_id: str,
+    data: dict,
+) -> web.Response:
+    """Update a schedule within an area.
+
+    Args:
+        hass: Home Assistant instance
+        area_manager: Area manager instance
+        area_id: Area identifier
+        schedule_id: Schedule identifier
+        data: Partial schedule fields to update
+
+    Returns:
+        JSON response
+    """
+    try:
+        area = area_manager.get_area(area_id)
+        if not area:
+            return web.json_response({"error": f"Area {area_id} not found"}, status=404)
+
+        schedule = area.schedules.get(schedule_id)
+        if not schedule:
+            return web.json_response(
+                {"error": f"Schedule {schedule_id} not found in area {area_id}"},
+                status=404,
+            )
+
+        # Build base dict from existing schedule and overlay incoming fields
+        existing = schedule.to_dict()
+        # Allow both frontend 'days' (Monday etc) or short codes
+        for k, v in data.items():
+            existing[k] = v
+
+        # If days was provided and is an empty list, treat that as a full deletion request
+        if (
+            "days" in data
+            and isinstance(data.get("days"), list)
+            and len(data.get("days")) == 0
+        ):
+            area.remove_schedule(schedule_id)
+            await area_manager.async_save()
+            return web.json_response({"success": True, "deleted": True})
+
+        # If caller provided 'days', remove 'day' single-day field to avoid override
+        if "days" in data and "day" in existing:
+            existing.pop("day", None)
+        # If caller provided 'day', remove 'days' list key to avoid ambiguity
+        if "day" in data and "days" in existing:
+            existing.pop("days", None)
+
+        # Recreate schedule object from dict to normalize fields
+        updated = Schedule.from_dict(existing)
+        # Ensure id persists
+        updated.schedule_id = schedule_id
+
+        # Replace in area schedules
+        area.schedules[schedule_id] = updated
+        await area_manager.async_save()
+
+        return web.json_response({"success": True, "schedule": updated.to_dict()})
+    except ValueError as err:
+        return web.json_response({"error": str(err)}, status=400)
+
+
 async def handle_set_preset_mode(
     hass: HomeAssistant, area_manager: AreaManager, area_id: str, data: dict
 ) -> web.Response:
