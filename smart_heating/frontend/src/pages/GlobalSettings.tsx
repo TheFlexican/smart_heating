@@ -372,7 +372,7 @@ export default function GlobalSettings({ themeMode, onThemeChange }: { themeMode
     setCalibrating(true)
     try {
       const res = await calibrateOpentherm()
-      if (res && res.opv) {
+      if (res?.opv) {
         setCalibrationResult(res.opv)
       }
     } catch (err) {
