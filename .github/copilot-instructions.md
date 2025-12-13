@@ -66,17 +66,49 @@ curl -s "http://homeassistant.local:8123/api/states" \
 - Ensure code is clean, well-documented, and efficient
 - **Fix bugs in actual code, don't work around them in tests**
 - When HA test suite provides proper fixtures/helpers, use them instead of mocking HA internals
-- **ALWAYS use SonarQube MCP server to check code quality before completing tasks**
+- **ALWAYS delegate code quality analysis and fixes to the SonarQube Agent**
 
-**RULE #5.3: SonarQube Code Quality Standards**
+**RULE #5.3: SonarQube Code Quality - Delegate to Specialized Agent**
 
-**CRITICAL: Check SonarQube Before Completing Any Task**
-- After making code changes, ALWAYS run: `mcp_sonarqube_search_sonar_issues_in_projects` to check for new issues
-- Fix all BLOCKER and HIGH severity issues before committing
-- Address MEDIUM severity issues when feasible
-- Document any intentionally ignored issues with `# NOSONAR` comments explaining why
+**⚠️ IMPORTANT: Use the SonarQube Agent for Code Quality Tasks**
 
-**Code Quality Thresholds:**
+When user requests involve code quality, analysis, or SonarQube issues, **delegate to the SonarQube Agent** instead of handling directly:
+
+**Delegate to SonarQube Agent when:**
+- User asks to "analyze code quality" or "check SonarQube"
+- User mentions "fix SonarQube issues" or "resolve code smells"
+- Before completing major features (quality check)
+- When reviewing pull requests for quality issues
+- When preparing for releases
+- User references SonarQube bot comments in PRs
+- Cognitive complexity or code smell issues need addressing
+- Deprecated API migrations are needed across multiple files
+
+**How to Delegate:**
+```markdown
+Use the runSubagent tool with the SonarQube agent context:
+
+runSubagent(
+  description="Code quality analysis",
+  prompt="Please analyze the codebase using SonarQube MCP server and fix all BLOCKER and HIGH severity issues. Focus on [specific area if applicable]. See .github/agents/sonarqube-agent.md for full guidelines and workflow."
+)
+```
+
+**For Quick, Single-File Fixes:**
+You may handle simple, isolated SonarQube fixes yourself (e.g., one optional chain fix) if:
+- Issue is in a single file
+- Fix is straightforward and obvious (e.g., `res && res.opv` → `res?.opv`)
+- No risk of breaking functionality
+- Can verify immediately with build
+
+**Always follow these safety rules for direct fixes:**
+1. ✅ Only change what SonarQube specifically identified
+2. ✅ Never remove API calls or function calls
+3. ✅ Never rename variables that might conflict with API functions
+4. ✅ Build and verify after each change
+5. ✅ Run tests to ensure no regressions
+
+**Code Quality Thresholds (Enforced by SonarQube Agent):**
 - **Cognitive Complexity:** Keep functions under 15 complexity (refactor if higher)
 - **Function Length:** Keep functions focused and under 50 lines when possible
 - **Nesting Depth:** Avoid nesting functions more than 4 levels deep
@@ -106,32 +138,33 @@ curl -s "http://homeassistant.local:8123/api/states" \
 - Avoid deeply nested callbacks (refactor to separate functions)
 - Use `const` by default, `let` only when reassignment needed, never `var`
 
-**Common Refactoring Patterns:**
+**Common Refactoring Patterns (Handled by SonarQube Agent):**
 1. **High Cognitive Complexity** → Extract helper functions, use early returns, reduce nesting
 2. **Nested Ternaries** → Create helper functions with clear names
 3. **Duplicated Literals** → Extract to constants at module/class level
 4. **Long Functions** → Split into smaller, focused functions with single responsibilities
 5. **Deep Nesting** → Use guard clauses, early returns, and extract nested logic
 
-**SonarQube MCP Server Workflow:**
+**SonarQube Agent Reference:**
+- See `.github/agents/sonarqube-agent.md` for complete guidelines
+- Agent handles comprehensive code quality analysis and fixes
+- Use `runSubagent` to delegate quality tasks
+
+**Quick SonarQube MCP Server Commands (for simple checks):**
 ```bash
-# 1. Check for issues after making changes
+# Check for new issues after your changes
 mcp_sonarqube_search_sonar_issues_in_projects(projects=["TheFlexican_smart-heating"], severities=["HIGH", "BLOCKER"])
 
-# 2. Get details on specific rules if needed
+# Get rule details if needed
 mcp_sonarqube_show_rule(key="typescript:S3776")  # Cognitive complexity
-mcp_sonarqube_show_rule(key="python:S3776")     # Cognitive complexity
 
-# 3. Analyze specific file for issues
-mcp_sonarqube_analyze_code_snippet(projectKey="TheFlexican_smart-heating", codeSnippet="...", language="typescript")
-
-# 4. Check project quality gate status
+# Check quality gate status
 mcp_sonarqube_get_project_quality_gate_status(projectKey="TheFlexican_smart-heating")
 ```
 
 **Before Committing Code:**
 1. ✅ Run all tests (Python unit tests + E2E tests when available)
-2. ✅ Check SonarQube for new issues: `mcp_sonarqube_search_sonar_issues_in_projects`
+2. ✅ Check SonarQube for new issues (delegate to SonarQube Agent for fixes if needed)
 3. ✅ Fix all BLOCKER and HIGH severity issues
 4. ✅ Verify code coverage meets 80% threshold
 5. ✅ Update documentation (EN + NL) if user-facing changes
