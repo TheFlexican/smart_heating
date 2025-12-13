@@ -1,6 +1,5 @@
 import {
   Box,
-  Grid,
   Typography,
   CircularProgress,
   Alert,
@@ -94,27 +93,32 @@ const ZoneList = ({ areas, loading, onUpdate, showHidden, onToggleShowHidden, on
             {t('dashboard.noAreasFound')}
           </Alert>
         ) : (
-          <Droppable droppableId="areas-list" type="AREA">
+          <Droppable droppableId="areas-list" direction="horizontal">
             {(provided, snapshot) => (
-              <Grid
-                container
-                spacing={{ xs: 2, sm: 2, md: 3 }}
+              <Box
                 ref={provided.innerRef}
                 {...provided.droppableProps}
                 sx={{
+                  display: 'grid',
+                  gridTemplateColumns: {
+                    xs: '1fr',
+                    sm: 'repeat(2, 1fr)',
+                    md: 'repeat(3, 1fr)',
+                    lg: 'repeat(4, 1fr)',
+                  },
+                  gap: { xs: 2, sm: 2, md: 3 },
                   bgcolor: snapshot.isDraggingOver ? 'action.hover' : 'transparent',
                   transition: 'background-color 0.2s ease',
                   minHeight: 100,
                   borderRadius: 2,
+                  p: 0.5,
                 }}
               >
                 {visibleAreas.map((area, index) => (
-                  <Grid item xs={12} sm={6} md={4} lg={3} key={area.id}>
-                    <ZoneCard area={area} onUpdate={onUpdate} index={index} />
-                  </Grid>
+                  <ZoneCard key={area.id} area={area} onUpdate={onUpdate} index={index} />
                 ))}
                 {provided.placeholder}
-              </Grid>
+              </Box>
             )}
           </Droppable>
         )}
