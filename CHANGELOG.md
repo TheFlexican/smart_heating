@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Tests and developer docs updated to avoid MagicMock numeric conversion pitfalls
 - Fix: Area Settings "Switch/Pump Control" toggle did not persist changes in the UI; API now exposes `shutdown_switches_when_idle` (backwards compatible with `switch_shutdown_enabled`)
  - Fix: Schedules using localized day names (e.g., 'Maandag') were not recognized by the scheduler; the backend now accepts English, Dutch and short day names.
+ - Breaking change: Backend now requires schedule day indices (0=Monday) or 3-letter short codes (mon,tue,..). Localized and full English day strings (e.g., 'Maandag', 'Monday') are no longer accepted via API. Frontend updated accordingly to send indices.
 
 
 **OpenTherm Boiler Monitoring & Error Notifications**

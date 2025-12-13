@@ -32,7 +32,8 @@ en dit project volgt [Semantic Versioning](https://semver.org/).
 - Wanneer de gebiedstemperatuur >= (doel - hysteresis), wordt de thermostaatinstelling verlaagd naar de huidige temperatuur om te voorkomen dat de 'verwarming' status wordt geschakeld
 - Voorkom dubbele calls naar `climate.set_temperature` door de laatst ingestelde setpoint per thermostaat in de cache op te slaan
 - Tests en ontwikkelaarsdocumentatie bijgewerkt om problemen met MagicMock numerieke conversie te voorkomen
-- Fix: De Zone-instelling "Schakel schakelaars/pompen uit wanneer niet verwarmd wordt" (Switch/Pump Control) werkte niet correct en veranderde niet persistent; de API retourneert nu `shutdown_switches_when_idle` (achterwaarts compatibel met `switch_shutdown_enabled`)- Fix: Schedules met gelokaliseerde dagnamen (bijv. 'Maandag') werden niet herkend; de backend accepteert nu Engelse, Nederlandse en korte dagnamen.
+- Fix: De Zone-instelling "Schakel schakelaars/pompen uit wanneer niet verwarmd wordt" (Switch/Pump Control) werkte niet correct en veranderde niet persistent; de API retourneert nu `shutdown_switches_when_idle` (achterwaarts compatibel met `switch_shutdown_enabled`).
+- Breaking change: De backend accepteert nu uitsluitend numerieke dagindices (0=Maandag) of korte 3-letter codes ('mon','tue',...). Voluit geschreven en gelokaliseerde dagnamen (bijv. 'Maandag', 'Monday') worden niet meer geaccepteerd via de API. De frontend is aangepast om indices te verzenden.
 
 **OpenTherm Ketel Monitoring & Foutmeldingen**
 - **Real-time ketel status dashboard**: Live OpenTherm Gateway sensor monitoring
