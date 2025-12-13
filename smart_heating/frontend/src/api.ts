@@ -201,8 +201,8 @@ export const setSwitchShutdown = async (
 export const copySchedule = async (
   sourceAreaId: string,
   targetAreaId: string,
-  sourceDays?: string[],
-  targetDays?: string[]
+  sourceDays?: number[],
+  targetDays?: number[]
 ): Promise<void> => {
   const data: any = {
     source_area_id: sourceAreaId,

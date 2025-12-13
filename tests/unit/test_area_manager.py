@@ -499,7 +499,7 @@ class TestScheduleManagement:
         assert schedule.schedule_id == "schedule1"
         assert schedule.time == "08:00"
         assert schedule.temperature == 21.0
-        assert schedule.days == ["mon", "tue", "wed"]
+        assert schedule.days == [0, 1, 2]
         assert "schedule1" in area.schedules
 
     def test_add_schedule_to_nonexistent_area(self, area_manager: AreaManager):

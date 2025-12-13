@@ -103,11 +103,11 @@ class ScheduleExecutor:
             now = now.astimezone(tz)
 
         current_time = now.time()
-        current_day = DAYS_OF_WEEK[now.weekday()]
+        current_day_idx = now.weekday()
 
         _LOGGER.debug(
             "Checking schedules for %s at %s",
-            current_day,
+            DAYS_OF_WEEK[current_day_idx],
             current_time.strftime("%H:%M"),
         )
 
@@ -128,7 +128,7 @@ class ScheduleExecutor:
             # Find active schedule for current day/time
             active_schedule = self._find_active_schedule(
                 area.schedules,
-                current_day,
+                current_day_idx,
                 current_time,
             )
 
@@ -148,11 +148,11 @@ class ScheduleExecutor:
                     _LOGGER.debug(
                         "No active schedule for area %s at %s %s",
                         area.name,
-                        current_day,
+                        DAYS_OF_WEEK[current_day_idx],
                         current_time.strftime("%H:%M"),
                     )
 
-    def _get_previous_day(self, current_day: str) -> str:
+    def _get_previous_day(self, current_day: "str | int") -> int:
         """Get the previous day name.
 
         Args:
@@ -162,28 +162,56 @@ class ScheduleExecutor:
             Previous day name
         """
         # Accept numeric day index (0=Monday) or day name string
-        day_order = [
-            "Monday",
-            "Tuesday",
-            "Wednesday",
-            "Thursday",
-            "Friday",
-            "Saturday",
-            "Sunday",
-        ]
-        current_day_idx = day_order.index(current_day)
-        return day_order[(current_day_idx - 1) % 7]
+        # Accept numeric day index (0=Monday) or a day name string
+        if isinstance(current_day, int):
+            return (int(current_day) - 1) % 7
+        key = current_day.strip().lower()
+        full_to_idx = {
+            "monday": 0,
+            "tuesday": 1,
+            "wednesday": 2,
+            "thursday": 3,
+            "friday": 4,
+            "saturday": 5,
+            "sunday": 6,
+        }
+        if key not in full_to_idx:
+            raise ValueError("Invalid day name")
+        return (full_to_idx[key] - 1) % 7
 
-    def _normalize_day_input(self, current_day: "str | int") -> str:
-        """Normalize input day to English full day name.
+    def _normalize_day_input(self, current_day: "str | int") -> int:
+        """Normalize input day to integer index.
 
-        Accepts an integer index 0..6 (0=Monday) or a full day name string.
+        Accepts integer index 0..6 (0=Monday), or full day name string, or short code.
+        Returns numeric index 0..6.
         """
         if isinstance(current_day, int):
-            idx_map_full = {0: "Monday", 1: "Tuesday", 2: "Wednesday", 3: "Thursday", 4: "Friday", 5: "Saturday", 6: "Sunday"}
-            return idx_map_full.get(current_day % 7)
-        # Assume it's already a string day name
-        return current_day
+            return int(current_day % 7)
+        if isinstance(current_day, str):
+            key = current_day.strip().lower()
+            short_to_idx = {
+                "mon": 0,
+                "tue": 1,
+                "wed": 2,
+                "thu": 3,
+                "fri": 4,
+                "sat": 5,
+                "sun": 6,
+            }
+            full_to_idx = {
+                "monday": 0,
+                "tuesday": 1,
+                "wednesday": 2,
+                "thursday": 3,
+                "friday": 4,
+                "saturday": 5,
+                "sunday": 6,
+            }
+            if key in short_to_idx:
+                return short_to_idx[key]
+            if key in full_to_idx:
+                return full_to_idx[key]
+        raise ValueError("Invalid day input: expected int index or day name/short code")
 
     def _is_time_in_midnight_crossing_schedule_from_previous_day(
         self, schedule: dict, current_time: time
@@ -284,10 +312,10 @@ class ScheduleExecutor:
         """
         # Normalize current_day: accept int index or English full name
         current_day_normalized = self._normalize_day_input(current_day)
-        previous_day = self._get_previous_day(current_day_normalized)
+        previous_day_idx = (current_day_normalized - 1) % 7
         # Try previous day midnight-crossing schedules
         schedule = self._find_previous_day_schedule(
-            schedules, previous_day, current_time
+            schedules, previous_day_idx, current_time
         )
         if schedule:
             return schedule
@@ -298,10 +326,12 @@ class ScheduleExecutor:
         if schedule:
             return schedule
         # Finally, normal schedules today
-        return self._find_normal_schedule(schedules, current_day_normalized, current_time)
+        return self._find_normal_schedule(
+            schedules, current_day_normalized, current_time
+        )
 
     def _find_previous_day_schedule(
-        self, schedules: dict, previous_day: str, current_time: time
+        self, schedules: dict, previous_day: int, current_time: time
     ) -> Optional[dict]:
         for schedule in schedules.values():
             if (
@@ -314,7 +344,7 @@ class ScheduleExecutor:
         return None
 
     def _find_midnight_crossing_today_schedule(
-        self, schedules: dict, current_day: str, current_time: time
+        self, schedules: dict, current_day: int, current_time: time
     ) -> Optional[dict]:
         for schedule in schedules.values():
             if (
@@ -327,7 +357,7 @@ class ScheduleExecutor:
         return None
 
     def _find_normal_schedule(
-        self, schedules: dict, current_day: str, current_time: time
+        self, schedules: dict, current_day: int, current_time: time
     ) -> Optional[dict]:
         for schedule in schedules.values():
             if schedule.day == current_day and self._is_time_in_normal_schedule(
@@ -561,15 +591,15 @@ class ScheduleExecutor:
         Returns:
             First morning schedule or None
         """
-        current_day = DAYS_OF_WEEK[now.weekday()]
+        current_day_idx = now.weekday()
         morning_schedules = []
 
         for schedule in schedules.values():
             if not schedule.enabled:
                 continue
 
-            # Check if schedule is for current day
-            if schedule.day != current_day:
+            # Check if schedule is for current day (numeric index)
+            if schedule.day != current_day_idx:
                 continue
 
             # Parse start time

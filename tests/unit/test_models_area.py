@@ -159,7 +159,7 @@ class TestAreaModel:
             schedule_id="schedule_1",
             time="07:00",
             temperature=21.0,
-                days=[0, "tuesday"],
+            days=[0, 1],
         )
 
         # Add schedule
@@ -410,7 +410,7 @@ class TestAreaPresetTemperatures:
             schedule_id="test_schedule",
             time="08:00",  # Use 'time' instead of 'start_time'
             temperature=21.0,
-            days=["mon", "tue", "wed", "thu", "fri"],  # Use strings instead of numbers
+            days=[0, 1, 2, 3, 4],
         )
         area.schedules["test_schedule"] = schedule
 
@@ -533,7 +533,7 @@ class TestAreaNightBoost:
             schedule_id="sleep1",
             start_time="22:00",
             end_time="06:30",
-            day="Monday",
+            day=0,
             preset_mode="sleep",
         )
         area.add_schedule(schedule)

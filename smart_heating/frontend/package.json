@@ -1,6 +1,6 @@
 {
   "name": "smart-heating-frontend",
-  "version": "0.5.13",
+  "version": "0.5.14",
   "private": true,
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

@@ -107,8 +107,8 @@ Area:
 Schedule:
   - schedule_id: str
   - time: str (HH:MM) [legacy]
-  - day: str (Monday, Tuesday, etc.) [legacy - enkele dag]
-  - days: List[str] (Monday, Tuesday, etc.) [v0.4.0+ - meerdaagse selectie]
+  - day: int (0=Monday..6=Sunday) [legacy - enkele dag index]
+  - days: List[int] (0=Monday..6=Sunday) [v0.4.0+ - meerdaagse selectie]
   - date: str (JJJJ-MM-DD) [v0.4.0+ - datumspecifieke schema's]
   - start_time: str (HH:MM)
   - end_time: str (HH:MM)

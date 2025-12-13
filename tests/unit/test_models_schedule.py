@@ -17,7 +17,7 @@ class TestScheduleInitialization:
         assert schedule.start_time == "08:00"
         assert schedule.end_time == "23:59"
         assert schedule.enabled is True
-        assert schedule.days == ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+        assert schedule.days == [0, 1, 2, 3, 4, 5, 6]
 
     def test_init_with_temperature(self):
         """Test initialization with temperature."""
@@ -35,17 +35,15 @@ class TestScheduleInitialization:
 
     def test_init_with_days(self):
         """Test initialization with specific days."""
-        schedule = Schedule("schedule1", "08:00", days=["mon", "wed", "fri"]) 
-
-        assert schedule.days == ["mon", "wed", "fri"]
-        assert schedule.day == "Monday"
+        schedule = Schedule("schedule1", "08:00", days=[0, 2, 4])
+        assert schedule.days == [0, 2, 4]
+        assert schedule.day == 0
 
     def test_init_with_day_name(self):
         """Test initialization with day name."""
         schedule = Schedule("schedule1", "08:00", day=1)
-
-        assert schedule.day == "Tuesday"
-        assert schedule.days == ["tue"]
+        assert schedule.day == 1
+        assert schedule.days == [1]
 
     def test_init_with_start_end_time(self):
         """Test initialization with start and end time."""
@@ -81,14 +79,14 @@ class TestIsActive:
 
     def test_is_active_recurring_correct_day_before_time(self):
         """Test recurring schedule before start time."""
-        schedule = Schedule("schedule1", "08:00", days=["mon"]) 
+        schedule = Schedule("schedule1", "08:00", days=[0])
         current_time = datetime(2024, 1, 15, 7, 30)  # Monday 07:30
 
         assert schedule.is_active(current_time) is False
 
     def test_is_active_recurring_correct_day_at_time(self):
         """Test recurring schedule at start time."""
-        schedule = Schedule("schedule1", "08:00", days=["mon"]) 
+        schedule = Schedule("schedule1", "08:00", days=[0])
         current_time = datetime(2024, 1, 15, 8, 0)  # Monday 08:00
 
         assert schedule.is_active(current_time) is True
@@ -114,7 +112,7 @@ class TestIsActive:
 
         # Empty days list defaults to all days, so schedule is active
         assert schedule.is_active(current_time) is True
-        assert schedule.days == ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+        assert schedule.days == [0, 1, 2, 3, 4, 5, 6]
 
     def test_is_active_date_specific_correct_date_in_range(self):
         """Test date-specific schedule on correct date and time."""
@@ -219,7 +217,7 @@ class TestFromDict:
         assert schedule.start_time == "08:00"
         assert schedule.end_time == "12:00"
         assert schedule.temperature == 21.0
-        assert schedule.days == ["mon", "wed"]
+        assert schedule.days == [0, 2]
         assert schedule.enabled is True
 
     def test_from_dict_with_preset_mode(self):
@@ -258,7 +256,7 @@ class TestFromDict:
         schedule = Schedule.from_dict(data)
 
         assert schedule.time == "08:00"
-        assert schedule.days == ["mon", "wed"]
+        assert schedule.days == [0, 2]
 
     def test_from_dict_with_day_name(self):
         """Test from_dict with single day name."""
@@ -266,7 +264,7 @@ class TestFromDict:
 
         schedule = Schedule.from_dict(data)
 
-        assert schedule.day == "Tuesday"
+        assert schedule.day == 1
 
     def test_from_dict_filters_none_days(self):
         """Test from_dict filters out None values from days."""
@@ -280,4 +278,4 @@ class TestFromDict:
         schedule = Schedule.from_dict(data)
 
         # Should filter out None and convert to internal format
-        assert schedule.days == ["mon", "wed"]
+        assert schedule.days == [0, 2]

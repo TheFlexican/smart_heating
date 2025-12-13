@@ -107,8 +107,8 @@ Area:
 Schedule:
   - schedule_id: str
   - time: str (HH:MM) [legacy]
-  - day: str (Monday, Tuesday, etc.) [legacy - single day]
-  - days: List[str] (Monday, Tuesday, etc.) [v0.4.0+ - multi-day selection]
+  - day: int (0=Monday..6=Sunday) [legacy - single day index]
+  - days: List[int] (0=Monday..6=Sunday) [v0.4.0+ - multi-day selection]
   - date: str (YYYY-MM-DD) [v0.4.0+ - date-specific schedules]
   - start_time: str (HH:MM)
   - end_time: str (HH:MM)

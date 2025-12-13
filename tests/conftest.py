@@ -322,7 +322,7 @@ def mock_schedule_entry() -> dict[str, Any]:
         "id": "schedule_1",
         "time": "07:00",
         "temperature": 21.0,
-        "days": ["monday", "tuesday", "wednesday", "thursday", "friday"],
+        "days": [0, 1, 2, 3, 4],
         "enabled": True,
     }
 

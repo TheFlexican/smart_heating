@@ -4,7 +4,7 @@ Quick reference for developing and extending Smart Heating.
 
 ## 🔄 Current Version & Roadmap
 
-**Current Stable**: v0.5.7
+**Current Stable**: v0.5.14
 **Next Release**: v0.6.0 (Planning Phase)
 
 ### v0.6.0 Development Roadmap

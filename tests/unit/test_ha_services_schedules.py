@@ -33,7 +33,7 @@ def mock_schedule():
     schedule.end_time = "22:00"
     schedule.temperature = 21.0
     schedule.enabled = True
-    schedule.day = "monday"
+    schedule.day = 0
     return schedule
 
 
@@ -84,14 +84,14 @@ class TestScheduleHandlers:
             ATTR_SCHEDULE_ID: "morning",
             ATTR_TIME: "08:00",
             ATTR_TEMPERATURE: 21.5,
-            ATTR_DAYS: ["monday", "tuesday"],
+            ATTR_DAYS: [0, 1],
         }
 
         await async_handle_add_schedule(call, mock_area_manager, mock_coordinator)
 
         # Verify schedule was added
         mock_area_manager.add_schedule_to_area.assert_called_once_with(
-            "living_room", "morning", "08:00", 21.5, ["monday", "tuesday"]
+            "living_room", "morning", "08:00", 21.5, [0, 1]
         )
         # Verify data was saved
         mock_area_manager.async_save.assert_called_once()

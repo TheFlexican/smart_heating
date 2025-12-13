@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### ✨ Features
 ### 🐛 Bug fixes & Improvements
 
+## [0.5.14] - 2025-12-13
+
+### 🐛 Bug Fixes & Improvements
+
+- Backend schedules: now accept numeric day indices (0=Monday) or short 3-letter codes (mon, tue, ...). Full day names are deprecated for the API. Updated frontend and docs to use numeric indices.
+
+
 ## [0.5.13] - 2025-12-12
 
 ### 🐛 Bug Fixes & Improvements

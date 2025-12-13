@@ -33,7 +33,7 @@ def mock_schedule():
     """Create a mock schedule entry."""
     schedule = MagicMock()
     schedule.schedule_id = "test_schedule"
-    schedule.day = "Monday"
+    schedule.day = 0
     schedule.start_time = "07:00"
     schedule.end_time = "09:00"
     schedule.temperature = TEST_TEMPERATURE
@@ -135,15 +135,15 @@ class TestDayHelpers:
 
     async def test_get_previous_day_monday(self, scheduler: ScheduleExecutor):
         """Test getting previous day from Monday."""
-        assert scheduler._get_previous_day("Monday") == "Sunday"
+        assert scheduler._get_previous_day(0) == 6
 
     async def test_get_previous_day_sunday(self, scheduler: ScheduleExecutor):
         """Test getting previous day from Sunday."""
-        assert scheduler._get_previous_day("Sunday") == "Saturday"
+        assert scheduler._get_previous_day(6) == 5
 
     async def test_get_previous_day_tuesday(self, scheduler: ScheduleExecutor):
         """Test getting previous day from Tuesday."""
-        assert scheduler._get_previous_day("Tuesday") == "Monday"
+        assert scheduler._get_previous_day(1) == 0
 
 
 class TestTimeMatching:
@@ -222,12 +222,12 @@ class TestFindActiveSchedule:
         """Test finding midnight-crossing schedule has priority."""
         # Create two schedules: one normal, one midnight-crossing
         normal_schedule = MagicMock()
-        normal_schedule.day = "Monday"
+        normal_schedule.day = 0
         normal_schedule.start_time = "08:00"
         normal_schedule.end_time = "10:00"
 
         midnight_schedule = MagicMock()
-        midnight_schedule.day = "Monday"
+        midnight_schedule.day = 0
         midnight_schedule.start_time = "22:00"
         midnight_schedule.end_time = "06:00"
 
@@ -354,7 +354,7 @@ class TestScheduleChecking:
         self, scheduler: ScheduleExecutor, mock_area_with_schedule, mock_schedule, mock_area_manager
     ):
         """Test that active schedules are applied."""
-        mock_schedule.day = "Monday"
+        mock_schedule.day = 0
         mock_schedule.start_time = "07:00"
         mock_schedule.end_time = "09:00"
         mock_area_with_schedule.schedules = {"test_id": mock_schedule}
@@ -372,7 +372,7 @@ class TestScheduleChecking:
         self, scheduler: ScheduleExecutor, mock_area_with_schedule, mock_schedule, mock_area_manager
     ):
         """Test that schedule cache prevents reapplying same schedule."""
-        mock_schedule.day = "Monday"
+        mock_schedule.day = 0
         mock_area_with_schedule.schedules = {"test_id": mock_schedule}
         mock_area_manager.get_all_areas.return_value = {TEST_AREA_ID: mock_area_with_schedule}
 
@@ -397,12 +397,12 @@ class TestSmartNightBoost:
     async def test_find_first_morning_schedule(self, scheduler_with_learning: ScheduleExecutor):
         """Test finding first morning schedule."""
         morning_schedule = MagicMock()
-        morning_schedule.day = "Monday"
+        morning_schedule.day = 0
         morning_schedule.start_time = "07:00"
         morning_schedule.enabled = True
 
         afternoon_schedule = MagicMock()
-        afternoon_schedule.day = "Monday"
+        afternoon_schedule.day = 0
         afternoon_schedule.start_time = "14:00"
         afternoon_schedule.enabled = True
 
@@ -418,7 +418,7 @@ class TestSmartNightBoost:
     ):
         """Test finding morning schedule when none exist."""
         afternoon_schedule = MagicMock()
-        afternoon_schedule.day = "Monday"
+        afternoon_schedule.day = 0
         afternoon_schedule.start_time = "14:00"
         afternoon_schedule.enabled = True
 

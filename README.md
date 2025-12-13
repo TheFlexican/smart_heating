@@ -1,6 +1,6 @@
 # Smart Heating
 
-[![Version](https://img.shields.io/badge/version-0.5.12-blue.svg)](https://github.com/TheFlexican/smart_heating/releases)
+[![Version](https://img.shields.io/badge/version-0.5.14-blue.svg)](https://github.com/TheFlexican/smart_heating/releases)
 [![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -186,7 +186,7 @@ POST /api/smart_heating/areas/{area_id}/boost
 # Add schedule
 POST /api/smart_heating/areas/{area_id}/schedule
 {
-  "days": ["monday", "tuesday"],
+  "days": [0, 1],
   "start_time": "07:00",
   "end_time": "09:00",
   "preset_mode": "comfort"

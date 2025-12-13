@@ -15,7 +15,7 @@ def make_hass():
 def test_get_previous_day():
     hass = make_hass()
     se = ScheduleExecutor(hass, MagicMock())
-    assert se._get_previous_day("Monday") == "Sunday" or se._get_previous_day("Monday") == "Sunday"
+    assert se._get_previous_day(0) == 6 or se._get_previous_day(0) == 6
 
 
 def make_schedule(start, end, day, schedule_id="s1", preset_mode=None, temperature=None):
@@ -34,28 +34,28 @@ def test_midnight_crossing_previous_day_match():
     sm = MagicMock()
     se = ScheduleExecutor(hass, sm)
     # schedule on Monday 22:00 - Tuesday 07:00
-    sched_prev = make_schedule("22:00", "07:00", "Monday")
+    sched_prev = make_schedule("22:00", "07:00", 0)
     # current day is Tuesday early morning 06:00
     cur_time = time.fromisoformat("06:00")
-    active = se._find_active_schedule({"s1": sched_prev}, "Tuesday", cur_time)
+    active = se._find_active_schedule({"s1": sched_prev}, 1, cur_time)
     assert active == sched_prev
 
 
 def test_midnight_crossing_today_match():
     hass = make_hass()
     se = ScheduleExecutor(hass, MagicMock())
-    sched_today = make_schedule("22:00", "07:00", "Tuesday")
+    sched_today = make_schedule("22:00", "07:00", 1)
     cur_time = time.fromisoformat("23:00")
-    active = se._find_active_schedule({"s1": sched_today}, "Tuesday", cur_time)
+    active = se._find_active_schedule({"s1": sched_today}, 1, cur_time)
     assert active == sched_today
 
 
 def test_normal_schedule_match():
     hass = make_hass()
     se = ScheduleExecutor(hass, MagicMock())
-    sched = make_schedule("08:00", "17:00", "Wednesday")
+    sched = make_schedule("08:00", "17:00", 2)
     cur_time = time.fromisoformat("10:00")
-    active = se._find_active_schedule({"s1": sched}, "Wednesday", cur_time)
+    active = se._find_active_schedule({"s1": sched}, 2, cur_time)
     assert active == sched
 
 
@@ -64,7 +64,7 @@ def test_get_target_time_and_temp_from_schedule():
     am = MagicMock()
     se = ScheduleExecutor(hass, am)
     area = SimpleNamespace(area_id="a1", target_temperature=21.0)
-    sched = make_schedule("07:15", "08:00", "Thursday", temperature=20.5)
+    sched = make_schedule("07:15", "08:00", 3, temperature=20.5)
     now = datetime(2025, 12, 12, 6, 0)
     target_time, target_temp = se._get_target_time_and_temp_from_schedule(area, sched, now)
     assert target_time.hour == 7 and target_time.minute == 15

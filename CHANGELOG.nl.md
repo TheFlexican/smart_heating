@@ -10,6 +10,13 @@ en dit project volgt [Semantic Versioning](https://semver.org/).
 ### ✨ Functies
 ### 🐛 Opgeloste bugs & Verbeteringen
 
+## [0.5.14] - 2025-12-13
+
+### 🐛 Opgeloste bugs & Verbeteringen
+
+- Backend schema's: accepteert nu numerieke dagindices (0=Maandag) of korte 3-letter codes (mon, tue, ...). Volledige dagnamen zijn niet langer toegestaan via de API. Frontend en docs bijgewerkt om indices te gebruiken.
+
+
 ## [0.5.13] - 2025-12-12
 
 ### 🐛 Opgeloste bugs & Verbeteringen

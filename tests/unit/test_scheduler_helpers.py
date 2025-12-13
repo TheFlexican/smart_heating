@@ -70,15 +70,15 @@ class TestGetPreviousDay:
 
     def test_get_previous_day_monday(self, scheduler):
         """Test getting previous day for Monday."""
-        assert scheduler._get_previous_day("Monday") == "Sunday"
+        assert scheduler._get_previous_day(0) == 6
 
     def test_get_previous_day_tuesday(self, scheduler):
         """Test getting previous day for Tuesday."""
-        assert scheduler._get_previous_day("Tuesday") == "Monday"
+        assert scheduler._get_previous_day(1) == 0
 
     def test_get_previous_day_sunday(self, scheduler):
         """Test getting previous day for Sunday."""
-        assert scheduler._get_previous_day("Sunday") == "Saturday"
+        assert scheduler._get_previous_day(6) == 5
 
 
 class TestScheduleTimeMatching:
@@ -232,7 +232,7 @@ class TestFindActiveSchedule:
             "1": Schedule(
                 schedule_id="1",
                 time="08:00",
-                    day=0,
+                day=0,
                 start_time="08:00",
                 end_time="17:00",
                 temperature=20.0,
@@ -250,7 +250,7 @@ class TestFindActiveSchedule:
             "1": Schedule(
                 schedule_id="1",
                 time="08:00",
-                    day=0,
+                day=0,
                 start_time="08:00",
                 end_time="17:00",
                 temperature=20.0,
@@ -260,17 +260,17 @@ class TestFindActiveSchedule:
 
         # Simulate frontend providing localized day name - 'Maandag'
         schedules_localized = {
-                "1": Schedule.from_dict(
-                    {
-                        "id": "1",
-                        "start_time": "08:00",
-                        "end_time": "17:00",
-                        "days": [0],
-                        "temperature": 20.0,
-                        "enabled": True,
-                    }
-                )
-            }
+            "1": Schedule.from_dict(
+                {
+                    "id": "1",
+                    "start_time": "08:00",
+                    "end_time": "17:00",
+                    "days": [0],
+                    "temperature": 20.0,
+                    "enabled": True,
+                }
+            )
+        }
 
         # Should match Monday at 10:00
         schedule = scheduler._find_active_schedule(schedules_localized, 0, time(10, 0))
@@ -280,16 +280,16 @@ class TestFindActiveSchedule:
     def test_schedule_constructor_localized_day_param(self):
         """Schedule constructor accepts localized 'day' parameter (e.g., 'Maandag')."""
         s = Schedule(
-                schedule_id="1",
-                time="08:00",
-                day=0,
-                start_time="08:00",
-                end_time="17:00",
-                temperature=20.0,
-                enabled=True,
-            )
-        assert s.day == "Monday"
-        assert s.days == ["mon"]
+            schedule_id="1",
+            time="08:00",
+            day=0,
+            start_time="08:00",
+            end_time="17:00",
+            temperature=20.0,
+            enabled=True,
+        )
+        assert s.day == 0
+        assert s.days == [0]
 
     def test_schedule_constructor_day_index(self):
         """Schedule constructor accepts day index (e.g., 0 for Monday)."""
@@ -302,8 +302,8 @@ class TestFindActiveSchedule:
             temperature=19.0,
             enabled=True,
         )
-        assert s.day == "Monday"
-        assert s.days == ["mon"]
+        assert s.day == 0
+        assert s.days == [0]
 
 
 class TestGetPresetTemperature:
