@@ -108,59 +108,68 @@ You may handle simple, isolated SonarQube fixes yourself (e.g., one optional cha
 4. ✅ Build and verify after each change
 5. ✅ Run tests to ensure no regressions
 
-**Code Quality Thresholds (Enforced by SonarQube Agent):**
-- **Cognitive Complexity:** Keep functions under 15 complexity (refactor if higher)
-- **Function Length:** Keep functions focused and under 50 lines when possible
-- **Nesting Depth:** Avoid nesting functions more than 4 levels deep
-- **Code Coverage:** Maintain minimum 80% test coverage for all modules
-- **Duplication:** Avoid duplicating string literals more than 3 times (use constants)
+**RULE #5.1: Delegate Implementation to Specialized Agents**
 
-**Python-Specific Rules:**
-- Use `async` file operations in async functions (avoid synchronous `open()`)
-- Always provide radix parameter to `int()` conversions: `int(value, 10)`
-- Avoid reassigning function parameters
-- Use type hints for function parameters and return values
-- Keep imports organized: stdlib → third-party → local
-- Use `if __name__ == "__main__":` guards for executable scripts
+**Backend Development (Python/Home Assistant):**
+- **Home Assistant Integration Agent** - For HA platform code, entities, coordinators
+- **Pytest Agent** - For Python unit tests and integration tests
+- Delegate when implementing HA features, platforms, services, or tests
+- See `.github/agents/home-assistant-integration-agent.md` and `.github/agents/home-assistant-pytest.agent.md`
 
-**TypeScript/JavaScript-Specific Rules:**
-- Replace deprecated MUI components:
-  - `InputLabelProps` → `slotProps={{ inputLabel: { shrink: true } }}`
-  - `InputProps` → `slotProps={{ input: { ... } }}`
-  - `primaryTypographyProps` → `slotProps={{ primary: { ... } }}`
-  - `paragraph` Typography variant → `body1`
-  - MUI `Grid` → `Grid2` or CSS Grid with Box component
-- Use `globalThis` instead of `window` for global scope
-- Always provide radix to `parseInt(value, 10)` and use `Number.parseFloat(value)`
-- Avoid nested ternary operators (extract to helper functions or if/else)
-- Fix optional chaining issues: ensure safe property access
-- Use `Array.from()` or spread operator instead of `.slice()` for array copies
-- Avoid deeply nested callbacks (refactor to separate functions)
-- Use `const` by default, `let` only when reassignment needed, never `var`
+**Frontend Development (TypeScript/React):**
+- **TypeScript/React Agent** - For React components, hooks, MUI implementation
+- **TypeScript Testing Agent** - For Jest/Vitest unit tests of components
+- **Playwright Agent** - For E2E user workflow tests
+- Delegate when building UI features, components, or writing tests
+- See `.github/agents/typescript-react-agent.md`, `.github/agents/typescript-testing-agent.md`, and `.github/agents/playwright-e2e-agent.md`
 
-**Common Refactoring Patterns (Handled by SonarQube Agent):**
-1. **High Cognitive Complexity** → Extract helper functions, use early returns, reduce nesting
-2. **Nested Ternaries** → Create helper functions with clear names
-3. **Duplicated Literals** → Extract to constants at module/class level
-4. **Long Functions** → Split into smaller, focused functions with single responsibilities
-5. **Deep Nesting** → Use guard clauses, early returns, and extract nested logic
+**Code Quality:**
+- **SonarQube Agent** - For code quality analysis, refactoring, deprecation fixes
+- Delegate when fixing code smells, complexity issues, or security vulnerabilities
+- See `.github/agents/sonarqube-agent.md`
 
-**SonarQube Agent Reference:**
-- See `.github/agents/sonarqube-agent.md` for complete guidelines
-- Agent handles comprehensive code quality analysis and fixes
-- Use `runSubagent` to delegate quality tasks
+**Example Delegations:**
+```markdown
+# Backend feature
+runSubagent({
+  description: "HA integration development",
+  prompt: "Implement boost mode for climate entities. See .github/agents/home-assistant-integration-agent.md"
+})
 
-**Quick SonarQube MCP Server Commands (for simple checks):**
-```bash
-# Check for new issues after your changes
-mcp_sonarqube_search_sonar_issues_in_projects(projects=["TheFlexican_smart-heating"], severities=["HIGH", "BLOCKER"])
+# Frontend feature
+runSubagent({
+  description: "React component development",
+  prompt: "Create temperature control component with MUI. See .github/agents/typescript-react-agent.md"
+})
 
-# Get rule details if needed
-mcp_sonarqube_show_rule(key="typescript:S3776")  # Cognitive complexity
+# Backend tests
+runSubagent({
+  description: "Write pytest tests",
+  prompt: "Write tests for area_manager.py with 80%+ coverage. See .github/agents/home-assistant-pytest.agent.md"
+})
 
-# Check quality gate status
-mcp_sonarqube_get_project_quality_gate_status(projectKey="TheFlexican_smart-heating")
+# Frontend tests
+runSubagent({
+  description: "Write component tests",
+  prompt: "Write unit tests for ZoneCard component. See .github/agents/typescript-testing-agent.md"
+})
+
+# Code quality
+runSubagent({
+  description: "Code quality analysis",
+  prompt: "Fix SonarQube BLOCKER and HIGH issues. See .github/agents/sonarqube-agent.md"
+})
 ```
+
+**Agent System Overview:**
+
+The project uses 6 specialized agents for complete development lifecycle:
+
+**Code Quality (1):** SonarQube Agent
+**Backend (2):** Home Assistant Integration Agent, Pytest Agent
+**Frontend (3):** TypeScript/React Agent, TypeScript Testing Agent, Playwright Agent
+
+See `.github/agents/README.md` for full agent documentation.
 
 **Before Committing Code:**
 1. ✅ Run all tests (Python unit tests + E2E tests when available)
@@ -194,47 +203,24 @@ mcp_sonarqube_get_project_quality_gate_status(projectKey="TheFlexican_smart-heat
   5. Continue until all todos complete
 - Skip todo tracking for simple single-step tasks
 
-**RULE #6: Test Coverage - Delegate to Pytest Agent**
+**RULE #6: Delegate Testing to Specialized Agents**
 
-**⚠️ IMPORTANT: Use the Pytest Test Writer Agent for Testing Tasks**
+**⚠️ IMPORTANT: Always delegate test writing to specialized testing agents**
 
-When user requests involve testing, test writing, or test coverage, **delegate to the Pytest Agent** instead of handling directly:
+**Backend Testing:**
+- **Pytest Agent** - Python unit tests, HA integration tests
+- Delegate: "Write pytest tests for [module]"
+- See `.github/agents/home-assistant-pytest.agent.md`
 
-**Delegate to Pytest Agent when:**
-- User asks to "write tests" or "add test coverage"
-- User mentions "pytest", "test this feature", "regression test"
-- New features need test coverage
-- Bugs require regression tests
-- Refactoring needs test updates
-- Coverage drops below 80%
-- Adding new platforms or components
+**Frontend Testing:**
+- **TypeScript Testing Agent** - Jest/Vitest unit tests for React components
+- **Playwright Agent** - E2E tests for user workflows
+- Delegate: "Write unit tests for [component]" or "Write E2E tests for [workflow]"
+- See `.github/agents/typescript-testing-agent.md` and `.github/agents/playwright-e2e-agent.md`
 
-**How to Delegate:**
-```markdown
-Use the runSubagent tool with the Pytest agent context:
-
-runSubagent(
-  description="Write pytest tests",
-  prompt="Write comprehensive pytest tests for [module/feature]. Ensure 80%+ coverage and follow HA testing conventions. See .github/agents/home-assistant-pytest.agent.md for guidelines."
-)
-```
-
-**For Simple Test Updates:**
-You may handle simple test fixes yourself (e.g., updating assertions) if:
-- Fixing a single broken test after code change
-- Updating mock return values
-- Adjusting test data
-- No new test coverage needed
-
-**Test Requirements (Enforced by Pytest Agent):**
-- **Minimum 80% code coverage** for all Python modules
-- **Two test layers:** Python unit tests (pytest) + E2E tests (Playwright)
-- **All tests must pass** before committing
-- **No placeholder tests** - all tests fully implemented
-
-**Pytest Agent Reference:**
-- See `.github/agents/home-assistant-pytest.agent.md` for complete guidelines
-- Agent handles test generation, coverage analysis, and HA conventions
+**Test Requirements:**
+- Minimum 80% code coverage for all modules
+- All tests must pass before committing
 - Use `runSubagent` to delegate test writing tasks
 
 **Quick Test Commands (for verification):**

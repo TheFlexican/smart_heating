@@ -10,7 +10,9 @@ The Smart Heating project uses a multi-agent system where:
 
 ## Available Agents
 
-### 🔍 SonarQube Agent
+### Code Quality & Analysis
+
+#### 🔍 SonarQube Agent
 **File:** `sonarqube-agent.md`
 
 **Purpose:** Code quality analysis and automated fixes
@@ -31,11 +33,6 @@ The Smart Heating project uses a multi-agent system where:
 - Before releases or major features
 - When preparing code for production
 
-**Tools:**
-- SonarQube MCP Server
-- SonarQube for IDE Extension
-- GitHub PR integration
-
 **Example Delegation:**
 ```typescript
 runSubagent({
@@ -44,7 +41,40 @@ runSubagent({
 })
 ```
 
-### 🧪 Pytest Test Writer Agent
+---
+
+### Backend Development (Python/Home Assistant)
+
+#### 🏠 Home Assistant Integration Agent
+**File:** `home-assistant-integration-agent.md`
+
+**Purpose:** Develop Home Assistant custom integrations and platforms
+
+**Expertise:**
+- HA integration architecture and patterns
+- Entity platforms (climate, switch, sensor, etc.)
+- DataUpdateCoordinator implementation
+- Config flows and user setup
+- Async/await patterns for HA
+- Services and WebSocket API
+
+**When to Use:**
+- "Create a new HA platform"
+- "Implement climate entity"
+- "Add service to integration"
+- "Update coordinator logic"
+- "Build config flow"
+- When developing HA integration code
+
+**Example Delegation:**
+```typescript
+runSubagent({
+  description: "HA integration development",
+  prompt: "Implement [feature] for Home Assistant integration. Follow HA patterns, use async/await, and update coordinator. See .github/agents/home-assistant-integration-agent.md for guidelines."
+})
+```
+
+#### 🧪 Pytest Test Writer Agent
 **File:** `home-assistant-pytest.agent.md`
 
 **Purpose:** Write and maintain pytest tests for Home Assistant integrations
@@ -58,18 +88,11 @@ runSubagent({
 - TDD (Test-Driven Development)
 
 **When to Use:**
-- "Write tests for this feature"
+- "Write pytest tests for this feature"
 - "Improve test coverage"
 - "Add regression tests for this bug"
 - "Update tests after refactoring"
-- "Write integration tests"
 - When coverage drops below 80%
-
-**Tools:**
-- pytest and pytest-asyncio
-- pytest-homeassistant-custom-component
-- pytest-cov for coverage
-- unittest.mock for mocking
 
 **Example Delegation:**
 ```typescript
@@ -79,7 +102,68 @@ runSubagent({
 })
 ```
 
-### 🎭 Playwright E2E Test Writer Agent
+---
+
+### Frontend Development (TypeScript/React)
+
+#### ⚛️ TypeScript/React Development Agent
+**File:** `typescript-react-agent.md`
+
+**Purpose:** Develop type-safe React components and frontend features
+
+**Expertise:**
+- TypeScript type system and patterns
+- React 18+ functional components and hooks
+- Material-UI v5/v6 component library
+- State management and side effects
+- API integration and WebSocket handling
+- Internationalization (EN/NL)
+
+**When to Use:**
+- "Create a React component"
+- "Implement this frontend feature"
+- "Add TypeScript types"
+- "Migrate to new MUI patterns"
+- "Build a custom hook"
+- When developing UI features
+
+**Example Delegation:**
+```typescript
+runSubagent({
+  description: "TypeScript/React development",
+  prompt: "Create a temperature control component with MUI. Ensure type safety, responsive design, and EN/NL translations. See .github/agents/typescript-react-agent.md for guidelines."
+})
+```
+
+#### 🧪 TypeScript/React Testing Agent
+**File:** `typescript-testing-agent.md`
+
+**Purpose:** Write unit tests for React components and TypeScript code
+
+**Expertise:**
+- Jest/Vitest test framework
+- React Testing Library patterns
+- Component and hook testing
+- API client mocking
+- User interaction simulation
+- Coverage analysis (80%+ target)
+
+**When to Use:**
+- "Write unit tests for this component"
+- "Test custom hooks"
+- "Add tests for API client"
+- "Improve frontend test coverage"
+- When adding new React components
+
+**Example Delegation:**
+```typescript
+runSubagent({
+  description: "TypeScript unit testing",
+  prompt: "Write comprehensive unit tests for ZoneCard component. Use React Testing Library, achieve 80%+ coverage. See .github/agents/typescript-testing-agent.md for guidelines."
+})
+```
+
+#### 🎭 Playwright E2E Test Writer Agent
 **File:** `playwright-e2e-agent.md`
 
 **Purpose:** Write and maintain Playwright end-to-end tests for frontend workflows
@@ -114,41 +198,7 @@ runSubagent({
 })
 ```
 
-### ⚛️ TypeScript/React Development Agent
-**File:** `typescript-react-agent.md`
-
-**Purpose:** Develop type-safe React components and frontend features
-
-**Expertise:**
-- TypeScript type system and patterns
-- React 18+ functional components and hooks
-- Material-UI v5/v6 component library
-- State management and side effects
-- API integration and WebSocket handling
-- Internationalization (EN/NL)
-
-**When to Use:**
-- "Create a React component"
-- "Implement this frontend feature"
-- "Add TypeScript types"
-- "Migrate to new MUI patterns"
-- "Build a custom hook"
-- When developing UI features
-
-**Tools:**
-- TypeScript 5+
-- React 18+
-- Material-UI v5/v6
-- React Router, i18next
-- Vite build tool
-
-**Example Delegation:**
-```typescript
-runSubagent({
-  description: "TypeScript/React development",
-  prompt: "Create a temperature control component with MUI. Ensure type safety, responsive design, and EN/NL translations. See .github/agents/typescript-react-agent.md for guidelines."
-})
-```
+---
 
 ## How to Use Agents
 
@@ -156,9 +206,10 @@ runSubagent({
 Simply mention what you want in natural language:
 - "Can you check the code quality?"
 - "Fix any SonarQube issues"
-- "Review this code for quality problems"
 - "Write E2E tests for this feature"
 - "Create a React component for temperature control"
+- "Implement a new climate platform"
+- "Write unit tests for this component"
 
 Copilot will automatically delegate to the appropriate agent.
 
@@ -286,28 +337,43 @@ All agents have access to project context:
 
 ## Current Agent Coverage
 
-The Smart Heating project has comprehensive agent coverage:
+The Smart Heating project has **complete development lifecycle coverage** with 6 specialized agents:
 
-**Backend Development:**
-- ✅ **Pytest Agent** - Python unit tests, HA integration tests
-- ✅ **SonarQube Agent** - Code quality, refactoring, security
+### Code Quality (1 agent)
+- ✅ **SonarQube Agent** - Code quality analysis, refactoring, security scanning
 
-**Frontend Development:**
-- ✅ **TypeScript/React Agent** - Component development, type safety
-- ✅ **Playwright Agent** - E2E tests, user workflows
+### Backend Development (2 agents)
+- ✅ **Home Assistant Integration Agent** - HA platform development, coordinators, entities
+- ✅ **Pytest Agent** - Python unit tests, HA integration tests, 80% coverage
 
-**Coverage Areas:**
-- ✅ Code Quality & Security (SonarQube)
-- ✅ Backend Testing (Pytest)
-- ✅ Frontend Development (TypeScript/React)
-- ✅ User Journey Testing (Playwright)
+### Frontend Development (3 agents)
+- ✅ **TypeScript/React Agent** - Component development, hooks, MUI patterns
+- ✅ **TypeScript Testing Agent** - Unit tests for React components, Jest/Vitest
+- ✅ **Playwright Agent** - E2E tests, user workflows, cross-browser testing
+
+### Coverage Map
+```
+Development Lifecycle:
+├── Implementation
+│   ├── Backend: Home Assistant Integration Agent
+│   └── Frontend: TypeScript/React Agent
+├── Testing
+│   ├── Backend Unit: Pytest Agent
+│   ├── Frontend Unit: TypeScript Testing Agent
+│   └── E2E: Playwright Agent
+└── Quality: SonarQube Agent
+
+Complete separation of concerns:
+✅ Development vs Testing
+✅ Backend vs Frontend
+✅ Unit vs E2E vs Quality
+```
 
 ## Future Agent Possibilities
 
 Potential additional agents for this project:
 - **Documentation Agent** - Keep EN/NL docs in sync, API documentation, changelog maintenance
-- **Home Assistant Agent** - HA-specific patterns, entity management, integration best practices
-- **Accessibility Agent** - WCAG compliance, ARIA patterns, keyboard navigation
+- **Accessibility Agent** - WCAG compliance, ARIA patterns, keyboard navigation, screen reader testing
 - **Performance Agent** - Optimization, profiling, bundle size analysis
 - **Deployment Agent** - CI/CD, container management, release automation
 
@@ -321,6 +387,6 @@ Agent documentation should be:
 
 ---
 
-**Version:** 1.1
+**Version:** 2.0
 **Last Updated:** 2025-12-13
 **Maintained By:** Smart Heating Development Team
