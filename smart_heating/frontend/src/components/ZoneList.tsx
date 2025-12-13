@@ -7,13 +7,12 @@ import {
   Button,
   Chip,
 } from '@mui/material'
-import { DragDropContext, Droppable, DropResult, DragUpdate, DragStart } from 'react-beautiful-dnd'
+import { DragDropContext, Droppable, DropResult } from 'react-beautiful-dnd'
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
 import { useTranslation } from 'react-i18next'
 import ZoneCard from './ZoneCard'
 import { Zone } from '../types'
-import { useState } from 'react'
 
 interface ZoneListProps {
   areas: Zone[]
@@ -26,26 +25,8 @@ interface ZoneListProps {
 
 const ZoneList = ({ areas, loading, onUpdate, showHidden, onToggleShowHidden, onAreasReorder }: ZoneListProps) => {
   const { t } = useTranslation()
-  const [isDragging, setIsDragging] = useState(false)
-    const [draggingId, setDraggingId] = useState<string | null>(null)
-    const [dragDestinationIndex, setDragDestinationIndex] = useState<number | null>(null)
-
-  const handleDragStart = (start?: DragStart) => {
-    setIsDragging(true)
-    const id = start?.draggableId ? start.draggableId.replace(/^area-card-/, '') : null
-    setDraggingId(id)
-  }
-
-  const handleDragUpdate = (update: DragUpdate) => {
-    const dest = update.destination ? update.destination.index : null
-    if (dest == null) return
-    setDragDestinationIndex(dest)
-  }
 
   const handleDragEnd = (result: DropResult) => {
-    setIsDragging(false)
-    setDragDestinationIndex(null)
-    setDraggingId(null)
     if (!result.destination) return
 
     const items = Array.from(visibleAreas)
@@ -57,8 +38,6 @@ const ZoneList = ({ areas, loading, onUpdate, showHidden, onToggleShowHidden, on
     const newOrder = [...items, ...hiddenAreas]
     onAreasReorder(newOrder)
   }
-
-  // placeholder height logic removed; we now reflow items during drag instead of using placeholders
 
   if (loading) {
     return (
@@ -73,7 +52,7 @@ const ZoneList = ({ areas, loading, onUpdate, showHidden, onToggleShowHidden, on
     .filter(area => showHidden || !area.hidden)
 
   return (
-    <DragDropContext onDragEnd={handleDragEnd} onDragStart={handleDragStart} onDragUpdate={handleDragUpdate}>
+    <DragDropContext onDragEnd={handleDragEnd}>
       <Box>
         <Box
           mb={{ xs: 2, sm: 3 }}
@@ -116,49 +95,24 @@ const ZoneList = ({ areas, loading, onUpdate, showHidden, onToggleShowHidden, on
           </Alert>
         ) : (
           <Droppable droppableId="areas-list" type="AREA">
-            {(provided) => (
+            {(provided, snapshot) => (
               <Grid
                 container
                 spacing={{ xs: 2, sm: 2, md: 3 }}
                 ref={provided.innerRef}
                 {...provided.droppableProps}
+                sx={{
+                  bgcolor: snapshot.isDraggingOver ? 'action.hover' : 'transparent',
+                  transition: 'background-color 0.2s ease',
+                  minHeight: 100,
+                  borderRadius: 2,
+                }}
               >
-                {(() => {
-                  if (isDragging && draggingId) {
-                    const list = visibleAreas.filter(a => a.id !== draggingId)
-                    const nodes = [] as JSX.Element[]
-                    for (let i = 0; i < list.length; i++) {
-                      if (dragDestinationIndex === i) {
-                        nodes.push(
-                          <Grid item xs={12} sm={6} md={4} lg={3} key={`placeholder-${i}`}>
-                            <Box sx={{ minHeight: 140, borderRadius: 2, border: '2px dashed', borderColor: 'primary.main', bgcolor: 'action.hover', mb: 1 }} />
-                          </Grid>
-                        )
-                      }
-                      const area = list[i]
-                      nodes.push(
-                        <Grid item xs={12} sm={6} md={4} lg={3} key={area.id}>
-                          <ZoneCard area={area} onUpdate={onUpdate} index={i} />
-                        </Grid>
-                      )
-                    }
-                    // placeholder at the end
-                    if (dragDestinationIndex === list.length) {
-                      nodes.push(
-                        <Grid item xs={12} sm={6} md={4} lg={3} key={`placeholder-end`}>
-                          <Box sx={{ minHeight: 140, borderRadius: 2, border: '2px dashed', borderColor: 'primary.main', bgcolor: 'action.hover', mb: 1 }} />
-                        </Grid>
-                      )
-                    }
-                    return nodes
-                  }
-
-                  return visibleAreas.map((area, index) => (
-                    <Grid item xs={12} sm={6} md={4} lg={3} key={area.id}>
-                      <ZoneCard area={area} onUpdate={onUpdate} index={index} />
-                    </Grid>
-                  ))
-                })()}
+                {visibleAreas.map((area, index) => (
+                  <Grid item xs={12} sm={6} md={4} lg={3} key={area.id}>
+                    <ZoneCard area={area} onUpdate={onUpdate} index={index} />
+                  </Grid>
+                ))}
                 {provided.placeholder}
               </Grid>
             )}
