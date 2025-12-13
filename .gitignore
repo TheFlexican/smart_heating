@@ -69,8 +69,6 @@ coverage_html/
 
 # Other files
 .ha_token
-copilot-instructions.md
-home-assistant-pytest.agent.md
 .ruff_cache
 venv
 ideas
