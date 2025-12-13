@@ -187,7 +187,9 @@ const DevicePanel = ({ devices, onUpdate }: DevicePanelProps) => {
                         </ListItemIcon>
                         <ListItemText
                           primary={device.name || device.id}
-                          primaryTypographyProps={{ color: 'text.primary' }}
+                          slotProps={{
+                            primary: { sx: { color: 'text.primary' } }
+                          }}
                           secondary={
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mt: 0.5 }}>
                               <Chip

@@ -29,7 +29,7 @@ const SensorConfigDialog = ({ open, onClose, onAdd, sensorType }: SensorConfigDi
   const [entities, setEntities] = useState<HassEntity[]>([])
   const [loading, setLoading] = useState(false)
   const [selectedEntity, setSelectedEntity] = useState('')
-  
+
   // Window sensor states
   const [windowAction, setWindowAction] = useState<'turn_off' | 'reduce_temperature' | 'none'>('reduce_temperature')
   const [windowTempDrop, setWindowTempDrop] = useState(5)
@@ -75,7 +75,7 @@ const SensorConfigDialog = ({ open, onClose, onAdd, sensorType }: SensorConfigDi
         }
         await onAdd(config)
       }
-      
+
       // Don't close here - let the parent handle it after successful add
       // handleClose()
     } catch (error) {
@@ -94,14 +94,14 @@ const SensorConfigDialog = ({ open, onClose, onAdd, sensorType }: SensorConfigDi
   // Filter entities by device class for better UX
   const filteredEntities = entities.filter(e => {
     if (sensorType === 'window') {
-      return e.attributes.device_class === 'window' || 
-             e.attributes.device_class === 'door' || 
+      return e.attributes.device_class === 'window' ||
+             e.attributes.device_class === 'door' ||
              e.attributes.device_class === 'opening'
     } else {
       // For presence sensors: include motion, occupancy, presence sensors
       // Also include person and device_tracker entities (marked with device_class: presence by backend)
-      return e.attributes.device_class === 'motion' || 
-             e.attributes.device_class === 'occupancy' || 
+      return e.attributes.device_class === 'motion' ||
+             e.attributes.device_class === 'occupancy' ||
              e.attributes.device_class === 'presence'
     }
   })
@@ -146,8 +146,8 @@ const SensorConfigDialog = ({ open, onClose, onAdd, sensorType }: SensorConfigDi
                   <TextField
                     size="small"
                     fullWidth
-                    placeholder={sensorType === 'window' 
-                      ? 'binary_sensor.window_living_room' 
+                    placeholder={sensorType === 'window'
+                      ? 'binary_sensor.window_living_room'
                       : 'binary_sensor.motion_living_room or person.john or device_tracker.iphone'}
                     value={selectedEntity}
                     onChange={(e) => setSelectedEntity(e.target.value)}
@@ -178,7 +178,7 @@ const SensorConfigDialog = ({ open, onClose, onAdd, sensorType }: SensorConfigDi
                       type="number"
                       value={windowTempDrop}
                       onChange={(e) => setWindowTempDrop(Number(e.target.value))}
-                      inputProps={{ min: 1, max: 10, step: 0.5 }}
+                      slotProps={{ htmlInput: { min: 1, max: 10, step: 0.5 } }}
                       helperText="How much to reduce temperature when window is open"
                       fullWidth
                     />

@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { 
-  Box, 
-  CircularProgress, 
-  Alert, 
-  ToggleButtonGroup, 
-  ToggleButton, 
+import {
+  Box,
+  CircularProgress,
+  Alert,
+  ToggleButtonGroup,
+  ToggleButton,
   TextField,
   Button,
   Stack
@@ -49,7 +49,7 @@ const HistoryChart = ({ areaId }: HistoryChartProps) => {
     try {
       setLoading(true)
       setError(null)
-      
+
       let result
       if (customRange && startTime && endTime) {
         // Custom time range
@@ -61,7 +61,7 @@ const HistoryChart = ({ areaId }: HistoryChartProps) => {
         // Preset time range
         result = await getHistory(areaId, { hours: timeRange })
       }
-      
+
       setData(result.entries || [])
     } catch (err) {
       console.error('Failed to load history:', err)
@@ -73,7 +73,7 @@ const HistoryChart = ({ areaId }: HistoryChartProps) => {
 
   useEffect(() => {
     loadHistory()
-    
+
     // Refresh every 5 minutes
     const interval = setInterval(loadHistory, 5 * 60 * 1000)
     return () => clearInterval(interval)
@@ -175,7 +175,7 @@ const HistoryChart = ({ areaId }: HistoryChartProps) => {
             <ToggleButton value="custom">Custom</ToggleButton>
           </ToggleButtonGroup>
         </Box>
-        
+
         {customRange && (
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-end' }}>
             <TextField
@@ -183,7 +183,7 @@ const HistoryChart = ({ areaId }: HistoryChartProps) => {
               type="datetime-local"
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              InputLabelProps={{ shrink: true }}
+              slotProps={{ inputLabel: { shrink: true } }}
               size="small"
               sx={{ flex: 1 }}
             />
@@ -192,12 +192,12 @@ const HistoryChart = ({ areaId }: HistoryChartProps) => {
               type="datetime-local"
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
-              InputLabelProps={{ shrink: true }}
+              slotProps={{ inputLabel: { shrink: true } }}
               size="small"
               sx={{ flex: 1 }}
             />
-            <Button 
-              variant="contained" 
+            <Button
+              variant="contained"
               onClick={loadHistory}
               disabled={!startTime || !endTime}
             >
@@ -210,21 +210,21 @@ const HistoryChart = ({ areaId }: HistoryChartProps) => {
       <ResponsiveContainer width="100%" height={400}>
         <ComposedChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#2c2c2c" />
-          <XAxis 
-            dataKey="time" 
+          <XAxis
+            dataKey="time"
             stroke="#9e9e9e"
             tick={{ fill: '#9e9e9e' }}
           />
-          <YAxis 
+          <YAxis
             stroke="#9e9e9e"
             tick={{ fill: '#9e9e9e' }}
             domain={['dataMin - 2', 'dataMax + 2']}
             label={{ value: 'Temperature (°C)', angle: -90, position: 'insideLeft', fill: '#9e9e9e' }}
           />
-          <Tooltip 
+          <Tooltip
             content={<CustomTooltip />}
           />
-          <Legend 
+          <Legend
             wrapperStyle={{ color: '#e1e1e1' }}
           />
           {avgTarget && (

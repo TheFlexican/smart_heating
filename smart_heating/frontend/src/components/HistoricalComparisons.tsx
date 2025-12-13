@@ -31,6 +31,21 @@ import { getComparison, getCustomComparison } from '../api'
 
 type Period = 'day' | 'week' | 'month' | 'year' | 'custom'
 
+// Helper function to get chip color based on score
+const getScoreColor = (score: number): 'success' | 'info' | 'warning' | 'error' => {
+  if (score >= 80) return 'success'
+  if (score >= 60) return 'info'
+  if (score >= 40) return 'warning'
+  return 'error'
+}
+
+// Helper function to get severity based on delta
+const getDeltaSeverity = (delta: MetricDelta): 'success' | 'warning' | 'info' => {
+  if (delta.is_improvement) return 'success'
+  if (delta.percent_change < -5) return 'warning'
+  return 'info'
+}
+
 const HistoricalComparisons: React.FC = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -38,7 +53,7 @@ const HistoricalComparisons: React.FC = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [comparison, setComparison] = useState<ComparisonResult | null>(null)
-  
+
   // Custom date range state
   const [customStartA, setCustomStartA] = useState('')
   const [customEndA, setCustomEndA] = useState('')
@@ -104,7 +119,7 @@ const HistoricalComparisons: React.FC = () => {
 
   const formatDelta = (delta: MetricDelta, isPercentage: boolean = false): string => {
     const sign = delta.change > 0 ? '+' : ''
-    const value = isPercentage 
+    const value = isPercentage
       ? `${sign}${delta.change.toFixed(1)}%`
       : `${sign}${delta.change.toFixed(2)}`
     return `${value} (${delta.percent_change > 0 ? '+' : ''}${delta.percent_change.toFixed(1)}%)`
@@ -122,7 +137,7 @@ const HistoricalComparisons: React.FC = () => {
         <Typography color="textSecondary" gutterBottom>
           {label}
         </Typography>
-        
+
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
           <Box>
             <Typography variant="caption" color="textSecondary">
@@ -132,7 +147,7 @@ const HistoricalComparisons: React.FC = () => {
               {currentValue.toFixed(1)}{unit}
             </Typography>
           </Box>
-          
+
           <Box textAlign="right">
             <Typography variant="caption" color="textSecondary">
               {t('comparison.previousPeriod')}
@@ -164,11 +179,7 @@ const HistoricalComparisons: React.FC = () => {
         <Chip
           size="small"
           label={areaComp.current_metrics.energy_score.toFixed(0)}
-          color={
-            areaComp.current_metrics.energy_score >= 80 ? 'success' :
-            areaComp.current_metrics.energy_score >= 60 ? 'info' :
-            areaComp.current_metrics.energy_score >= 40 ? 'warning' : 'error'
-          }
+          color={getScoreColor(areaComp.current_metrics.energy_score)}
         />
       </TableCell>
       <TableCell align="right">
@@ -205,26 +216,26 @@ const HistoricalComparisons: React.FC = () => {
   )
 
   const renderSummary = () => {
-    if (!comparison || !comparison.summary_delta) return null
+    if (!comparison?.summary_delta) return null
 
     const delta = comparison.summary_delta.energy_score
     let summaryText = ''
-    
+
     if (delta.is_improvement) {
-      summaryText = t('comparison.summaryImproved', { 
-        percent: Math.abs(delta.percent_change).toFixed(1) 
+      summaryText = t('comparison.summaryImproved', {
+        percent: Math.abs(delta.percent_change).toFixed(1)
       })
     } else if (delta.percent_change < -5) {
-      summaryText = t('comparison.summaryDecreased', { 
-        percent: Math.abs(delta.percent_change).toFixed(1) 
+      summaryText = t('comparison.summaryDecreased', {
+        percent: Math.abs(delta.percent_change).toFixed(1)
       })
     } else {
       summaryText = t('comparison.summaryStable')
     }
 
     return (
-      <Alert 
-        severity={delta.is_improvement ? 'success' : delta.percent_change < -5 ? 'warning' : 'info'}
+      <Alert
+        severity={getDeltaSeverity(delta)}
         icon={getDeltaIcon(delta)}
       >
         <Typography variant="body1">{summaryText}</Typography>
@@ -248,7 +259,7 @@ const HistoricalComparisons: React.FC = () => {
             </Typography>
           </Box>
         </Box>
-        
+
         <ButtonGroup variant="outlined">
           <Button
             variant={period === 'day' ? 'contained' : 'outlined'}
@@ -297,7 +308,7 @@ const HistoricalComparisons: React.FC = () => {
                 label={t('comparison.periodA') + ' - ' + t('comparison.startDate')}
                 value={customStartA}
                 onChange={(e) => setCustomStartA(e.target.value)}
-                InputLabelProps={{ shrink: true }}
+                slotProps={{ inputLabel: { shrink: true } }}
               />
             </Grid>
             <Grid item xs={12} md={3}>
@@ -307,7 +318,7 @@ const HistoricalComparisons: React.FC = () => {
                 label={t('comparison.periodA') + ' - ' + t('comparison.endDate')}
                 value={customEndA}
                 onChange={(e) => setCustomEndA(e.target.value)}
-                InputLabelProps={{ shrink: true }}
+                slotProps={{ inputLabel: { shrink: true } }}
               />
             </Grid>
             <Grid item xs={12} md={3}>
@@ -317,7 +328,7 @@ const HistoricalComparisons: React.FC = () => {
                 label={t('comparison.periodB') + ' - ' + t('comparison.startDate')}
                 value={customStartB}
                 onChange={(e) => setCustomStartB(e.target.value)}
-                InputLabelProps={{ shrink: true }}
+                slotProps={{ inputLabel: { shrink: true } }}
               />
             </Grid>
             <Grid item xs={12} md={3}>
@@ -327,7 +338,7 @@ const HistoricalComparisons: React.FC = () => {
                 label={t('comparison.periodB') + ' - ' + t('comparison.endDate')}
                 value={customEndB}
                 onChange={(e) => setCustomEndB(e.target.value)}
-                InputLabelProps={{ shrink: true }}
+                slotProps={{ inputLabel: { shrink: true } }}
               />
             </Grid>
             <Grid item xs={12}>
@@ -344,7 +355,7 @@ const HistoricalComparisons: React.FC = () => {
       )}
 
       {loading && <LinearProgress sx={{ mb: 2 }} />}
-      
+
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}

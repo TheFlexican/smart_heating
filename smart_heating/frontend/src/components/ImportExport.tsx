@@ -81,14 +81,14 @@ const ImportExport = () => {
 
       // Download the file
       const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
+      const url = globalThis.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
       a.download = filename
       document.body.appendChild(a)
       a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
+      globalThis.URL.revokeObjectURL(url)
+      a.remove()
 
       setSuccess(t('importExport.exportSuccess'))
     } catch (err) {
@@ -155,7 +155,7 @@ const ImportExport = () => {
 
         // Reload page after 2 seconds to reflect changes
         setTimeout(() => {
-          window.location.reload()
+          globalThis.location.reload()
         }, 2000)
       } else {
         setError(result.error || 'Import failed')
@@ -244,7 +244,7 @@ const ImportExport = () => {
       >
         <DialogTitle>{t('importExport.previewTitle')}</DialogTitle>
         <DialogContent>
-          {preview && preview.valid ? (
+          {preview?.valid ? (
             <>
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 {t('importExport.previewDescription')}
