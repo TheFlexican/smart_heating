@@ -28,13 +28,6 @@
     "test": "vitest",
     "test:unit": "vitest run"
   },
-  "vitest": {
-    "globals": true,
-    "environment": "jsdom",
-    "setupFiles": [
-      "./tests/setup.ts"
-    ]
-  },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/react": "^14.0.0",
