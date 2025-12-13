@@ -66,72 +66,114 @@ curl -s "http://homeassistant.local:8123/api/states" \
 - Ensure code is clean, well-documented, and efficient
 - **Fix bugs in actual code, don't work around them in tests**
 - When HA test suite provides proper fixtures/helpers, use them instead of mocking HA internals
-- **ALWAYS use SonarQube MCP server to check code quality before completing tasks**
+- **ALWAYS delegate code quality analysis and fixes to the SonarQube Agent**
 
-**RULE #5.3: SonarQube Code Quality Standards**
+**RULE #5.3: SonarQube Code Quality - Delegate to Specialized Agent**
 
-**CRITICAL: Check SonarQube Before Completing Any Task**
-- After making code changes, ALWAYS run: `mcp_sonarqube_search_sonar_issues_in_projects` to check for new issues
-- Fix all BLOCKER and HIGH severity issues before committing
-- Address MEDIUM severity issues when feasible
-- Document any intentionally ignored issues with `# NOSONAR` comments explaining why
+**⚠️ IMPORTANT: Use the SonarQube Agent for Code Quality Tasks**
 
-**Code Quality Thresholds:**
-- **Cognitive Complexity:** Keep functions under 15 complexity (refactor if higher)
-- **Function Length:** Keep functions focused and under 50 lines when possible
-- **Nesting Depth:** Avoid nesting functions more than 4 levels deep
-- **Code Coverage:** Maintain minimum 80% test coverage for all modules
-- **Duplication:** Avoid duplicating string literals more than 3 times (use constants)
+When user requests involve code quality, analysis, or SonarQube issues, **delegate to the SonarQube Agent** instead of handling directly:
 
-**Python-Specific Rules:**
-- Use `async` file operations in async functions (avoid synchronous `open()`)
-- Always provide radix parameter to `int()` conversions: `int(value, 10)`
-- Avoid reassigning function parameters
-- Use type hints for function parameters and return values
-- Keep imports organized: stdlib → third-party → local
-- Use `if __name__ == "__main__":` guards for executable scripts
+**Delegate to SonarQube Agent when:**
+- User asks to "analyze code quality" or "check SonarQube"
+- User mentions "fix SonarQube issues" or "resolve code smells"
+- Before completing major features (quality check)
+- When reviewing pull requests for quality issues
+- When preparing for releases
+- User references SonarQube bot comments in PRs
+- Cognitive complexity or code smell issues need addressing
+- Deprecated API migrations are needed across multiple files
 
-**TypeScript/JavaScript-Specific Rules:**
-- Replace deprecated MUI components:
-  - `InputLabelProps` → `slotProps={{ inputLabel: { shrink: true } }}`
-  - `InputProps` → `slotProps={{ input: { ... } }}`
-  - `primaryTypographyProps` → `slotProps={{ primary: { ... } }}`
-  - `paragraph` Typography variant → `body1`
-  - MUI `Grid` → `Grid2` or CSS Grid with Box component
-- Use `globalThis` instead of `window` for global scope
-- Always provide radix to `parseInt(value, 10)` and use `Number.parseFloat(value)`
-- Avoid nested ternary operators (extract to helper functions or if/else)
-- Fix optional chaining issues: ensure safe property access
-- Use `Array.from()` or spread operator instead of `.slice()` for array copies
-- Avoid deeply nested callbacks (refactor to separate functions)
-- Use `const` by default, `let` only when reassignment needed, never `var`
+**How to Delegate:**
+```markdown
+Use the runSubagent tool with the SonarQube agent context:
 
-**Common Refactoring Patterns:**
-1. **High Cognitive Complexity** → Extract helper functions, use early returns, reduce nesting
-2. **Nested Ternaries** → Create helper functions with clear names
-3. **Duplicated Literals** → Extract to constants at module/class level
-4. **Long Functions** → Split into smaller, focused functions with single responsibilities
-5. **Deep Nesting** → Use guard clauses, early returns, and extract nested logic
-
-**SonarQube MCP Server Workflow:**
-```bash
-# 1. Check for issues after making changes
-mcp_sonarqube_search_sonar_issues_in_projects(projects=["TheFlexican_smart-heating"], severities=["HIGH", "BLOCKER"])
-
-# 2. Get details on specific rules if needed
-mcp_sonarqube_show_rule(key="typescript:S3776")  # Cognitive complexity
-mcp_sonarqube_show_rule(key="python:S3776")     # Cognitive complexity
-
-# 3. Analyze specific file for issues
-mcp_sonarqube_analyze_code_snippet(projectKey="TheFlexican_smart-heating", codeSnippet="...", language="typescript")
-
-# 4. Check project quality gate status
-mcp_sonarqube_get_project_quality_gate_status(projectKey="TheFlexican_smart-heating")
+runSubagent(
+  description="Code quality analysis",
+  prompt="Please analyze the codebase using SonarQube MCP server and fix all BLOCKER and HIGH severity issues. Focus on [specific area if applicable]. See .github/agents/sonarqube.agent.md for full guidelines and workflow."
+)
 ```
+
+**For Quick, Single-File Fixes:**
+You may handle simple, isolated SonarQube fixes yourself (e.g., one optional chain fix) if:
+- Issue is in a single file
+- Fix is straightforward and obvious (e.g., `res && res.opv` → `res?.opv`)
+- No risk of breaking functionality
+- Can verify immediately with build
+
+**Always follow these safety rules for direct fixes:**
+1. ✅ Only change what SonarQube specifically identified
+2. ✅ Never remove API calls or function calls
+3. ✅ Never rename variables that might conflict with API functions
+4. ✅ Build and verify after each change
+5. ✅ Run tests to ensure no regressions
+
+**RULE #5.1: Delegate Implementation to Specialized Agents**
+
+**Backend Development (Python/Home Assistant):**
+- **Home Assistant Integration Agent** - For HA platform code, entities, coordinators
+- **Home Assistant Pytest Agent** - For Python unit tests and integration tests
+- Delegate when implementing HA features, platforms, services, or tests
+- See `.github/agents/home-assistant-integration.agent.md` and `.github/agents/home-assistant-pytest.agent.md`
+
+**Frontend Development (TypeScript/React):**
+- **TypeScript/React Agent** - For React components, hooks, MUI implementation
+- **TypeScript Testing Agent** - For Jest/Vitest unit tests of components
+- **Playwright Agent** - For E2E user workflow tests
+- Delegate when building UI features, components, or writing tests
+- See `.github/agents/typescript-react.agent.md`, `.github/agents/typescript-testing.agent.md`, and `.github/agents/playwright-e2e.agent.md`
+
+**Code Quality:**
+- **SonarQube Agent** - For code quality analysis, refactoring, deprecation fixes
+- Delegate when fixing code smells, complexity issues, or security vulnerabilities
+- See `.github/agents/sonarqube.agent.md`
+
+**Example Delegations:**
+```markdown
+# Backend feature
+runSubagent({
+  description: "HA integration development",
+  prompt: "Implement boost mode for climate entities. See .github/agents/home-assistant-integration.agent.md"
+})
+
+# Frontend feature
+runSubagent({
+  description: "React component development",
+  prompt: "Create temperature control component with MUI. See .github/agents/typescript-react.agent.md"
+})
+
+# Backend tests
+runSubagent({
+  description: "Write pytest tests",
+  prompt: "Write tests for area_manager.py with 80%+ coverage. See .github/agents/home-assistant-pytest.agent.md"
+})
+
+# Frontend tests
+runSubagent({
+  description: "Write component tests",
+  prompt: "Write unit tests for ZoneCard component. See .github/agents/typescript-testing.agent.md"
+})
+
+# Code quality
+runSubagent({
+  description: "Code quality analysis",
+  prompt: "Fix SonarQube BLOCKER and HIGH issues. See .github/agents/sonarqube.agent.md"
+})
+```
+
+**Agent System Overview:**
+
+The project uses 6 specialized agents for complete development lifecycle:
+
+**Code Quality (1):** SonarQube Agent
+**Backend (2):** Home Assistant Integration Agent, Home Assistant Pytest Agent
+**Frontend (3):** TypeScript/React Agent, TypeScript Testing Agent, Playwright Agent
+
+See `.github/agents/README.md` for full agent documentation.
 
 **Before Committing Code:**
 1. ✅ Run all tests (Python unit tests + E2E tests when available)
-2. ✅ Check SonarQube for new issues: `mcp_sonarqube_search_sonar_issues_in_projects`
+2. ✅ Check SonarQube for new issues (delegate to SonarQube Agent for fixes if needed)
 3. ✅ Fix all BLOCKER and HIGH severity issues
 4. ✅ Verify code coverage meets 80% threshold
 5. ✅ Update documentation (EN + NL) if user-facing changes
@@ -161,45 +203,37 @@ mcp_sonarqube_get_project_quality_gate_status(projectKey="TheFlexican_smart-heat
   5. Continue until all todos complete
 - Skip todo tracking for simple single-step tasks
 
-**RULE #6: Test Coverage**
-- **Minimum 80% code coverage required** for all Python modules
-- **Two test layers:** Python unit tests (pytest) + E2E tests (Playwright)
-- **NEVER skip writing tests** - No matter how complex or time-consuming
-- **ALL tests must be fully implemented** - No placeholder or skipped tests without explicit user permission
-- **NEVER stop implementing tests** due to "complexity" or token usage concerns
-- If a test is complex, take the time to implement it properly with mocks and fixtures
-- Token budget is 1,000,000 - don't stop until the work is complete or you hit actual limits
+**RULE #6: Delegate Testing to Specialized Agents**
 
-**NOTE FOR TEST AUTHORS**
-- When writing tests for numeric values (e.g., hysteresis thresholds and temperatures), avoid relying on MagicMock objects in a way that causes accidental numeric conversions. MagicMock values may respond to arithmetic operators and can create unexpected behavior. Prefer explicitly typed numbers or parseable strings when required by the code under test.
-- If an area-level configuration value (like `hysteresis_override`) may be present in tests as a MagicMock, explicitly cast or validate numeric types in tests or in code. E.g.:
+**⚠️ IMPORTANT: Always delegate test writing to specialized testing agents**
 
-```python
-val = getattr(area, 'hysteresis_override', None)
-if isinstance(val, (int, float)):
-  val = float(val)
-else:
-  # choose default
-  val = 0.5
+**Backend Testing:**
+- **Home Assistant Pytest Agent** - Python unit tests, HA integration tests
+- Delegate: "Write pytest tests for [module]"
+- See `.github/agents/home-assistant-pytest.agent.md`
+
+**Frontend Testing:**
+- **TypeScript Testing Agent** - Jest/Vitest unit tests for React components
+- **Playwright Agent** - E2E tests for user workflows
+- Delegate: "Write unit tests for [component]" or "Write E2E tests for [workflow]"
+- See `.github/agents/typescript-testing.agent.md` and `.github/agents/playwright-e2e.agent.md`
+
+**Test Requirements:**
+- Minimum 80% code coverage for all modules
+- All tests must pass before committing
+- Use `runSubagent` to delegate test writing tasks
+
+**Quick Test Commands (for verification):**
+```bash
+# Run all Python tests
+bash tests/run_tests.sh
+
+# Run specific test file
+source venv && pytest tests/unit/test_area_manager.py -v
+
+# Run with coverage
+source venv && pytest tests/unit --cov=smart_heating --cov-report=html -v
 ```
-
-This ensures tests don't assume MagicMock numeric behavior and makes results deterministic.
-
-**FINDINGS FROM RECENT CHANGE:**
-- The thermostat idle logic has been updated to use a hysteresis-aware setpoint for idle devices. If the current area temperature >= (target - hysteresis) then we set the thermostat to the current temperature; otherwise keep the target temperature. Duplicate `climate.set_temperature` calls are avoided by caching the last set setpoint per thermostat.
-- To test the new code, prefer to create fixtures that set `area.current_temperature` and `area.hysteresis_override` to numeric values (int/float or numeric-string). Avoid MagicMock for these values so comparisons are safe.
-- Example test pattern for idle thermostat behavior:
-
-```python
-@pytest.mark.asyncio
-async def test_idle_hysteresis_behavior(device_handler, mock_area):
-  mock_area.get_thermostats.return_value = ['climate.thermo1']
-  mock_area.current_temperature = 21.0
-  await device_handler.async_control_thermostats(mock_area, False, 22.0)
-  # Expect climate.set_temperature called to 22.0 or 21.0 depending on hysteresis
-```
-
-Following this pattern will avoid unexpected comparisons and make tests deterministic.
 
 **RULE #7: API Testing After Deployment**
 - **ALWAYS test API endpoints after deploying features/fixes** using curl commands
@@ -216,51 +250,15 @@ Following this pattern will avoid unexpected comparisons and make tests determin
 - Document test results showing successful validation and error handling
 - This ensures features work end-to-end before user testing
 
-**Python Unit Tests (pytest):**
-- Location: `tests/unit/` directory
-- Framework: pytest with pytest-asyncio, pytest-cov, pytest-homeassistant-custom-component
-- Run: `bash tests/run_tests.sh` (automated) or `pytest tests/unit --cov=smart_heating -v`
-- Coverage: HTML report at `coverage_html/index.html`, enforced 80% threshold
-- Test files: 12+ files with 126+ test functions covering:
-  - `test_area_manager.py` - Area CRUD, global settings (19 tests, 90%+ target)
-  - `test_models_area.py` - Area model, devices, sensors (20 tests, 90%+ target)
-  - `test_coordinator.py` - Data coordination (15 tests, 80%+ target)
-  - `test_climate.py` - Climate platform (14 tests, 80%+ target)
-  - `test_scheduler.py` - Schedule execution (11 tests, 80%+ target)
-  - `test_safety_monitor.py` - Safety monitoring (10 tests, 80%+ target)
-  - `test_vacation_manager.py` - Vacation mode (10 tests, 80%+ target)
-  - `test_switch.py` - Switch platform (8 tests, 80%+ target)
-  - `test_utils.py` - Validators, response builders (8 tests, 90%+ target)
-  - `test_config_flow.py` - Config flow (5 tests, 80%+ target)
-  - `test_init.py` - Integration setup (6 tests, 80%+ target)
-- Common fixtures in `tests/conftest.py`: mock_area_manager, mock_coordinator, mock_area_data, etc.
-- Documentation: `tests/README.md` (comprehensive guide), `TESTING_SUMMARY.md`, `TESTING_QUICKSTART.md`
+## Testing Overview
 
-**E2E Tests (Playwright):**
-- Location: `tests/e2e/` directory
-- Run: `cd tests/e2e && npm test`
-- Coverage: 109 total tests, 105 passing, 4 skipped
-- Test files: navigation, temperature-control, boost-mode, comprehensive-features, sensor-management, backend-logging, device-management, enhanced-schedule-ui, vacation-mode
-- Must pass 100% before committing
+**For detailed testing guidelines, see the Home Assistant Pytest Agent:** `.github/agents/home-assistant-pytest.agent.md`
 
-**When Adding New Features:**
-1. Write Python unit tests FIRST (TDD approach recommended)
-2. Add E2E tests for user-facing features
-3. Run both test suites: `bash tests/run_tests.sh && cd tests/e2e && npm test`
-4. Verify coverage meets 80%: check `coverage_html/index.html`
-5. Update tests when modifying existing code
-6. Test edge cases, error conditions, and boundary values
-7. **Never skip tests** - implement them fully even if complex
-
-**Home Assistant Testing Best Practices (per official docs):**
-- Use official `pytest-homeassistant-custom-component` package
-- Use `MockConfigEntry` from `pytest_homeassistant_custom_component.common`
-- Use `hass` fixture for Home Assistant instance
-- Test via HA core interfaces (hass.states, hass.services, registries)
-- Mock external dependencies properly
-- Use async_setup_entry/async_unload_entry patterns
-- Test entity properties through coordinator data
-- Follow patterns from https://developers.home-assistant.io/docs/development_testing/
+**Test Structure:**
+- Python unit tests: `tests/unit/` (126+ tests, pytest-based)
+- E2E tests: `tests/e2e/` (109 tests, Playwright-based)
+- Coverage target: 80% minimum for Python modules
+- Common fixtures: `tests/conftest.py`
 
 **Quick Commands:**
 ```bash
