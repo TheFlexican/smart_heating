@@ -69,7 +69,7 @@ class TestScheduleHandlers:
             "id": "sched_123",
             "time": "08:00",
             "temperature": 22.0,
-            "days": ["monday", "tuesday"],
+            "days": [0, 1],
             "enabled": True,
         }
 
@@ -104,7 +104,7 @@ class TestScheduleHandlers:
             "start_time": "07:00",
             "end_time": "09:00",
             "preset_mode": "comfort",
-            "days": ["weekday"],
+            "days": [0, 1, 2, 3, 4],
         }
 
         with (
@@ -143,7 +143,7 @@ class TestScheduleHandlers:
         self, mock_hass, mock_area_manager
     ):
         """Test adding schedule without temperature or preset_mode."""
-        data = {"time": "08:00", "days": ["monday"]}
+        data = {"time": "08:00", "days": [0]}
 
         with patch(
             "smart_heating.api_handlers.schedules.validate_area_id", return_value=(True, None)

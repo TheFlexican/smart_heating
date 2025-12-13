@@ -53,7 +53,7 @@ const ScheduleEntryDialog = ({
 
   // Schedule type: 'weekly' for recurring, 'date' for specific date
   const [scheduleType, setScheduleType] = useState<'weekly' | 'date'>('weekly')
-  const [selectedDays, setSelectedDays] = useState<string[]>(['Monday'])
+  const [selectedDays, setSelectedDays] = useState<number[]>([0])
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date())
   const [startTime, setStartTime] = useState('06:00')
   const [endTime, setEndTime] = useState('22:00')
@@ -77,15 +77,16 @@ const ScheduleEntryDialog = ({
         } else {
           setScheduleType('weekly')
           if (editingEntry.days && editingEntry.days.length > 0) {
-            setSelectedDays(editingEntry.days)
-          } else if (editingEntry.day) {
-            setSelectedDays([editingEntry.day])
+            // editingEntry.days are indices
+            setSelectedDays(editingEntry.days as number[])
+          } else if (typeof editingEntry.day === 'number') {
+            setSelectedDays([editingEntry.day as number])
           }
         }
       } else {
         // Reset to defaults for new entry
         setScheduleType('weekly')
-        setSelectedDays(['Monday'])
+        setSelectedDays([0])
         setSelectedDate(new Date())
         setStartTime('06:00')
         setEndTime('22:00')
@@ -96,24 +97,24 @@ const ScheduleEntryDialog = ({
     }
   }, [open, editingEntry])
 
-  const handleDayToggle = (day: string) => {
+  const handleDayToggle = (dayIndex: number) => {
     setSelectedDays(prev =>
-      prev.includes(day)
-        ? prev.filter(d => d !== day)
-        : [...prev, day]
+      prev.includes(dayIndex)
+        ? prev.filter(d => d !== dayIndex)
+        : [...prev, dayIndex]
     )
   }
 
   const handleSelectAllWeekdays = () => {
-    setSelectedDays(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'])
+    setSelectedDays([0, 1, 2, 3, 4])
   }
 
   const handleSelectWeekend = () => {
-    setSelectedDays(['Saturday', 'Sunday'])
+    setSelectedDays([5, 6])
   }
 
   const handleSelectAllDays = () => {
-    setSelectedDays([...DAYS_OF_WEEK])
+    setSelectedDays([0, 1, 2, 3, 4, 5, 6])
   }
 
   const handleSave = async () => {
@@ -214,15 +215,15 @@ const ScheduleEntryDialog = ({
 
                 {/* Day checkboxes */}
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                  {DAYS_OF_WEEK.map(day => {
+                  {DAYS_OF_WEEK.map((day, idx) => {
                     const dayKey = day.toLowerCase() as 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'
                     return (
                       <FormControlLabel
                         key={day}
                         control={
                           <Checkbox
-                            checked={selectedDays.includes(day)}
-                            onChange={() => handleDayToggle(day)}
+                            checked={selectedDays.includes(idx)}
+                            onChange={() => handleDayToggle(idx)}
                           />
                         }
                         label={t(`areaDetail.${dayKey}`)}
@@ -238,8 +239,8 @@ const ScheduleEntryDialog = ({
                       {t('scheduleDialog.selectedDaysCount', { count: selectedDays.length })}:
                     </Typography>
                     <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 1 }}>
-                      {selectedDays.map(day => (
-                        <Chip key={day} label={day} size="small" color="primary" />
+                      {selectedDays.map(dayIdx => (
+                        <Chip key={dayIdx} label={DAYS_OF_WEEK[dayIdx]} size="small" color="primary" />
                       ))}
                     </Box>
                   </Box>

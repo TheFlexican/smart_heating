@@ -116,7 +116,7 @@ class TestValidateDaysList:
 
     def test_validate_days_list_valid(self):
         """Test validating valid days list."""
-        is_valid, error = _validate_days_list(["mon", "tue", "wed"])
+        is_valid, error = _validate_days_list([0, 1, 2])
         assert is_valid is True
         assert error is None
 
@@ -134,7 +134,7 @@ class TestValidateDaysList:
 
     def test_validate_days_list_invalid_day(self):
         """Test validating invalid day."""
-        is_valid, error = _validate_days_list(["mon", "invalid"])
+        is_valid, error = _validate_days_list([0, "invalid"])
         assert is_valid is False
         assert "invalid day" in error
 
@@ -144,21 +144,21 @@ class TestValidateScheduleData:
 
     def test_validate_schedule_data_valid(self):
         """Test validating valid schedule data."""
-        data = {"time": "08:00", "temperature": 21.0, "days": ["mon", "tue", "wed"]}
+        data = {"time": "08:00", "temperature": 21.0, "days": [0, 1, 2]}
         is_valid, error = validate_schedule_data(data)
         assert is_valid is True
         assert error is None
 
     def test_validate_schedule_data_missing_time(self):
         """Test validating schedule data without time."""
-        data = {"temperature": 21.0, "days": ["mon"]}
+        data = {"temperature": 21.0, "days": [0]}
         is_valid, error = validate_schedule_data(data)
         assert is_valid is False
         assert "time" in error
 
     def test_validate_schedule_data_missing_temperature(self):
         """Test validating schedule data without temperature."""
-        data = {"time": "08:00", "days": ["mon"]}
+        data = {"time": "08:00", "days": [0]}
         is_valid, error = validate_schedule_data(data)
         assert is_valid is False
         assert "temperature" in error
@@ -211,14 +211,14 @@ class TestValidatorsEdgeCases:
 
     def test_validate_schedule_data_missing_time(self):
         """Test schedule validation missing time field."""
-        data = {"temperature": 20.0, "days": ["mon"]}
+        data = {"temperature": 20.0, "days": [0]}
         is_valid, error = validate_schedule_data(data)
         assert is_valid is False
         assert "time is required" in error
 
     def test_validate_schedule_data_missing_temperature(self):
         """Test schedule validation missing temperature field."""
-        data = {"time": "08:00", "days": ["mon"]}
+        data = {"time": "08:00", "days": [0]}
         is_valid, error = validate_schedule_data(data)
         assert is_valid is False
         assert "temperature is required" in error

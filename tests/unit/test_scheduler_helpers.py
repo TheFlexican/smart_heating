@@ -90,7 +90,7 @@ class TestScheduleTimeMatching:
         schedule = Schedule(
             schedule_id="1",
             time="22:00",
-            day="Saturday",
+            day=5,
             start_time="22:00",
             end_time="07:00",
             temperature=18.0,
@@ -121,7 +121,7 @@ class TestScheduleTimeMatching:
         schedule = Schedule(
             schedule_id="1",
             time="22:00",
-            day="Saturday",
+            day=5,
             start_time="22:00",
             end_time="07:00",
             temperature=18.0,
@@ -146,7 +146,7 @@ class TestScheduleTimeMatching:
         schedule = Schedule(
             schedule_id="1",
             time="08:00",
-            day="Monday",
+            day=0,
             start_time="08:00",
             end_time="22:00",
             temperature=21.0,
@@ -175,7 +175,7 @@ class TestFindActiveSchedule:
             "1": Schedule(
                 schedule_id="1",
                 time="08:00",
-                day="Monday",
+                day=0,
                 start_time="08:00",
                 end_time="17:00",
                 temperature=20.0,
@@ -184,7 +184,7 @@ class TestFindActiveSchedule:
             "2": Schedule(
                 schedule_id="2",
                 time="17:00",
-                day="Monday",
+                day=0,
                 start_time="17:00",
                 end_time="22:00",
                 temperature=21.0,
@@ -193,12 +193,12 @@ class TestFindActiveSchedule:
         }
 
         # Test at 10:00 Monday
-        schedule = scheduler._find_active_schedule(schedules, "Monday", time(10, 0))
+        schedule = scheduler._find_active_schedule(schedules, 0, time(10, 0))
         assert schedule is not None
         assert schedule.schedule_id == "1"
 
         # Test at 20:00 Monday
-        schedule = scheduler._find_active_schedule(schedules, "Monday", time(20, 0))
+        schedule = scheduler._find_active_schedule(schedules, 0, time(20, 0))
         assert schedule is not None
         assert schedule.schedule_id == "2"
 
@@ -208,7 +208,7 @@ class TestFindActiveSchedule:
             "1": Schedule(
                 schedule_id="1",
                 time="22:00",
-                day="Sunday",
+                day=6,
                 start_time="22:00",
                 end_time="07:00",
                 temperature=18.0,
@@ -217,12 +217,12 @@ class TestFindActiveSchedule:
         }
 
         # Test at 23:00 Sunday (start of schedule)
-        schedule = scheduler._find_active_schedule(schedules, "Sunday", time(23, 0))
+        schedule = scheduler._find_active_schedule(schedules, 6, time(23, 0))
         assert schedule is not None
         assert schedule.schedule_id == "1"
 
         # Test at 02:00 Monday (continuation from Sunday)
-        schedule = scheduler._find_active_schedule(schedules, "Monday", time(2, 0))
+        schedule = scheduler._find_active_schedule(schedules, 0, time(2, 0))
         assert schedule is not None
         assert schedule.schedule_id == "1"
 
@@ -232,7 +232,7 @@ class TestFindActiveSchedule:
             "1": Schedule(
                 schedule_id="1",
                 time="08:00",
-                day="Monday",
+                    day=0,
                 start_time="08:00",
                 end_time="17:00",
                 temperature=20.0,
@@ -241,7 +241,7 @@ class TestFindActiveSchedule:
         }
 
         # Test at 07:00 Monday (before any schedule)
-        schedule = scheduler._find_active_schedule(schedules, "Monday", time(7, 0))
+        schedule = scheduler._find_active_schedule(schedules, 0, time(7, 0))
         assert schedule is None
 
     def test_find_active_schedule_localized_day_names(self, scheduler):
@@ -250,7 +250,7 @@ class TestFindActiveSchedule:
             "1": Schedule(
                 schedule_id="1",
                 time="08:00",
-                day="Monday",
+                    day=0,
                 start_time="08:00",
                 end_time="17:00",
                 temperature=20.0,
@@ -260,34 +260,34 @@ class TestFindActiveSchedule:
 
         # Simulate frontend providing localized day name - 'Maandag'
         schedules_localized = {
-            "1": Schedule.from_dict(
-                {
-                    "id": "1",
-                    "start_time": "08:00",
-                    "end_time": "17:00",
-                    "days": ["Maandag"],
-                    "temperature": 20.0,
-                    "enabled": True,
-                }
-            )
-        }
+                "1": Schedule.from_dict(
+                    {
+                        "id": "1",
+                        "start_time": "08:00",
+                        "end_time": "17:00",
+                        "days": [0],
+                        "temperature": 20.0,
+                        "enabled": True,
+                    }
+                )
+            }
 
         # Should match Monday at 10:00
-        schedule = scheduler._find_active_schedule(schedules_localized, "Monday", time(10, 0))
+        schedule = scheduler._find_active_schedule(schedules_localized, 0, time(10, 0))
         assert schedule is not None
         assert schedule.schedule_id == "1"
 
     def test_schedule_constructor_localized_day_param(self):
         """Schedule constructor accepts localized 'day' parameter (e.g., 'Maandag')."""
         s = Schedule(
-            schedule_id="1",
-            time="08:00",
-            day="Maandag",
-            start_time="08:00",
-            end_time="17:00",
-            temperature=20.0,
-            enabled=True,
-        )
+                schedule_id="1",
+                time="08:00",
+                day=0,
+                start_time="08:00",
+                end_time="17:00",
+                temperature=20.0,
+                enabled=True,
+            )
         assert s.day == "Monday"
         assert s.days == ["mon"]
 
@@ -413,7 +413,7 @@ class TestApplyScheduleMethods:
         schedule = Schedule(
             schedule_id="1",
             time="08:00",
-            day="Monday",
+            day=0,
             start_time="08:00",
             end_time="17:00",
             preset_mode=PRESET_COMFORT,
@@ -442,7 +442,7 @@ class TestApplyScheduleMethods:
         schedule = Schedule(
             schedule_id="1",
             time="08:00",
-            day="Monday",
+            day=0,
             start_time="08:00",
             end_time="17:00",
             preset_mode=PRESET_COMFORT,
@@ -463,7 +463,7 @@ class TestApplyScheduleMethods:
         schedule = Schedule(
             schedule_id="1",
             time="08:00",
-            day="Monday",
+            day=0,
             start_time="08:00",
             end_time="17:00",
             temperature=21.5,
@@ -491,7 +491,7 @@ class TestApplyScheduleMethods:
         schedule = Schedule(
             schedule_id="1",
             time="08:00",
-            day="Monday",
+            day=0,
             start_time="08:00",
             end_time="17:00",
             temperature=21.0,
@@ -529,7 +529,7 @@ class TestApplyScheduleMethods:
                 "id": "1",
                 "start_time": "08:00",
                 "end_time": "17:00",
-                "days": ["Maandag"],
+                "days": [0],
                 "temperature": 21.5,
                 "enabled": True,
             }

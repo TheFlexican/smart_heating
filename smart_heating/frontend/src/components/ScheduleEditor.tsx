@@ -85,8 +85,8 @@ const ScheduleEditor = ({ area, onUpdate }: ScheduleEditorProps) => {
     }
   }
 
-  const toggleDay = (day: string) => {
-    setExpandedDays(prev => ({ ...prev, [day]: !prev[day] }))
+  const toggleDay = (dayIndex: number) => {
+    setExpandedDays(prev => ({ ...prev, [dayIndex]: !prev[dayIndex] }))
   }
 
   const toggleDate = (date: string) => {
@@ -98,13 +98,14 @@ const ScheduleEditor = ({ area, onUpdate }: ScheduleEditorProps) => {
   const dateSpecificSchedules = schedules.filter(s => s.date)
 
   // Group weekly schedules by day
-  const getSchedulesForDay = (day: string) => {
+  const getSchedulesForDay = (dayIndex: number) => {
     return weeklySchedules
       .filter(s => {
         if (s.days && s.days.length > 0) {
-          return s.days.includes(day)
+          // s.days are indices
+          return s.days.includes(dayIndex as any)
         }
-        return s.day === day
+        return s.day === dayIndex
       })
       .sort((a, b) => a.start_time.localeCompare(b.start_time))
   }
@@ -228,10 +229,10 @@ const ScheduleEditor = ({ area, onUpdate }: ScheduleEditorProps) => {
         )}
 
         <Stack spacing={2}>
-          {DAYS_OF_WEEK.map(day => {
-            const daySchedules = getSchedulesForDay(day)
+          {DAYS_OF_WEEK.map((day, dayIndex) => {
+            const daySchedules = getSchedulesForDay(dayIndex)
             const dayKey = day.toLowerCase() as 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'
-            const isExpanded = expandedDays[day] ?? true
+            const isExpanded = expandedDays[dayIndex] ?? true
 
             return (
               <Card key={day} variant="outlined">
@@ -249,7 +250,7 @@ const ScheduleEditor = ({ area, onUpdate }: ScheduleEditorProps) => {
                       {daySchedules.length > 0 && (
                         <>
                           <Chip label={`${daySchedules.length}`} size="small" color="primary" />
-                          <IconButton size="small" onClick={() => toggleDay(day)}>
+                          <IconButton size="small" onClick={() => toggleDay(dayIndex)}>
                             {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                           </IconButton>
                         </>

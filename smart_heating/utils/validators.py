@@ -69,10 +69,12 @@ def _validate_days_list(days: Any) -> Tuple[bool, Optional[str]]:
     if not isinstance(days, list) or len(days) == 0:
         return False, "days must be a non-empty list"
 
-    valid_days = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+    # Expect numeric day indices 0..6 (Monday=0)
     for day in days:
-        if day not in valid_days:
-            return False, f"invalid day: {day}. Must be one of {valid_days}"
+        if not isinstance(day, int):
+            return False, f"invalid day: {day}. Days must be integer indices 0 (Monday) - 6 (Sunday)"
+        if day < 0 or day > 6:
+            return False, f"invalid day index: {day}. Must be between 0 and 6"
 
     return True, None
 

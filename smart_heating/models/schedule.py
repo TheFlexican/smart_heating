@@ -57,30 +57,7 @@ class Schedule:
             "Saturday": "sat",
             "Sunday": "sun",
         }
-        # Any input `day` might be localized; create a normalized lookup for day param too
-        localized_day_map = {
-            "monday": "Monday",
-            "maandag": "Monday",
-            "tuesday": "Tuesday",
-            "dinsdag": "Tuesday",
-            "wednesday": "Wednesday",
-            "woensdag": "Wednesday",
-            "thursday": "Thursday",
-            "donderdag": "Thursday",
-            "friday": "Friday",
-            "vrijdag": "Friday",
-            "saturday": "Saturday",
-            "zaterdag": "Saturday",
-            "sunday": "Sunday",
-            "zondag": "Sunday",
-            "mon": "Monday",
-            "tue": "Tuesday",
-            "wed": "Wednesday",
-            "thu": "Thursday",
-            "fri": "Friday",
-            "sat": "Saturday",
-            "sun": "Sunday",
-        }
+        # Only support numeric indices (0=Monday) or short codes (mon, tue, ...).
         reverse_day_map = {v: k for k, v in day_map.items()}
 
         # If date is specified, this is a date-specific schedule (not recurring weekly)
@@ -94,14 +71,35 @@ class Schedule:
                 normalized_day = index_map_full.get(day % 7, day)
             elif isinstance(day, str):
                 day_key = day.strip().lower()
-                normalized_day = localized_day_map.get(day_key, day)
+                short_codes = {"mon", "tue", "wed", "thu", "fri", "sat", "sun"}
+                if day_key in short_codes:
+                    normalized_day = reverse_day_map.get(day_key, "Monday")
+                else:
+                    raise ValueError(
+                        "Invalid 'day' string format: use numeric index (0=Monday) or short code 'mon'"
+                    )
             else:
                 normalized_day = day
             self.day = normalized_day
             # Map normalized full name to short day code where possible
             self.days = [day_map.get(self.day, "mon")]
         elif days:
-            self.days = days
+            # Accept days as list of short codes ("mon") or numeric indices (0=Monday)
+            def normalize_day_item(d):
+                if isinstance(d, int):
+                    idx_map = {0: "mon", 1: "tue", 2: "wed", 3: "thu", 4: "fri", 5: "sat", 6: "sun"}
+                    return idx_map.get(d % 7, d)
+                if isinstance(d, str):
+                    key = d.strip().lower()
+                    if key in {"mon", "tue", "wed", "thu", "fri", "sat", "sun"}:
+                        return key
+                    # Reject full English or localized day names to enforce indices/short codes
+                    raise ValueError(
+                        "Invalid 'days' string format: use numeric indices (0=Monday) or short codes (mon)"
+                    )
+                return d
+
+            self.days = [normalize_day_item(x) for x in days]
             # Use first day for display
             self.day = reverse_day_map.get(days[0], "Monday") if days else "Monday"
         else:
@@ -163,20 +161,17 @@ class Schedule:
             result["date"] = self.date
         # Add days for recurring weekly schedules
         elif self.days:
-            # Convert internal format to frontend format
-            day_map = {
-                "mon": "Monday",
-                "tue": "Tuesday",
-                "wed": "Wednesday",
-                "thu": "Thursday",
-                "fri": "Friday",
-                "sat": "Saturday",
-                "sun": "Sunday",
-            }
-            result["days"] = [day_map.get(d, d) for d in self.days]
+            # Convert internal short codes to numeric indices for frontend
+            short_to_index = {"mon": 0, "tue": 1, "wed": 2, "thu": 3, "fri": 4, "sat": 5, "sun": 6}
+            result["days"] = [short_to_index.get(d, d) for d in self.days]
             # Keep single day for backwards compatibility
-            if self.day:
-                result["day"] = self.day
+            if self.day is not None:
+                # Provide single day as index if possible
+                full_to_index = {"Monday": 0, "Tuesday": 1, "Wednesday": 2, "Thursday": 3, "Friday": 4, "Saturday": 5, "Sunday": 6}
+                if isinstance(self.day, str) and self.day in full_to_index:
+                    result["day"] = full_to_index[self.day]
+                else:
+                    result["day"] = self.day
 
         if self.temperature is not None:
             result["temperature"] = self.temperature
@@ -190,32 +185,8 @@ class Schedule:
         # Convert frontend days format to internal format if needed
         days_data = data.get("days")
         if days_data and isinstance(days_data, list) and days_data:
-            # Check if it's frontend format (Monday, Tuesday, etc.) or localized names
-            # Accept both English and Dutch day names, case-insensitive
-            day_map = {
-                "monday": "mon",
-                "maandag": "mon",
-                "tuesday": "tue",
-                "dinsdag": "tue",
-                "wednesday": "wed",
-                "woensdag": "wed",
-                "thursday": "thu",
-                "donderdag": "thu",
-                "friday": "fri",
-                "vrijdag": "fri",
-                "saturday": "sat",
-                "zaterdag": "sat",
-                "sunday": "sun",
-                "zondag": "sun",
-                # Also accept 3-letter short names
-                "mon": "mon",
-                "tue": "tue",
-                "wed": "wed",
-                "thu": "thu",
-                "fri": "fri",
-                "sat": "sat",
-                "sun": "sun",
-            }
+            # Expect numeric day indices (0=Monday) or short 3-letter codes (mon, tue, ...)
+            day_map = {"mon": "mon", "tue": "tue", "wed": "wed", "thu": "thu", "fri": "fri", "sat": "sat", "sun": "sun"}
 
             def map_day_any(d: Any) -> str:
                 # Accept integers as day indices

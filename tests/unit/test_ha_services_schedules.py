@@ -412,7 +412,7 @@ class TestScheduleHandlers:
             "source_area_id": "source_area",
             "source_schedule_id": "schedule_1",
             "target_area_id": "target_area",
-            "target_days": ["monday", "tuesday", "wednesday"],
+            "target_days": [0, 1, 2],
         }
 
         await async_handle_copy_schedule(call, mock_area_manager, mock_coordinator)

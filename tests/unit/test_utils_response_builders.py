@@ -207,7 +207,7 @@ class TestBuildAreaResponse:
             "id": "schedule1",
             "time": "08:00",
             "temperature": 21.0,
-            "days": ["mon", "tue"],
+            "days": [0, 1],
         }
         area.schedules = {"schedule1": schedule}
 

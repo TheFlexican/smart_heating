@@ -493,7 +493,7 @@ class TestScheduleManagement:
         area_manager.areas[TEST_AREA_ID] = area
 
         schedule = area_manager.add_schedule_to_area(
-            TEST_AREA_ID, "schedule1", "08:00", 21.0, ["mon", "tue", "wed"]
+            TEST_AREA_ID, "schedule1", "08:00", 21.0, [0, 1, 2]
         )
 
         assert schedule.schedule_id == "schedule1"
@@ -505,14 +505,14 @@ class TestScheduleManagement:
     def test_add_schedule_to_nonexistent_area(self, area_manager: AreaManager):
         """Test adding schedule to non-existent area raises error."""
         with pytest.raises(ValueError, match="does not exist"):
-            area_manager.add_schedule_to_area("nonexistent", "schedule1", "08:00", 21.0, ["mon"])
+            area_manager.add_schedule_to_area("nonexistent", "schedule1", "08:00", 21.0, [0])
 
     def test_remove_schedule_from_area(self, area_manager: AreaManager):
         """Test removing schedule from area."""
         area = Area(TEST_AREA_ID, TEST_AREA_NAME)
         area_manager.areas[TEST_AREA_ID] = area
 
-        area_manager.add_schedule_to_area(TEST_AREA_ID, "schedule1", "08:00", 21.0, ["mon"])
+        area_manager.add_schedule_to_area(TEST_AREA_ID, "schedule1", "08:00", 21.0, [0])
         area_manager.remove_schedule_from_area(TEST_AREA_ID, "schedule1")
 
         assert "schedule1" not in area.schedules

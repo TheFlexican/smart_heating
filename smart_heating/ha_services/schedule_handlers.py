@@ -247,8 +247,9 @@ async def async_handle_copy_schedule(
         # Create new schedule(s) for target days
         if target_days:
             for day in target_days:
+                # day is expected to be an integer index (0=Monday)
                 new_schedule = Schedule(
-                    schedule_id=f"{day.lower()}_{uuid.uuid4().hex[:8]}",
+                    schedule_id=f"{day}_{uuid.uuid4().hex[:8]}",
                     time=source_schedule.start_time,
                     temperature=source_schedule.temperature,
                     day=day,
@@ -259,11 +260,34 @@ async def async_handle_copy_schedule(
                 target_area.add_schedule(new_schedule)
         else:
             # Copy with same days
+            # Normalize source schedule day to integer index for constructor
+            def _normalize_day_to_index(d):
+                    idx_map_full = {
+                        "Monday": 0,
+                        "Tuesday": 1,
+                        "Wednesday": 2,
+                        "Thursday": 3,
+                        "Friday": 4,
+                        "Saturday": 5,
+                        "Sunday": 6,
+                    }
+                    short_to_idx = {"mon": 0, "tue": 1, "wed": 2, "thu": 3, "fri": 4, "sat": 5, "sun": 6}
+                    if isinstance(d, int):
+                        return d
+                    if isinstance(d, str):
+                        key = d.strip().lower()
+                        if key in short_to_idx:
+                            return short_to_idx[key]
+                        # Maybe full name available
+                        return idx_map_full.get(d, None)
+                    return None
+
+            source_day_index = _normalize_day_to_index(source_schedule.day)
             new_schedule = Schedule(
                 schedule_id=f"copied_{uuid.uuid4().hex[:8]}",
                 time=source_schedule.start_time,
                 temperature=source_schedule.temperature,
-                day=source_schedule.day,
+                day=source_day_index,
                 start_time=source_schedule.start_time,
                 end_time=source_schedule.end_time,
                 enabled=source_schedule.enabled,

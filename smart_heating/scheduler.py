@@ -161,6 +161,7 @@ class ScheduleExecutor:
         Returns:
             Previous day name
         """
+        # Accept numeric day index (0=Monday) or day name string
         day_order = [
             "Monday",
             "Tuesday",
@@ -172,6 +173,17 @@ class ScheduleExecutor:
         ]
         current_day_idx = day_order.index(current_day)
         return day_order[(current_day_idx - 1) % 7]
+
+    def _normalize_day_input(self, current_day: "str | int") -> str:
+        """Normalize input day to English full day name.
+
+        Accepts an integer index 0..6 (0=Monday) or a full day name string.
+        """
+        if isinstance(current_day, int):
+            idx_map_full = {0: "Monday", 1: "Tuesday", 2: "Wednesday", 3: "Thursday", 4: "Friday", 5: "Saturday", 6: "Sunday"}
+            return idx_map_full.get(current_day % 7)
+        # Assume it's already a string day name
+        return current_day
 
     def _is_time_in_midnight_crossing_schedule_from_previous_day(
         self, schedule: dict, current_time: time
@@ -254,7 +266,7 @@ class ScheduleExecutor:
     def _find_active_schedule(
         self,
         schedules: dict,
-        current_day: str,
+        current_day: "str | int",
         current_time: time,
     ) -> Optional[dict]:
         """Find the active schedule for the given day and time.
@@ -270,7 +282,9 @@ class ScheduleExecutor:
         Returns:
             Active schedule entry or None
         """
-        previous_day = self._get_previous_day(current_day)
+        # Normalize current_day: accept int index or English full name
+        current_day_normalized = self._normalize_day_input(current_day)
+        previous_day = self._get_previous_day(current_day_normalized)
         # Try previous day midnight-crossing schedules
         schedule = self._find_previous_day_schedule(
             schedules, previous_day, current_time
@@ -279,12 +293,12 @@ class ScheduleExecutor:
             return schedule
         # Try schedules starting today that cross midnight
         schedule = self._find_midnight_crossing_today_schedule(
-            schedules, current_day, current_time
+            schedules, current_day_normalized, current_time
         )
         if schedule:
             return schedule
         # Finally, normal schedules today
-        return self._find_normal_schedule(schedules, current_day, current_time)
+        return self._find_normal_schedule(schedules, current_day_normalized, current_time)
 
     def _find_previous_day_schedule(
         self, schedules: dict, previous_day: str, current_time: time

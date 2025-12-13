@@ -86,7 +86,7 @@ class TestValidators:
         schedule_data = {
             "time": "07:00",
             "temperature": 21.0,
-            "days": ["mon", "tue"],
+            "days": [0, 1],
             "enabled": True,
         }
         is_valid, error = validate_schedule_data(schedule_data)
@@ -98,7 +98,7 @@ class TestValidators:
         # Missing required field
         schedule_data = {
             "temperature": 21.0,
-            "days": ["mon"],
+            "days": [0],
         }
         is_valid, error = validate_schedule_data(schedule_data)
         assert is_valid is False
@@ -107,7 +107,7 @@ class TestValidators:
         schedule_data = {
             "time": "0700",
             "temperature": 21.0,
-            "days": ["mon"],
+            "days": [0],
         }
         is_valid, error = validate_schedule_data(schedule_data)
         assert is_valid is False
@@ -116,7 +116,7 @@ class TestValidators:
         schedule_data = {
             "time": "25:00",
             "temperature": 21.0,
-            "days": ["mon"],
+            "days": [0],
         }
         is_valid, error = validate_schedule_data(schedule_data)
         assert is_valid is False
@@ -125,7 +125,7 @@ class TestValidators:
         schedule_data = {
             "time": "12:60",
             "temperature": 21.0,
-            "days": ["mon"],
+            "days": [0],
         }
         is_valid, error = validate_schedule_data(schedule_data)
         assert is_valid is False
@@ -134,7 +134,7 @@ class TestValidators:
         schedule_data = {
             "time": "07:00",
             "temperature": 21.0,
-            "days": ["monday"],  # Should be "mon"
+            "days": [7],
         }
         is_valid, error = validate_schedule_data(schedule_data)
         assert is_valid is False
@@ -143,7 +143,7 @@ class TestValidators:
         schedule_data = {
             "time": "ab:cd",
             "temperature": 21.0,
-            "days": ["mon"],
+            "days": [0],
         }
         is_valid, error = validate_schedule_data(schedule_data)
         assert is_valid is False
@@ -153,7 +153,7 @@ class TestValidators:
         schedule_data = {
             "time": "07:00",
             "temperature": None,
-            "days": ["mon"],
+            "days": [0],
         }
         is_valid, error = validate_schedule_data(schedule_data)
         assert is_valid is False

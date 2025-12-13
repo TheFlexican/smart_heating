@@ -469,7 +469,7 @@ const ZoneDetail = () => {
         title: t('settingsCards.presetModesTitle'),
         description: t('settingsCards.presetModesDescription'),
         icon: <BookmarkIcon />,
-        badge: area.preset_mode === 'none' ? undefined : t(`presets.${area.preset_mode}`),
+        badge: (!area.enabled || area.state === 'off' || area.preset_mode === 'none') ? undefined : t(`presets.${area.preset_mode}`),
         defaultExpanded: false,
         content: (
           <>
@@ -1833,7 +1833,7 @@ const ZoneDetail = () => {
                 valueLabelDisplay="auto"
                 disabled={!area.enabled || !!(area.preset_mode && area.preset_mode !== 'none')}
               />
-              {area.preset_mode && area.preset_mode !== 'none' && (
+                {area.enabled && area.state !== 'off' && area.preset_mode && area.preset_mode !== 'none' && (
                 <Box mt={1} display="flex" alignItems="center" gap={1}>
                   <BookmarkIcon fontSize="small" color="secondary" />
                   <Typography variant="caption" color="text.secondary" dangerouslySetInnerHTML={{

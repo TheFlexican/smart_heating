@@ -159,7 +159,7 @@ class TestAreaModel:
             schedule_id="schedule_1",
             time="07:00",
             temperature=21.0,
-            days=["monday", "tuesday"],
+                days=[0, "tuesday"],
         )
 
         # Add schedule

@@ -35,7 +35,12 @@ curl -s "http://homeassistant.local:8123/api/states" \
 - **NEVER** create git tags without explicit user request
 - **NEVER** push to GitHub without user confirmation
 - **NEVER** push any code when there are failing tests
-- After implementing features: Deploy → Test API → Run Tests → Update Docs & Translations → Let user test → Wait for approval → THEN commit/tag/push
+- **ALWAYS** Create a new git branch for each feature/fix
+- **ALWAYS** Use descriptive commit messages (e.g., feat: add X, fix: correct Y)
+- **ALWAYS** Squash commits when merging to main branch
+- **ALWAYS** Create a pull request for code review to main
+- **ALWAYS** Follow semantic versioning for tags (e.g., v0.4.3)
+- After implementing features and fixes: Deploy → Test API → Run Tests → Update Docs & Translations → Ask user to test → Wait for approval → THEN commit/tag/push
 - Workflow: Code → Deploy (bash scripts/deploy_test.sh) → Test API → Run bash tests/run_tests.sh → Run E2E tests → Update Docs (EN+NL) → Update Translations (EN+NL) → User approval → Git operations
 
 **RULE #3.1: Version Synchronization**
@@ -62,14 +67,6 @@ curl -s "http://homeassistant.local:8123/api/states" \
 - Workflow: Code → Deploy (bash scripts/deploy_test.sh) → Test API → Update All Docs & Translations (EN+NL) → Run Tests (bash tests/run_tests.sh && cd tests/e2e && npm test) → User approval → Commit
 
 **RULE #5: Maintain Code Quality**
-- Follow existing code patterns and styles for Home Assistant and this project
-- Ensure code is clean, well-documented, and efficient
-- **Fix bugs in actual code, don't work around them in tests**
-- When HA test suite provides proper fixtures/helpers, use them instead of mocking HA internals
-- **ALWAYS delegate code quality analysis and fixes to the SonarQube Agent**
-
-**RULE #5.3: SonarQube Code Quality - Delegate to Specialized Agent**
-
 **⚠️ IMPORTANT: Use the SonarQube Agent for Code Quality Tasks**
 
 When user requests involve code quality, analysis, or SonarQube issues, **delegate to the SonarQube Agent** instead of handling directly:
@@ -172,7 +169,7 @@ The project uses 6 specialized agents for complete development lifecycle:
 See `.github/agents/README.md` for full agent documentation.
 
 **Before Committing Code:**
-1. ✅ Run all tests (Python unit tests + E2E tests when available)
+<!-- 1. ✅ Run all tests (Python unit tests + E2E tests when available) -->
 2. ✅ Check SonarQube for new issues (delegate to SonarQube Agent for fixes if needed)
 3. ✅ Fix all BLOCKER and HIGH severity issues
 4. ✅ Verify code coverage meets 80% threshold
