@@ -1,3 +1,20 @@
+---
+name: playwright-e2e
+description: Write Playwright E2E tests for user workflows with semantic locators and reliability
+argument-hint: Describe the user workflow to test...
+tools: ['edit', 'search', 'fetch', 'githubRepo', 'usages']
+target: vscode
+handoffs:
+  - label: Run E2E Tests
+    agent: agent
+    prompt: Run the E2E tests using cd tests/e2e && npm test
+    send: false
+  - label: Debug Test
+    agent: agent
+    prompt: Run the test in headed mode for debugging: cd tests/e2e && npm test -- --headed
+    send: false
+---
+
 # Playwright E2E Test Writer Agent
 
 ## Purpose

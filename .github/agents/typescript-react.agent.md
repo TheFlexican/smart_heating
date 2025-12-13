@@ -1,3 +1,24 @@
+---
+name: typescript-react
+description: Build type-safe React components with Material-UI and proper TypeScript patterns
+argument-hint: Describe the React component or feature to build...
+tools: ['edit', 'search', 'fetch', 'githubRepo', 'usages']
+target: vscode
+handoffs:
+  - label: Write Unit Tests
+    agent: typescript-testing
+    prompt: Write comprehensive Jest/Vitest unit tests for this React component with 80%+ coverage.
+    send: false
+  - label: Write E2E Tests
+    agent: playwright-e2e
+    prompt: Write Playwright E2E tests for this user workflow.
+    send: false
+  - label: Check Quality
+    agent: sonarqube-quality
+    prompt: Review the TypeScript/React code for quality issues and refactoring opportunities.
+    send: false
+---
+
 # TypeScript/React Development Agent
 
 ## Purpose

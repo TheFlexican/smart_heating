@@ -1,3 +1,20 @@
+---
+name: home-assistant-pytest
+description: Write pytest tests for Home Assistant integrations with 80%+ coverage
+argument-hint: Describe what to test (module, feature, or component)...
+tools: ['edit', 'search', 'fetch', 'githubRepo', 'usages']
+target: vscode
+handoffs:
+  - label: Run Tests
+    agent: agent
+    prompt: Run the tests using bash tests/run_tests.sh
+    send: false
+  - label: Check Coverage
+    agent: agent
+    prompt: Check test coverage and ensure it meets the 80% threshold
+    send: false
+---
+
 # Home Assistant Pytest Test Writer Agent
 
 ## Purpose

@@ -90,7 +90,7 @@ Use the runSubagent tool with the SonarQube agent context:
 
 runSubagent(
   description="Code quality analysis",
-  prompt="Please analyze the codebase using SonarQube MCP server and fix all BLOCKER and HIGH severity issues. Focus on [specific area if applicable]. See .github/agents/sonarqube-agent.md for full guidelines and workflow."
+  prompt="Please analyze the codebase using SonarQube MCP server and fix all BLOCKER and HIGH severity issues. Focus on [specific area if applicable]. See .github/agents/sonarqube.agent.md for full guidelines and workflow."
 )
 ```
 
@@ -114,32 +114,32 @@ You may handle simple, isolated SonarQube fixes yourself (e.g., one optional cha
 - **Home Assistant Integration Agent** - For HA platform code, entities, coordinators
 - **Pytest Agent** - For Python unit tests and integration tests
 - Delegate when implementing HA features, platforms, services, or tests
-- See `.github/agents/home-assistant-integration-agent.md` and `.github/agents/home-assistant-pytest.agent.md`
+- See `.github/agents/home-assistant-integration.agent.md` and `.github/agents/home-assistant-pytest.agent.md`
 
 **Frontend Development (TypeScript/React):**
 - **TypeScript/React Agent** - For React components, hooks, MUI implementation
 - **TypeScript Testing Agent** - For Jest/Vitest unit tests of components
 - **Playwright Agent** - For E2E user workflow tests
 - Delegate when building UI features, components, or writing tests
-- See `.github/agents/typescript-react-agent.md`, `.github/agents/typescript-testing-agent.md`, and `.github/agents/playwright-e2e-agent.md`
+- See `.github/agents/typescript-react.agent.md`, `.github/agents/typescript-testing.agent.md`, and `.github/agents/playwright-e2e.agent.md`
 
 **Code Quality:**
 - **SonarQube Agent** - For code quality analysis, refactoring, deprecation fixes
 - Delegate when fixing code smells, complexity issues, or security vulnerabilities
-- See `.github/agents/sonarqube-agent.md`
+- See `.github/agents/sonarqube.agent.md`
 
 **Example Delegations:**
 ```markdown
 # Backend feature
 runSubagent({
   description: "HA integration development",
-  prompt: "Implement boost mode for climate entities. See .github/agents/home-assistant-integration-agent.md"
+  prompt: "Implement boost mode for climate entities. See .github/agents/home-assistant-integration.agent.md"
 })
 
 # Frontend feature
 runSubagent({
   description: "React component development",
-  prompt: "Create temperature control component with MUI. See .github/agents/typescript-react-agent.md"
+  prompt: "Create temperature control component with MUI. See .github/agents/typescript-react.agent.md"
 })
 
 # Backend tests
@@ -151,13 +151,13 @@ runSubagent({
 # Frontend tests
 runSubagent({
   description: "Write component tests",
-  prompt: "Write unit tests for ZoneCard component. See .github/agents/typescript-testing-agent.md"
+  prompt: "Write unit tests for ZoneCard component. See .github/agents/typescript-testing.agent.md"
 })
 
 # Code quality
 runSubagent({
   description: "Code quality analysis",
-  prompt: "Fix SonarQube BLOCKER and HIGH issues. See .github/agents/sonarqube-agent.md"
+  prompt: "Fix SonarQube BLOCKER and HIGH issues. See .github/agents/sonarqube.agent.md"
 })
 ```
 
@@ -216,7 +216,7 @@ See `.github/agents/README.md` for full agent documentation.
 - **TypeScript Testing Agent** - Jest/Vitest unit tests for React components
 - **Playwright Agent** - E2E tests for user workflows
 - Delegate: "Write unit tests for [component]" or "Write E2E tests for [workflow]"
-- See `.github/agents/typescript-testing-agent.md` and `.github/agents/playwright-e2e-agent.md`
+- See `.github/agents/typescript-testing.agent.md` and `.github/agents/playwright-e2e.agent.md`
 
 **Test Requirements:**
 - Minimum 80% code coverage for all modules

@@ -1,3 +1,20 @@
+---
+name: sonarqube-quality
+description: Analyze code quality, fix issues, and refactor using SonarQube
+argument-hint: Describe what code quality issues to analyze or fix...
+tools: ['edit', 'search', 'fetch', 'githubRepo', 'usages']
+target: vscode
+handoffs:
+  - label: Write Tests
+    agent: home-assistant-pytest
+    prompt: Write comprehensive tests for the refactored code to ensure 80%+ coverage.
+    send: false
+  - label: Deploy Changes
+    agent: agent
+    prompt: Deploy the quality-improved code using bash scripts/deploy_test.sh
+    send: false
+---
+
 # SonarQube Code Quality Agent
 
 ## Purpose

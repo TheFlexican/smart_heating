@@ -1,3 +1,24 @@
+---
+name: home-assistant-integration
+description: Develop Home Assistant integrations with proper HA patterns and async code
+argument-hint: Describe the HA feature to implement (platform, entity, service)...
+tools: ['edit', 'search', 'fetch', 'githubRepo', 'usages']
+target: vscode
+handoffs:
+  - label: Write Tests
+    agent: home-assistant-pytest
+    prompt: Write comprehensive pytest tests for this integration code with 80%+ coverage.
+    send: false
+  - label: Check Quality
+    agent: sonarqube-quality
+    prompt: Review the integration code for quality issues and refactoring opportunities.
+    send: false
+  - label: Deploy & Test
+    agent: agent
+    prompt: Deploy to test environment using bash scripts/deploy_test.sh and verify functionality.
+    send: false
+---
+
 # Home Assistant Integration Development Agent
 
 ## Purpose

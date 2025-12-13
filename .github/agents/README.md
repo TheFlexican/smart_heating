@@ -13,7 +13,7 @@ The Smart Heating project uses a multi-agent system where:
 ### Code Quality & Analysis
 
 #### 🔍 SonarQube Agent
-**File:** `sonarqube-agent.md`
+**File:** `sonarqube.agent.md`
 
 **Purpose:** Code quality analysis and automated fixes
 
@@ -37,7 +37,7 @@ The Smart Heating project uses a multi-agent system where:
 ```typescript
 runSubagent({
   description: "Code quality analysis",
-  prompt: "Please analyze the codebase using SonarQube MCP server and fix all BLOCKER and HIGH severity issues. See .github/agents/sonarqube-agent.md for guidelines."
+  prompt: "Please analyze the codebase using SonarQube MCP server and fix all BLOCKER and HIGH severity issues. See .github/agents/sonarqube.agent.md for guidelines."
 })
 ```
 
@@ -46,7 +46,7 @@ runSubagent({
 ### Backend Development (Python/Home Assistant)
 
 #### 🏠 Home Assistant Integration Agent
-**File:** `home-assistant-integration-agent.md`
+**File:** `home-assistant-integration.agent.md`
 
 **Purpose:** Develop Home Assistant custom integrations and platforms
 
@@ -70,7 +70,7 @@ runSubagent({
 ```typescript
 runSubagent({
   description: "HA integration development",
-  prompt: "Implement [feature] for Home Assistant integration. Follow HA patterns, use async/await, and update coordinator. See .github/agents/home-assistant-integration-agent.md for guidelines."
+  prompt: "Implement [feature] for Home Assistant integration. Follow HA patterns, use async/await, and update coordinator. See .github/agents/home-assistant-integration.agent.md for guidelines."
 })
 ```
 
@@ -107,7 +107,7 @@ runSubagent({
 ### Frontend Development (TypeScript/React)
 
 #### ⚛️ TypeScript/React Development Agent
-**File:** `typescript-react-agent.md`
+**File:** `typescript-react.agent.md`
 
 **Purpose:** Develop type-safe React components and frontend features
 
@@ -131,12 +131,12 @@ runSubagent({
 ```typescript
 runSubagent({
   description: "TypeScript/React development",
-  prompt: "Create a temperature control component with MUI. Ensure type safety, responsive design, and EN/NL translations. See .github/agents/typescript-react-agent.md for guidelines."
+  prompt: "Create a temperature control component with MUI. Ensure type safety, responsive design, and EN/NL translations. See .github/agents/typescript-react.agent.md for guidelines."
 })
 ```
 
 #### 🧪 TypeScript/React Testing Agent
-**File:** `typescript-testing-agent.md`
+**File:** `typescript-testing.agent.md`
 
 **Purpose:** Write unit tests for React components and TypeScript code
 
@@ -159,12 +159,12 @@ runSubagent({
 ```typescript
 runSubagent({
   description: "TypeScript unit testing",
-  prompt: "Write comprehensive unit tests for ZoneCard component. Use React Testing Library, achieve 80%+ coverage. See .github/agents/typescript-testing-agent.md for guidelines."
+  prompt: "Write comprehensive unit tests for ZoneCard component. Use React Testing Library, achieve 80%+ coverage. See .github/agents/typescript-testing.agent.md for guidelines."
 })
 ```
 
 #### 🎭 Playwright E2E Test Writer Agent
-**File:** `playwright-e2e-agent.md`
+**File:** `playwright-e2e.agent.md`
 
 **Purpose:** Write and maintain Playwright end-to-end tests for frontend workflows
 
@@ -194,7 +194,7 @@ runSubagent({
 ```typescript
 runSubagent({
   description: "Write Playwright E2E tests",
-  prompt: "Write comprehensive E2E tests for the temperature control workflow. Test user interactions, WebSocket updates, and responsive behavior. See .github/agents/playwright-e2e-agent.md for guidelines."
+  prompt: "Write comprehensive E2E tests for the temperature control workflow. Test user interactions, WebSocket updates, and responsive behavior. See .github/agents/playwright-e2e.agent.md for guidelines."
 })
 ```
 
@@ -218,7 +218,7 @@ When you detect a task that matches an agent's expertise:
 
 1. **Identify the domain** (e.g., code quality → SonarQube agent)
 2. **Use runSubagent tool** with clear instructions
-3. **Reference the agent's documentation** (`.github/agents/[agent-name].md`)
+3. **Reference the agent's documentation** (`.github/agents/[agent-name].agent.md`)
 4. **Provide context** about what specifically needs attention
 5. **Let the agent work autonomously** and report back
 
