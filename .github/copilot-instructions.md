@@ -112,7 +112,7 @@ You may handle simple, isolated SonarQube fixes yourself (e.g., one optional cha
 
 **Backend Development (Python/Home Assistant):**
 - **Home Assistant Integration Agent** - For HA platform code, entities, coordinators
-- **Pytest Agent** - For Python unit tests and integration tests
+- **Home Assistant Pytest Agent** - For Python unit tests and integration tests
 - Delegate when implementing HA features, platforms, services, or tests
 - See `.github/agents/home-assistant-integration.agent.md` and `.github/agents/home-assistant-pytest.agent.md`
 
@@ -166,7 +166,7 @@ runSubagent({
 The project uses 6 specialized agents for complete development lifecycle:
 
 **Code Quality (1):** SonarQube Agent
-**Backend (2):** Home Assistant Integration Agent, Pytest Agent
+**Backend (2):** Home Assistant Integration Agent, Home Assistant Pytest Agent
 **Frontend (3):** TypeScript/React Agent, TypeScript Testing Agent, Playwright Agent
 
 See `.github/agents/README.md` for full agent documentation.
@@ -208,7 +208,7 @@ See `.github/agents/README.md` for full agent documentation.
 **⚠️ IMPORTANT: Always delegate test writing to specialized testing agents**
 
 **Backend Testing:**
-- **Pytest Agent** - Python unit tests, HA integration tests
+- **Home Assistant Pytest Agent** - Python unit tests, HA integration tests
 - Delegate: "Write pytest tests for [module]"
 - See `.github/agents/home-assistant-pytest.agent.md`
 
@@ -252,7 +252,7 @@ source venv && pytest tests/unit --cov=smart_heating --cov-report=html -v
 
 ## Testing Overview
 
-**For detailed testing guidelines, see the Pytest Agent:** `.github/agents/home-assistant-pytest.agent.md`
+**For detailed testing guidelines, see the Home Assistant Pytest Agent:** `.github/agents/home-assistant-pytest.agent.md`
 
 **Test Structure:**
 - Python unit tests: `tests/unit/` (126+ tests, pytest-based)

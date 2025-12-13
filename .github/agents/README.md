@@ -74,7 +74,7 @@ runSubagent({
 })
 ```
 
-#### 🧪 Pytest Test Writer Agent
+#### 🧪 Home Assistant Pytest Agent
 **File:** `home-assistant-pytest.agent.md`
 
 **Purpose:** Write and maintain pytest tests for Home Assistant integrations
@@ -344,7 +344,7 @@ The Smart Heating project has **complete development lifecycle coverage** with 6
 
 ### Backend Development (2 agents)
 - ✅ **Home Assistant Integration Agent** - HA platform development, coordinators, entities
-- ✅ **Pytest Agent** - Python unit tests, HA integration tests, 80% coverage
+- ✅ **Home Assistant Pytest Agent** - Python unit tests, HA integration tests, 80% coverage
 
 ### Frontend Development (3 agents)
 - ✅ **TypeScript/React Agent** - Component development, hooks, MUI patterns
@@ -358,7 +358,7 @@ Development Lifecycle:
 │   ├── Backend: Home Assistant Integration Agent
 │   └── Frontend: TypeScript/React Agent
 ├── Testing
-│   ├── Backend Unit: Pytest Agent
+│   ├── Backend Unit: Home Assistant Pytest Agent
 │   ├── Frontend Unit: TypeScript Testing Agent
 │   └── E2E: Playwright Agent
 └── Quality: SonarQube Agent
