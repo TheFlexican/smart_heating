@@ -20,7 +20,8 @@ import {
   Tooltip,
   alpha
 } from '@mui/material'
-import { Draggable } from 'react-beautiful-dnd'
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
 import ThermostatIcon from '@mui/icons-material/Thermostat'
 import SensorsIcon from '@mui/icons-material/Sensors'
@@ -41,13 +42,21 @@ import { setZoneTemperature, removeDeviceFromZone, hideZone, unhideZone, getEnti
 interface ZoneCardProps {
   area: Zone
   onUpdate: () => void
-  index: number
 }
 
-const ZoneCard = ({ area, onUpdate, index }: ZoneCardProps) => {
+const ZoneCard = ({ area, onUpdate }: ZoneCardProps) => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: area.id })
 
   // Get displayed temperature: use effective temperature when in preset mode, otherwise use target
   const getDisplayTemperature = () => {
@@ -286,57 +295,59 @@ const ZoneCard = ({ area, onUpdate, index }: ZoneCardProps) => {
     return parts.length > 0 ? parts.join(' · ') : 'unavailable'
   }
 
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
   return (
-    <Draggable draggableId={`area-card-${area.id}`} index={index}>
-      {(dragProvided, dragSnapshot) => (
-        <Card
-          ref={dragProvided.innerRef}
-          {...dragProvided.draggableProps}
-          elevation={dragSnapshot.isDragging ? 12 : 2}
-          onClick={handleCardClick}
+    <Card
+      ref={setNodeRef}
+      style={style}
+      elevation={isDragging ? 12 : 2}
+      onClick={handleCardClick}
+      sx={{
+        bgcolor: isDragging ? alpha('#03a9f4', 0.15) : 'background.paper',
+        borderRadius: 3,
+        cursor: isDragging ? 'grabbing' : 'pointer',
+        boxShadow: isDragging
+          ? '0 12px 32px rgba(3, 169, 244, 0.4)'
+          : undefined,
+        opacity: isDragging ? 0.9 : 1,
+        minHeight: { xs: 160, sm: 180 },
+        '&:hover': {
+          transform: isDragging ? undefined : 'translateY(-2px)',
+          boxShadow: isDragging
+            ? '0 12px 32px rgba(3, 169, 244, 0.4)'
+            : '0 4px 12px rgba(0,0,0,0.3)',
+        },
+      }}
+    >
+      <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+        {/* Drag Handle */}
+        <Box
+          {...attributes}
+          {...listeners}
           sx={{
-            bgcolor: dragSnapshot.isDragging ? alpha('#03a9f4', 0.15) : 'background.paper',
-            borderRadius: 3,
-            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-            cursor: dragSnapshot.isDragging ? 'grabbing' : 'pointer',
-            transform: dragSnapshot.isDragging ? 'rotate(2deg) scale(1.05)' : 'scale(1)',
-            boxShadow: dragSnapshot.isDragging
-              ? '0 12px 32px rgba(3, 169, 244, 0.4)'
-              : undefined,
-            opacity: dragSnapshot.isDragging ? 0.9 : 1,
-            minHeight: { xs: 160, sm: 180 },
+            position: 'absolute',
+            top: 8,
+            left: 8,
+            cursor: isDragging ? 'grabbing' : 'grab',
+            color: isDragging ? 'primary.main' : 'text.secondary',
+            opacity: isDragging ? 1 : 0.4,
+            transition: 'all 0.2s',
             '&:hover': {
-              transform: dragSnapshot.isDragging ? 'rotate(2deg) scale(1.05)' : 'translateY(-2px)',
-              boxShadow: dragSnapshot.isDragging
-                ? '0 12px 32px rgba(3, 169, 244, 0.4)'
-                : '0 4px 12px rgba(0,0,0,0.3)',
+              opacity: 1,
+              color: 'primary.main',
+            },
+            '&:active': {
+              cursor: 'grabbing',
             },
           }}
+          onClick={(e) => e.stopPropagation()}
         >
-          <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-            {/* Drag Handle */}
-            <Box
-              {...dragProvided.dragHandleProps}
-              sx={{
-                position: 'absolute',
-                top: 8,
-                left: 8,
-                cursor: dragSnapshot.isDragging ? 'grabbing' : 'grab',
-                color: dragSnapshot.isDragging ? 'primary.main' : 'text.secondary',
-                opacity: dragSnapshot.isDragging ? 1 : 0.4,
-                transition: 'all 0.2s',
-                '&:hover': {
-                  opacity: 1,
-                  color: 'primary.main',
-                },
-                '&:active': {
-                  cursor: 'grabbing',
-                },
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <DragIndicatorIcon fontSize="small" />
-            </Box>
+          <DragIndicatorIcon fontSize="small" />
+        </Box>
         <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
           <Box flex={1}>
             <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
@@ -560,8 +571,6 @@ const ZoneCard = ({ area, onUpdate, index }: ZoneCardProps) => {
         </MenuItem>
       </Menu>
     </Card>
-      )}
-    </Draggable>
   )
 }
 
