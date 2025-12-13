@@ -85,12 +85,12 @@ export const UserManagement: React.FC = () => {
       person_entity: '',
       priority: 5,
       preset_preferences: {
-        home: 21.0,
-        away: 16.0,
-        sleep: 18.0,
-        eco: 19.0,
-        comfort: 22.0,
-        activity: 20.0,
+        home: 21,
+        away: 16,
+        sleep: 18,
+        eco: 19,
+        comfort: 22,
+        activity: 20,
       },
       areas: [],
     })
@@ -387,8 +387,8 @@ export const UserManagement: React.FC = () => {
                 type="number"
                 label={t('users.priority', 'Priority (1-10)')}
                 value={formData.priority}
-                onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) })}
-                inputProps={{ min: 1, max: 10 }}
+                onChange={(e) => setFormData({ ...formData, priority: Number.parseInt(e.target.value) })}
+                slotProps={{ htmlInput: { min: 1, max: 10 } }}
                 required
               />
             </Grid>
@@ -404,9 +404,11 @@ export const UserManagement: React.FC = () => {
                   type="number"
                   label={t(`presets.${preset}`, preset)}
                   value={formData.preset_preferences[preset] || ''}
-                  onChange={(e) => handlePresetTempChange(preset, parseFloat(e.target.value))}
-                  inputProps={{ step: 0.5 }}
-                  InputProps={{ endAdornment: '°C' }}
+                  onChange={(e) => handlePresetTempChange(preset, Number.parseFloat(e.target.value))}
+                  slotProps={{
+                    htmlInput: { step: 0.5 },
+                    input: { endAdornment: '°C' }
+                  }}
                 />
               </Grid>
             ))}

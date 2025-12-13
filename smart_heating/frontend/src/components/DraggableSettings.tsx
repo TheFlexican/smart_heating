@@ -1,5 +1,21 @@
 import { ReactNode, useEffect, useState } from 'react'
-import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { Box, Alert, IconButton, useTheme, useMediaQuery } from '@mui/material'
 import RestoreIcon from '@mui/icons-material/Restore'
 import SettingsSection from './SettingsSection'
@@ -37,7 +53,7 @@ const DraggableSettings = ({ sections, storageKey = 'settings-order', expandedCa
         const reordered = orderIds
           .map(id => sections.find(s => s.id === id))
           .filter(Boolean) as SettingSection[]
-        
+
         // Add any new sections that weren't in saved order
         const newSections = sections.filter(s => !orderIds.includes(s.id))
         setOrderedSections([...reordered, ...newSections])
@@ -51,21 +67,28 @@ const DraggableSettings = ({ sections, storageKey = 'settings-order', expandedCa
     }
   }, [sections, storageKey])
 
-  const handleDragEnd = (result: DropResult) => {
-    if (!result.destination) {
-      return
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+
+    if (over && active.id !== over.id) {
+      const oldIndex = orderedSections.findIndex((s) => s.id === active.id)
+      const newIndex = orderedSections.findIndex((s) => s.id === over.id)
+
+      const items = arrayMove(orderedSections, oldIndex, newIndex)
+      setOrderedSections(items)
+      setHasCustomOrder(true)
+
+      // Save to localStorage
+      const orderIds = items.map(item => item.id)
+      localStorage.setItem(storageKey, JSON.stringify(orderIds))
     }
-
-    const items = Array.from(orderedSections)
-    const [reorderedItem] = items.splice(result.source.index, 1)
-    items.splice(result.destination.index, 0, reorderedItem)
-
-    setOrderedSections(items)
-    setHasCustomOrder(true)
-
-    // Save to localStorage
-    const orderIds = items.map(item => item.id)
-    localStorage.setItem(storageKey, JSON.stringify(orderIds))
   }
 
   const handleResetOrder = () => {
@@ -77,8 +100,8 @@ const DraggableSettings = ({ sections, storageKey = 'settings-order', expandedCa
   return (
     <Box>
       {hasCustomOrder && (
-        <Alert 
-          severity="info" 
+        <Alert
+          severity="info"
           sx={{ mb: 2 }}
           action={
             <IconButton
@@ -95,60 +118,77 @@ const DraggableSettings = ({ sections, storageKey = 'settings-order', expandedCa
         </Alert>
       )}
 
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <Droppable droppableId="settings-sections">
-          {(provided, snapshot) => (
-            <Box
-              {...provided.droppableProps}
-              ref={provided.innerRef}
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: isMobile 
-                  ? '1fr' 
-                  : isTablet 
-                    ? 'repeat(2, 1fr)' 
-                    : 'repeat(3, 1fr)',
-                gap: 2,
-                bgcolor: snapshot.isDraggingOver ? 'action.hover' : 'transparent',
-                transition: 'background-color 0.2s',
-                borderRadius: 1,
-                p: 1,
-              }}
-            >
-              {orderedSections.map((section, index) => (
-                <Draggable key={section.id} draggableId={section.id} index={index}>
-                  {(provided, snapshot) => (
-                    <Box
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      sx={{
-                        opacity: snapshot.isDragging ? 0.8 : 1,
-                        transform: snapshot.isDragging ? 'scale(1.05)' : 'scale(1)',
-                        transition: 'all 0.2s',
-                      }}
-                    >
-                      <SettingsSection
-                        id={section.id}
-                        title={section.title}
-                        description={section.description}
-                        icon={section.icon}
-                        badge={section.badge}
-                        defaultExpanded={section.defaultExpanded}
-                        expanded={expandedCard === section.id}
-                        onExpandedChange={(expanded) => onExpandedChange(expanded ? section.id : null)}
-                        dragHandleProps={provided.dragHandleProps}
-                      >
-                        {section.content}
-                      </SettingsSection>
-                    </Box>
-                  )}
-                </Draggable>
-              ))}
-              {provided.placeholder}
-            </Box>
-          )}
-        </Droppable>
-      </DragDropContext>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={orderedSections.map(s => s.id)} strategy={verticalListSortingStrategy}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: isMobile
+                ? '1fr'
+                : isTablet
+                ? 'repeat(2, 1fr)'
+                : 'repeat(3, 1fr)',
+              gap: 2,
+            }}
+          >
+            {orderedSections.map((section) => (
+              <SortableSettingCard
+                key={section.id}
+                section={section}
+                expanded={expandedCard === section.id}
+                onExpandedChange={(expanded) => onExpandedChange(expanded ? section.id : null)}
+              />
+            ))}
+          </Box>
+        </SortableContext>
+      </DndContext>
+    </Box>
+  )
+}
+
+// Sortable wrapper for settings sections
+interface SortableSettingCardProps {
+  section: SettingSection
+  expanded: boolean
+  onExpandedChange: (expanded: boolean) => void
+}
+
+const SortableSettingCard = ({ section, expanded, onExpandedChange }: SortableSettingCardProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: section.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
+  return (
+    <Box
+      ref={setNodeRef}
+      style={style}
+      sx={{
+        opacity: isDragging ? 0.5 : 1,
+      }}
+    >
+      <SettingsSection
+        id={section.id}
+        title={section.title}
+        description={section.description}
+        icon={section.icon}
+        badge={section.badge}
+        defaultExpanded={section.defaultExpanded}
+        expanded={expanded}
+        onExpandedChange={onExpandedChange}
+        dragHandleProps={{ ...attributes, ...listeners }}
+      >
+        {section.content}
+      </SettingsSection>
     </Box>
   )
 }

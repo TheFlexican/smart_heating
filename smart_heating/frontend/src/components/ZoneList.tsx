@@ -1,13 +1,26 @@
 import {
   Box,
-  Grid,
   Typography,
   CircularProgress,
   Alert,
   Button,
   Chip,
 } from '@mui/material'
-import { DragDropContext, Droppable, DropResult } from 'react-beautiful-dnd'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy,
+} from '@dnd-kit/sortable'
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
 import { useTranslation } from 'react-i18next'
@@ -26,17 +39,27 @@ interface ZoneListProps {
 const ZoneList = ({ areas, loading, onUpdate, showHidden, onToggleShowHidden, onAreasReorder }: ZoneListProps) => {
   const { t } = useTranslation()
 
-  const handleDragEnd = (result: DropResult) => {
-    if (!result.destination) return
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
 
-    const items = Array.from(visibleAreas)
-    const [reorderedItem] = items.splice(result.source.index, 1)
-    items.splice(result.destination.index, 0, reorderedItem)
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
 
-    // Merge reordered visible areas with hidden areas
-    const hiddenAreas = areas.filter(a => a.hidden && !showHidden)
-    const newOrder = [...items, ...hiddenAreas]
-    onAreasReorder(newOrder)
+    if (over && active.id !== over.id) {
+      const oldIndex = visibleAreas.findIndex((area) => area.id === active.id)
+      const newIndex = visibleAreas.findIndex((area) => area.id === over.id)
+
+      const reorderedAreas = arrayMove(visibleAreas, oldIndex, newIndex)
+
+      // Merge reordered visible areas with hidden areas
+      const hiddenAreas = areas.filter(a => a.hidden && !showHidden)
+      const newOrder = [...reorderedAreas, ...hiddenAreas]
+      onAreasReorder(newOrder)
+    }
   }
 
   if (loading) {
@@ -52,7 +75,7 @@ const ZoneList = ({ areas, loading, onUpdate, showHidden, onToggleShowHidden, on
     .filter(area => showHidden || !area.hidden)
 
   return (
-    <DragDropContext onDragEnd={handleDragEnd}>
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <Box>
         <Box
           mb={{ xs: 2, sm: 3 }}
@@ -94,26 +117,30 @@ const ZoneList = ({ areas, loading, onUpdate, showHidden, onToggleShowHidden, on
             {t('dashboard.noAreasFound')}
           </Alert>
         ) : (
-          <Droppable droppableId="areas-list" type="AREA">
-            {(provided) => (
-              <Grid
-                container
-                spacing={{ xs: 2, sm: 2, md: 3 }}
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-              >
-                {visibleAreas.map((area, index) => (
-                  <Grid item xs={12} md={6} lg={4} key={area.id}>
-                    <ZoneCard area={area} onUpdate={onUpdate} index={index} />
-                  </Grid>
-                ))}
-                {provided.placeholder}
-              </Grid>
-            )}
-          </Droppable>
+          <SortableContext items={visibleAreas.map(a => a.id)} strategy={rectSortingStrategy}>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: {
+                  xs: '1fr',
+                  sm: 'repeat(2, 1fr)',
+                  md: 'repeat(3, 1fr)',
+                  lg: 'repeat(4, 1fr)',
+                },
+                gap: { xs: 2, sm: 2, md: 3 },
+                minHeight: 100,
+                borderRadius: 2,
+                p: 0.5,
+              }}
+            >
+              {visibleAreas.map((area) => (
+                <ZoneCard key={area.id} area={area} onUpdate={onUpdate} />
+              ))}
+            </Box>
+          </SortableContext>
         )}
       </Box>
-    </DragDropContext>
+    </DndContext>
   )
 }
 

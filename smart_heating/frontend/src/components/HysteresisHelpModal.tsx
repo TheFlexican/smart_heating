@@ -29,7 +29,7 @@ export default function HysteresisHelpModal({ open, onClose }: HysteresisHelpMod
             <Typography variant="h6" gutterBottom>
               {t('hysteresisHelp.whatIsIt')}
             </Typography>
-            <Typography variant="body2" color="text.secondary" paragraph>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               {t('hysteresisHelp.whatIsItExplanation')}
             </Typography>
           </Box>
@@ -41,7 +41,7 @@ export default function HysteresisHelpModal({ open, onClose }: HysteresisHelpMod
             <Typography variant="h6" gutterBottom>
               {t('hysteresisHelp.howItWorks')}
             </Typography>
-            <Typography variant="body2" color="text.secondary" paragraph>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               {t('hysteresisHelp.howItWorksExplanation')}
             </Typography>
             <Alert severity="info" sx={{ mt: 1 }}>
@@ -61,12 +61,12 @@ export default function HysteresisHelpModal({ open, onClose }: HysteresisHelpMod
             <Typography variant="h6" gutterBottom>
               {t('hysteresisHelp.heatingSystemTypes')}
             </Typography>
-            
+
             <Box sx={{ ml: 2, mt: 2 }}>
               <Typography variant="subtitle2" color="primary" gutterBottom>
                 🔥 {t('hysteresisHelp.radiatorHeating')}
               </Typography>
-              <Typography variant="body2" color="text.secondary" paragraph>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 {t('hysteresisHelp.radiatorExplanation')}
               </Typography>
               <Alert severity="warning" sx={{ mb: 2 }}>
@@ -78,7 +78,7 @@ export default function HysteresisHelpModal({ open, onClose }: HysteresisHelpMod
               <Typography variant="subtitle2" color="primary" gutterBottom>
                 🌡️ {t('hysteresisHelp.floorHeating')}
               </Typography>
-              <Typography variant="body2" color="text.secondary" paragraph>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 {t('hysteresisHelp.floorExplanation')}
               </Typography>
               <Alert severity="success" sx={{ mb: 2 }}>
@@ -97,10 +97,10 @@ export default function HysteresisHelpModal({ open, onClose }: HysteresisHelpMod
               {t('hysteresisHelp.settingsGuide')}
             </Typography>
             <Box sx={{ ml: 2, mt: 1 }}>
-              <Typography variant="body2" color="text.secondary" paragraph>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 <strong>• {t('hysteresisHelp.globalSetting')}</strong> {t('hysteresisHelp.globalSettingExplanation')}
               </Typography>
-              <Typography variant="body2" color="text.secondary" paragraph>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 <strong>• {t('hysteresisHelp.areaSetting')}</strong> {t('hysteresisHelp.areaSettingExplanation')}
               </Typography>
             </Box>
@@ -114,13 +114,13 @@ export default function HysteresisHelpModal({ open, onClose }: HysteresisHelpMod
               {t('hysteresisHelp.recommendations')}
             </Typography>
             <Box sx={{ ml: 2, mt: 1 }}>
-              <Typography variant="body2" color="text.secondary" paragraph>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 <strong>0.1-0.3°C:</strong> {t('hysteresisHelp.veryLowRange')}
               </Typography>
-              <Typography variant="body2" color="text.secondary" paragraph>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 <strong>0.5°C:</strong> {t('hysteresisHelp.balancedRange')}
               </Typography>
-              <Typography variant="body2" color="text.secondary" paragraph>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 <strong>1.0-2.0°C:</strong> {t('hysteresisHelp.highRange')}
               </Typography>
             </Box>

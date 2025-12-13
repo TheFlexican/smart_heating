@@ -274,7 +274,7 @@ const ScheduleEntryDialog = ({
               type="time"
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              InputLabelProps={{ shrink: true }}
+              slotProps={{ inputLabel: { shrink: true } }}
               fullWidth
               helperText={t('scheduleDialog.spanHelperText')}
             />
@@ -284,7 +284,7 @@ const ScheduleEntryDialog = ({
               type="time"
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
-              InputLabelProps={{ shrink: true }}
+              slotProps={{ inputLabel: { shrink: true } }}
               fullWidth
             />
           </Box>
@@ -324,9 +324,11 @@ const ScheduleEntryDialog = ({
               label={t('scheduleDialog.temperature')}
               type="number"
               value={temperature}
-              onChange={(e) => setTemperature(parseFloat(e.target.value))}
-              InputLabelProps={{ shrink: true }}
-              inputProps={{ min: 5, max: 30, step: 0.5 }}
+              onChange={(e) => setTemperature(Number.parseFloat(e.target.value))}
+              slotProps={{
+                inputLabel: { shrink: true },
+                htmlInput: { min: 5, max: 30, step: 0.5 }
+              }}
               fullWidth
             />
           )}

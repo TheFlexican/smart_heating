@@ -8,7 +8,6 @@ import {
   Snackbar,
   Alert
 } from '@mui/material'
-import { DragDropContext, DropResult } from 'react-beautiful-dnd'
 import Header from './components/Header'
 import ZoneList from './components/ZoneList'
 import DevicePanel from './components/DevicePanel'
@@ -20,7 +19,7 @@ import EfficiencyReports from './components/EfficiencyReports'
 import HistoricalComparisons from './components/HistoricalComparisons'
 import AdvancedMetricsDashboard from './components/AdvancedMetricsDashboard'
 import { Zone, Device } from './types'
-import { getZones, getDevices, addDeviceToZone, getConfig, getSafetySensor } from './api'
+import { getZones, getDevices, getConfig, getSafetySensor } from './api'
 import { useWebSocket } from './hooks/useWebSocket'
 
 // Home Assistant theme factory - matches HA's native theme
@@ -94,7 +93,6 @@ interface ZonesOverviewProps {
   showHidden: boolean
   hideDevicesPanel: boolean
   availableDevices: Device[]
-  handleDragEnd: (result: DropResult) => void
   handleZonesUpdate: () => void
   setShowHidden: (value: boolean) => void
   onAreasReorder: (areas: Zone[]) => void
@@ -108,18 +106,16 @@ const ZonesOverview = ({
   showHidden,
   hideDevicesPanel,
   availableDevices,
-  handleDragEnd,
   handleZonesUpdate,
   setShowHidden,
   onAreasReorder,
 }: ZonesOverviewProps) => (
-  <DragDropContext onDragEnd={handleDragEnd}>
-    <Box sx={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100vh',
-      bgcolor: 'background.default'
-    }}>
+  <Box sx={{
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100vh',
+    bgcolor: 'background.default'
+  }}>
       <Header wsConnected={wsConnected} />
       <Box sx={{
         display: 'flex',
@@ -163,7 +159,6 @@ const ZonesOverview = ({
         )}
       </Box>
     </Box>
-  </DragDropContext>
 )
 
 function App() {
@@ -320,29 +315,7 @@ function App() {
     loadData()
   }
 
-  const handleDragEnd = async (result: DropResult) => {
-    const { source, destination } = result
-
-    if (!destination) return
-    if (source.droppableId === destination.droppableId) return
-
-    const areaId = destination.droppableId.replace('area-', '')
-    const deviceId = result.draggableId.replace('device-', '')
-
-    const device = availableDevices.find(d => d.id === deviceId)
-    if (!device) return
-
-    try {
-      await addDeviceToZone(areaId, {
-        device_id: deviceId,
-        device_type: device.type,
-        mqtt_topic: device.mqtt_topic
-      })
-      await loadData()
-    } catch (error) {
-      console.error('Failed to add device to area:', error)
-    }
-  }
+  // Device drag-drop temporarily disabled - will be re-implemented with @dnd-kit
 
   return (
     <ThemeProvider theme={createHATheme(themeMode)}>
@@ -358,7 +331,6 @@ function App() {
               showHidden={showHidden}
               hideDevicesPanel={hideDevicesPanel}
               availableDevices={availableDevices}
-              handleDragEnd={handleDragEnd}
               handleZonesUpdate={handleZonesUpdate}
               setShowHidden={setShowHidden}
               onAreasReorder={(reorderedAreas) => {

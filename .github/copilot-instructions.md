@@ -66,7 +66,78 @@ curl -s "http://homeassistant.local:8123/api/states" \
 - Ensure code is clean, well-documented, and efficient
 - **Fix bugs in actual code, don't work around them in tests**
 - When HA test suite provides proper fixtures/helpers, use them instead of mocking HA internals
-- Always use SonarQube mcp server analysis after code changes and fix issues based on priority
+- **ALWAYS use SonarQube MCP server to check code quality before completing tasks**
+
+**RULE #5.3: SonarQube Code Quality Standards**
+
+**CRITICAL: Check SonarQube Before Completing Any Task**
+- After making code changes, ALWAYS run: `mcp_sonarqube_search_sonar_issues_in_projects` to check for new issues
+- Fix all BLOCKER and HIGH severity issues before committing
+- Address MEDIUM severity issues when feasible
+- Document any intentionally ignored issues with `# NOSONAR` comments explaining why
+
+**Code Quality Thresholds:**
+- **Cognitive Complexity:** Keep functions under 15 complexity (refactor if higher)
+- **Function Length:** Keep functions focused and under 50 lines when possible
+- **Nesting Depth:** Avoid nesting functions more than 4 levels deep
+- **Code Coverage:** Maintain minimum 80% test coverage for all modules
+- **Duplication:** Avoid duplicating string literals more than 3 times (use constants)
+
+**Python-Specific Rules:**
+- Use `async` file operations in async functions (avoid synchronous `open()`)
+- Always provide radix parameter to `int()` conversions: `int(value, 10)`
+- Avoid reassigning function parameters
+- Use type hints for function parameters and return values
+- Keep imports organized: stdlib → third-party → local
+- Use `if __name__ == "__main__":` guards for executable scripts
+
+**TypeScript/JavaScript-Specific Rules:**
+- Replace deprecated MUI components:
+  - `InputLabelProps` → `slotProps={{ inputLabel: { shrink: true } }}`
+  - `InputProps` → `slotProps={{ input: { ... } }}`
+  - `primaryTypographyProps` → `slotProps={{ primary: { ... } }}`
+  - `paragraph` Typography variant → `body1`
+  - MUI `Grid` → `Grid2` or CSS Grid with Box component
+- Use `globalThis` instead of `window` for global scope
+- Always provide radix to `parseInt(value, 10)` and use `Number.parseFloat(value)`
+- Avoid nested ternary operators (extract to helper functions or if/else)
+- Fix optional chaining issues: ensure safe property access
+- Use `Array.from()` or spread operator instead of `.slice()` for array copies
+- Avoid deeply nested callbacks (refactor to separate functions)
+- Use `const` by default, `let` only when reassignment needed, never `var`
+
+**Common Refactoring Patterns:**
+1. **High Cognitive Complexity** → Extract helper functions, use early returns, reduce nesting
+2. **Nested Ternaries** → Create helper functions with clear names
+3. **Duplicated Literals** → Extract to constants at module/class level
+4. **Long Functions** → Split into smaller, focused functions with single responsibilities
+5. **Deep Nesting** → Use guard clauses, early returns, and extract nested logic
+
+**SonarQube MCP Server Workflow:**
+```bash
+# 1. Check for issues after making changes
+mcp_sonarqube_search_sonar_issues_in_projects(projects=["TheFlexican_smart-heating"], severities=["HIGH", "BLOCKER"])
+
+# 2. Get details on specific rules if needed
+mcp_sonarqube_show_rule(key="typescript:S3776")  # Cognitive complexity
+mcp_sonarqube_show_rule(key="python:S3776")     # Cognitive complexity
+
+# 3. Analyze specific file for issues
+mcp_sonarqube_analyze_code_snippet(projectKey="TheFlexican_smart-heating", codeSnippet="...", language="typescript")
+
+# 4. Check project quality gate status
+mcp_sonarqube_get_project_quality_gate_status(projectKey="TheFlexican_smart-heating")
+```
+
+**Before Committing Code:**
+1. ✅ Run all tests (Python unit tests + E2E tests when available)
+2. ✅ Check SonarQube for new issues: `mcp_sonarqube_search_sonar_issues_in_projects`
+3. ✅ Fix all BLOCKER and HIGH severity issues
+4. ✅ Verify code coverage meets 80% threshold
+5. ✅ Update documentation (EN + NL) if user-facing changes
+6. ✅ Update translations if UI text changed
+7. ✅ Build succeeds without errors or warnings
+8. ✅ Get user approval before git operations
 
 **RULE #5.1: Never Stop Halfway During Tasks**
 - **ALWAYS complete assigned work fully** - No stopping to give summaries or status updates

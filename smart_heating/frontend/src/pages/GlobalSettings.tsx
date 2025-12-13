@@ -448,7 +448,7 @@ export default function GlobalSettings({ themeMode, onThemeChange }: { themeMode
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', pb: 4 }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', pb: 0, display: 'flex', flexDirection: 'column', height: '100vh' }}>
       {/* Header */}
       <Paper
         elevation={0}
@@ -512,7 +512,8 @@ export default function GlobalSettings({ themeMode, onThemeChange }: { themeMode
         </Tabs>
       </Box>
 
-      <Box sx={{ px: 2 }}>
+      {/* Content area: on mobile allow scrolling inside the viewport */}
+      <Box sx={{ px: 2, overflowY: { xs: 'auto', sm: 'visible' }, maxHeight: { xs: 'calc(100vh - 120px)', sm: 'none' }, py: 2 }}>
         {saveSuccess && (
           <Alert severity="success" sx={{ mt: 2, mb: 2 }}>
             {t('globalSettings.saveSuccess', 'Settings saved successfully')}

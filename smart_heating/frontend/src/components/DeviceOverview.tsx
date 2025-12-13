@@ -22,6 +22,15 @@ interface DeviceOverviewProps {
   areas: Zone[]
 }
 
+// Helper function to determine device chip color
+const getDeviceChipColor = (device: any): 'error' | 'info' | 'success' | 'default' => {
+  if (device.type === 'thermostat') {
+    if (device.hvac_action === 'heating') return 'error'
+    if (device.hvac_action === 'cooling') return 'info'
+  }
+  return device.state === 'on' ? 'success' : 'default'
+}
+
 const DeviceOverview = ({ areas }: DeviceOverviewProps) => {
   const getDeviceStatusIcon = (device: any) => {
     if (device.type === 'thermostat') {
@@ -153,12 +162,7 @@ const DeviceOverview = ({ areas }: DeviceOverviewProps) => {
                   <Chip
                     label={getDeviceStatus(device)}
                     size="small"
-                    color={
-                      device.type === 'thermostat' && device.hvac_action === 'heating' ? 'error' :
-                      device.type === 'thermostat' && device.hvac_action === 'cooling' ? 'info' :
-                      device.state === 'on' ? 'success' :
-                      'default'
-                    }
+                    color={getDeviceChipColor(device)}
                   />
                 </TableCell>
                 <TableCell>

@@ -760,7 +760,7 @@ const ZoneDetail = () => {
                   value={areaHeatingCurveCoefficient ?? ''}
                   onChange={(e) => setAreaHeatingCurveCoefficient(e.target.value ? Number(e.target.value) : null)}
                   disabled={useGlobalHeatingCurve}
-                  inputProps={{ step: 0.1, min: 0.1, max: 10 }}
+                  slotProps={{ htmlInput: { step: 0.1, min: 0.1, max: 10 } }}
                 />
                 <Button variant="contained" onClick={async () => {
                   try {

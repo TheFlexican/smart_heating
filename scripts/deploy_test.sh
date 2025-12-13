@@ -10,8 +10,14 @@ NC='\033[0m' # No Color
 
 # Configuration
 HA_CONTAINER="homeassistant-test"
-INTEGRATION_DIR="smart_heating"
+# Resolve repo root and use absolute paths so script works from any CWD
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+INTEGRATION_DIR="$REPO_ROOT/smart_heating"
 FRONTEND_DIR="$INTEGRATION_DIR/frontend"
+
+echo "Repo root: $REPO_ROOT"
+echo "Frontend dir: $FRONTEND_DIR"
 
 echo -e "${BLUE}════════════════════════════════════════════════════════${NC}"
 echo -e "${BLUE}  Smart Heating - Sync Script${NC}"

@@ -47,7 +47,7 @@ export const VacationModeSettings: React.FC = () => {
       setLoading(true)
       const data = await getVacationMode()
       setVacationMode(data)
-      
+
       if (data.start_date) {
         setStartDate(new Date(data.start_date))
       }
@@ -67,7 +67,7 @@ export const VacationModeSettings: React.FC = () => {
         setTimeout(() => loadVacationMode(retryCount + 1), delay)
         return
       }
-      
+
       // Show error to user only after retries exhausted
       if (err && typeof err === 'object' && 'code' in err && err.code === 'ERR_NETWORK') {
         console.error('Failed to load vacation mode after retries (network error):', err)
@@ -215,9 +215,9 @@ export const VacationModeSettings: React.FC = () => {
               label={t('vacation.minTemperature')}
               type="number"
               value={minTemp}
-              onChange={(e) => setMinTemp(parseFloat(e.target.value))}
+              onChange={(e) => setMinTemp(Number.parseFloat(e.target.value))}
               disabled={vacationMode?.enabled || saving}
-              inputProps={{ min: 5, max: 15, step: 0.5 }}
+              slotProps={{ htmlInput: { min: 5, max: 15, step: 0.5 } }}
               fullWidth
             />
           )}

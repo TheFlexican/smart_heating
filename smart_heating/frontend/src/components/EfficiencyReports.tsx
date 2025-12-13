@@ -52,7 +52,7 @@ const EfficiencyReports: React.FC = () => {
     try {
       const allAreas = await getAllAreasEfficiency(period)
       setAllAreasReport(allAreas)
-      
+
       // If an area is selected, load its specific report
       if (selectedArea) {
         const areaData = await getEfficiencyReport(selectedArea, period)
@@ -137,21 +137,21 @@ const EfficiencyReports: React.FC = () => {
           </CardContent>
         </Card>
       </Grid>
-      
+
       <Grid item xs={12} sm={6} md={3}>
         {renderMetricCard(
           t('efficiency.heatingTime'),
           `${metrics.heating_time_percentage.toFixed(1)}%`
         )}
       </Grid>
-      
+
       <Grid item xs={12} sm={6} md={3}>
         {renderMetricCard(
           t('efficiency.heatingCycles'),
           metrics.heating_cycles.toString()
         )}
       </Grid>
-      
+
       <Grid item xs={12} sm={6} md={3}>
         {renderMetricCard(
           t('efficiency.tempDelta'),
@@ -183,7 +183,7 @@ const EfficiencyReports: React.FC = () => {
   }
 
   const renderAllAreasTable = () => {
-    if (!allAreasReport || !allAreasReport.area_reports) return null
+    if (!allAreasReport?.area_reports) return null
 
     return (
       <TableContainer component={Paper}>
@@ -252,7 +252,7 @@ const EfficiencyReports: React.FC = () => {
             </Typography>
           </Box>
         </Box>
-        
+
         <ButtonGroup variant="outlined">
           <Button
             variant={period === 'day' ? 'contained' : 'outlined'}
@@ -282,7 +282,7 @@ const EfficiencyReports: React.FC = () => {
       </Box>
 
       {loading && <LinearProgress sx={{ mb: 2 }} />}
-      
+
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
@@ -316,9 +316,9 @@ const EfficiencyReports: React.FC = () => {
                   {t('common.back')}
                 </Button>
               </Box>
-              
+
               {renderAreaMetrics(areaReport.metrics)}
-              
+
               <Paper sx={{ mt: 3, p: 2 }}>
                 <Typography variant="h6" gutterBottom>
                   {t('efficiency.recommendations')}

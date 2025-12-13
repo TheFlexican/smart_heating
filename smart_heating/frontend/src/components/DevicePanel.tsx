@@ -15,7 +15,7 @@ import {
   FormControlLabel,
   Switch,
 } from '@mui/material'
-import { Droppable, Draggable } from 'react-beautiful-dnd'
+// import { Droppable, Draggable } from 'react-beautiful-dnd' // TODO: Migrate to @dnd-kit
 import ThermostatIcon from '@mui/icons-material/Thermostat'
 import SensorsIcon from '@mui/icons-material/Sensors'
 import RouterIcon from '@mui/icons-material/Router'
@@ -171,36 +171,25 @@ const DevicePanel = ({ devices, onUpdate }: DevicePanelProps) => {
             )}
           </Box>
         ) : (
-          <Droppable droppableId="devices-panel" isDropDisabled={true}>
-            {(provided) => (
-              <List ref={provided.innerRef} {...provided.droppableProps}>
-                {filteredDevices.map((device, index) => (
-                  <Draggable
-                    key={device.id}
-                    draggableId={`device-${device.id}`}
-                    index={index}
-                  >
-                    {(provided, snapshot) => (
-                      <ListItem
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        {...provided.dragHandleProps}
-                        sx={{
-                          cursor: 'grab',
-                          bgcolor: snapshot.isDragging ? 'rgba(3, 169, 244, 0.1)' : 'transparent',
-                          border: snapshot.isDragging ? '2px dashed #03a9f4' : 'none',
-                          borderRadius: 1,
-                          '&:hover': {
-                            bgcolor: 'rgba(255,255,255,0.05)',
-                          },
-                        }}
-                      >
-                        <ListItemIcon sx={{ color: 'text.secondary' }}>
-                          {getDeviceIcon(device.type)}
+          <List>
+            {filteredDevices.map((device) => (
+              <ListItem
+                key={device.id}
+                sx={{
+                  borderRadius: 1,
+                  '&:hover': {
+                    bgcolor: 'rgba(255,255,255,0.05)',
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ color: 'text.secondary' }}>
+                  {getDeviceIcon(device.type)}
                         </ListItemIcon>
                         <ListItemText
                           primary={device.name || device.id}
-                          primaryTypographyProps={{ color: 'text.primary' }}
+                          slotProps={{
+                            primary: { sx: { color: 'text.primary' } }
+                          }}
                           secondary={
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mt: 0.5 }}>
                               <Chip
@@ -222,13 +211,8 @@ const DevicePanel = ({ devices, onUpdate }: DevicePanelProps) => {
                           }
                         />
                       </ListItem>
-                    )}
-                  </Draggable>
-                ))}
-                {provided.placeholder}
-              </List>
-            )}
-          </Droppable>
+            ))}
+          </List>
         )}
       </Box>
     </Paper>
